@@ -1,7 +1,7 @@
-interface UserState {
+interface AuthState {
+  token: string | null
   currentUser: User | null
-  role: Role | null
-  permissions: string[]
+  isLoggedIn: boolean
 }
 
 interface AppState {
@@ -10,12 +10,7 @@ interface AppState {
   sidebarCollapsed: boolean
 }
 
-interface DraftState {
-  items: Record<string, unknown>
-}
-
 interface State {
-  user: UserState
+  auth: AuthState
   app: AppState
-  draft: DraftState
 }

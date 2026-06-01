@@ -9,4 +9,25 @@ module.exports = defineConfig({
     config.resolve.extensions
       .merge(['.ts', '.vue'])
   },
+  devServer: {
+    port: 8080,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/info': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/__become-wheel': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/_tick': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

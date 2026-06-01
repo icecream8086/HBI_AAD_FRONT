@@ -1,16 +1,45 @@
+type UserRole = 'root' | 'Operator' | 'Viewer'
+
 interface User {
   id: string
-  username: string
-  realName: string
   email: string
-  avatar?: string
-  roleId: string
-  hospitalId: string
-  createdAt: string
+  name: string
+  role: UserRole
+  createdAt: number
+  updatedAt: number
+  privateKeyEd25519: string
 }
 
-interface Role {
-  id: string
+interface LoginRequest {
+  email: string
+  password: string
+}
+
+interface RegisterRequest {
+  email: string
+  password: string
   name: string
-  permissions: string[]
+  role?: UserRole
+}
+
+interface AuthResponse {
+  token: string
+  user: User
+}
+
+interface LoginInfo {
+  exists: boolean
+  methods: ('password' | 'no-password')[]
+  policy?: LoginPolicy | null
+}
+
+interface LoginPolicy {
+  enabled: boolean
+  timeRanges: { start: string; end: string; days: number[] }[]
+  allowedCIDRs: string[]
+}
+
+interface NoPasswordLoginRequest {
+  email: string
+  oneTimeKey: string
 }

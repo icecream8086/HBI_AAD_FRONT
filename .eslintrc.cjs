@@ -25,5 +25,17 @@ module.exports = {
         '@typescript-eslint/no-var-requires': 'off',
       },
     },
+    {
+      files: ['src/api/generated/**'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+    {
+      files: ['src/views/**/*.vue'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'warn',
+      },
+    },
   ],
 }
