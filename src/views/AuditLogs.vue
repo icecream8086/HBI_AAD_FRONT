@@ -36,6 +36,16 @@
       <el-table-column prop="facility" label="设施" width="130" />
       <el-table-column prop="message" label="消息" min-width="300" show-overflow-tooltip />
     </el-table>
+    <el-pagination
+      v-if="total > pageSize"
+      v-model:current-page="page"
+      v-model:page-size="pageSize"
+      :total="total"
+      :page-sizes="[10, 20, 50, 100]"
+      layout="total, sizes, prev, pager, next"
+      @size-change="fetchData"
+      @current-change="fetchData"
+    />
   </div>
 </template>
 
@@ -46,14 +56,21 @@ import { api } from '../api'
 
 const loading = ref(false)
 const logs = ref<AuditLog[]>([])
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const f = reactive({ levelMax: '', facility: '', search: '' })
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 async function fetchData() {
   loading.value = true
-  try { logs.value = await api.extractLines<AuditLog>(api.audit.apiAuditLogsGet()) }
-  catch { ElMessage.error('获取日志失败') }
+  try {
+    const res = await api.audit.apiAuditLogsGet({ params: { page: page.value, limit: pageSize.value } })
+    const d = (res.data as Record<string, any>).data as { lines: AuditLog[]; total: number }
+    logs.value = d.lines || []
+    total.value = d.total ?? 0
+  } catch { ElMessage.error('获取日志失败') }
   finally { loading.value = false }
 }
 

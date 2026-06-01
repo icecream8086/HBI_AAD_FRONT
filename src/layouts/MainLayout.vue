@@ -31,13 +31,16 @@
           <el-icon><PictureFilled /></el-icon>
           <template #title>镜像</template>
         </el-menu-item>
+        <el-menu-item index="/users">
+          <el-icon><User /></el-icon>
+          <template #title>用户</template>
+        </el-menu-item>
 
         <el-sub-menu index="admin">
           <template #title>
             <el-icon><Setting /></el-icon>
-            <span>系统管理</span>
+            <span>权限管理</span>
           </template>
-          <el-menu-item index="/users">用户管理</el-menu-item>
           <el-menu-item index="/permissions/policies">策略</el-menu-item>
           <el-menu-item index="/permissions/groups">权限组</el-menu-item>
           <el-menu-item index="/permissions/user-groups">用户组</el-menu-item>
@@ -150,9 +153,11 @@ function handleCommand(cmd: string) {
 onMounted(async () => {
   if (store.state.auth.token && !store.state.auth.currentUser) {
     try {
-      const users = await api.extract<User[]>(api.users.apiUsersGet())
-      // Store user from token - re-login needed if not found
-      if (users.length > 0) store.commit('auth/SET_USER', users[0])
+      const userId = localStorage.getItem('current_user_id')
+      if (userId) {
+        const user = await api.extract<User>(api.users.apiUsersIdGet(userId))
+        store.commit('auth/SET_USER', user)
+      }
     } catch { /* ignore */ }
   }
 })

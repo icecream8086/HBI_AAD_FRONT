@@ -7,3 +7,4 @@ coverage
 test-results
 openapi.json
 openapi-summary.json
+.claude

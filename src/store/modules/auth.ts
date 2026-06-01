@@ -17,16 +17,23 @@ const authModule: Module<AuthState, State> = {
         localStorage.setItem('access_token', token)
       } else {
         localStorage.removeItem('access_token')
+        localStorage.removeItem('current_user_id')
       }
     },
     SET_USER(s, user: User | null) {
       s.currentUser = user
+      if (user) localStorage.setItem('current_user_id', user.id)
+      else localStorage.removeItem('current_user_id')
     },
     CLEAR_AUTH(s) {
       s.token = null
       s.currentUser = null
       s.isLoggedIn = false
-      localStorage.removeItem('access_token')
+      localStorage.clear()
+      sessionStorage.clear()
+      document.cookie.split(';').forEach(c => {
+        document.cookie = c.replace(/^ +/, '').replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`)
+      })
     },
   },
   actions: {
