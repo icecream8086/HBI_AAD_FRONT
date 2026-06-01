@@ -11,8 +11,8 @@
         :collapse="isCollapsed"
         :collapse-transition="false"
         background-color="transparent"
-        text-color="var(--el-text-color-primary)"
-        active-text-color="var(--el-color-primary)"
+        text-color="var(--sidebar-text, var(--el-text-color-primary))"
+        active-text-color="var(--sidebar-active, var(--el-color-primary))"
         router
       >
         <el-menu-item index="/dashboard">
@@ -74,6 +74,22 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <!-- Theme switcher -->
+          <el-dropdown trigger="click" @command="cmd => setTheme(cmd)">
+            <span class="user-trigger">
+              <el-icon :size="18"><MagicStick /></el-icon>
+              <span style="margin:0 4px">{{ currentInfo.name }}</span>
+              <el-icon><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="t in themes" :key="t.id" :command="t.id">
+                  <el-icon><component :is="t.icon as any" /></el-icon>{{ t.name }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+
           <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-trigger">
               <el-avatar :size="28" style="margin-right:6px">
@@ -114,7 +130,7 @@ import { api } from '../api'
 const route = useRoute()
 const router = useRouter()
 const store = useStore<State>()
-useTheme()
+const { themes, currentInfo, setTheme } = useTheme()
 
 const user = computed(() => store.state.auth.currentUser)
 const isCollapsed = computed(() => store.state.app.sidebarCollapsed)
@@ -145,8 +161,8 @@ onMounted(async () => {
 <style scoped>
 .main-layout { height: 100vh; }
 .sidebar {
-  background-color: var(--el-bg-color);
-  border-right: 1px solid var(--el-border-color-light);
+  background-color: var(--sidebar-bg, var(--el-bg-color));
+  border-right: 1px solid var(--nav-border, var(--el-border-color-light));
   overflow-y: auto;
   transition: width 0.3s;
 }
@@ -157,7 +173,9 @@ onMounted(async () => {
   justify-content: center;
   font-weight: bold;
   font-size: 20px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  color: var(--sidebar-text, var(--el-text-color-primary));
+  border-bottom: 1px solid var(--nav-border, var(--el-border-color-light));
+  background: var(--sidebar-bg, transparent);
 }
 .logo-icon { font-size: 24px; }
 .header {
@@ -165,18 +183,19 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   height: var(--header-height);
-  background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-light);
+  background: var(--nav-bg, var(--el-bg-color));
+  border-bottom: 1px solid var(--nav-border, var(--el-border-color-light));
   padding: 0 16px;
 }
 .header-left { display: flex; align-items: center; gap: 12px; }
 .header-right { display: flex; align-items: center; gap: 16px; }
-.header-icon { cursor: pointer; }
 .collapse-btn { cursor: pointer; }
-.user-trigger { cursor: pointer; display: flex; align-items: center; }
-.username { margin-right: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-trigger { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.header :deep(.el-breadcrumb__inner) { color: var(--nav-text, var(--el-text-color-regular)) !important; }
+.header :deep(.el-breadcrumb__separator) { color: var(--nav-text, var(--el-text-color-placeholder)) !important; }
+.username { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .main-content {
-  background-color: var(--el-bg-color-page);
+  background-color: var(--app-bg, var(--el-bg-color-page));
   overflow-y: auto;
 }
 </style>

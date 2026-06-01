@@ -1,0 +1,99 @@
+/* GNU 风格 — 终端绿黑 */
+html.theme-gnu {
+  color-scheme: dark;
+  --el-color-primary: #33cc33;
+  --el-color-primary-light-3: #2aad2a;
+  --el-color-primary-light-5: #228522;
+  --el-color-primary-light-7: #1a5e1a;
+  --el-color-primary-light-8: #154715;
+  --el-color-primary-light-9: #102f10;
+  --el-color-primary-dark-2: #5cd65c;
+  --el-color-success: #33cc33;
+  --el-color-success-light-3: #2aad2a;
+  --el-color-success-light-5: #228522;
+  --el-color-success-light-7: #1a5e1a;
+  --el-color-success-light-9: #102f10;
+  --el-color-warning: #ccaa33;
+  --el-color-warning-light-3: #a88a2a;
+  --el-color-warning-light-5: #7d6722;
+  --el-color-warning-light-7: #53441a;
+  --el-color-warning-light-9: #292110;
+  --el-color-danger: #cc3333;
+  --el-color-danger-light-3: #a82a2a;
+  --el-color-danger-light-5: #7d2222;
+  --el-color-danger-light-7: #531a1a;
+  --el-color-danger-light-9: #291010;
+  --el-color-error: #cc3333;
+  --el-color-info: #4a7a4a;
+  --el-color-info-light-3: #3a623a;
+  --el-color-info-light-5: #2d4a2d;
+  --el-color-info-light-7: #1f321f;
+  --el-color-info-light-9: #101910;
+  --el-bg-color-page: #0a0a0a;
+  --el-bg-color: #0d0d0d;
+  --el-bg-color-overlay: #141414;
+  --el-text-color-primary: #ccffcc;
+  --el-text-color-regular: #99cc99;
+  --el-text-color-secondary: #6a8a6a;
+  --el-text-color-placeholder: #5a7a5a;
+  --el-text-color-disabled: #3a5a3a;
+  --el-border-color-darker: #2a4a2a;
+  --el-border-color-dark: #2a4a2a;
+  --el-border-color: #1a3a1a;
+  --el-border-color-light: #162e16;
+  --el-border-color-lighter: #122512;
+  --el-border-color-extra-light: #0e1e0e;
+  --el-fill-color-darker: #242424;
+  --el-fill-color-dark: #1e1e1e;
+  --el-fill-color: #181818;
+  --el-fill-color-light: #141414;
+  --el-fill-color-lighter: #101010;
+  --el-fill-color-extra-light: #0e0e0e;
+  --el-fill-color-blank: #0d0d0d;
+  --el-mask-color: rgba(0,0,0,0.8);
+  --el-mask-color-extra-light: rgba(0,0,0,0.3);
+  --el-box-shadow: 0px 12px 32px 4px rgba(0,0,0,0.4), 0px 8px 20px rgba(0,0,0,0.7);
+  --el-box-shadow-light: 0px 0px 12px rgba(0,0,0,0.7);
+  --el-box-shadow-lighter: 0px 0px 6px rgba(0,0,0,0.7);
+  --el-box-shadow-dark: 0px 16px 48px 16px rgba(0,0,0,0.7), 0px 12px 32px #000, 0px 8px 16px -8px #000;
+  --el-border-radius-base: 2px;
+  --el-border-radius-small: 1px;
+  --app-bg: #0a0a0a;
+  --nav-bg: #0d0d0d;
+  --nav-text: #33cc33;
+  --nav-border: #1a3a1a;
+  --sidebar-bg: #050505;
+  --sidebar-text: #99cc99;
+  --sidebar-active: #33ff33;
+  --content-bg: #0d0d0d;
+  --card-shadow: rgba(0,255,0,0.06);
+}
+html.theme-gnu .el-card,
+html.theme-gnu .el-table,
+html.theme-gnu .el-table__header-wrapper,
+html.theme-gnu .el-table__body-wrapper,
+html.theme-gnu .el-table__inner-wrapper,
+html.theme-gnu .el-table__empty-block {
+  --el-card-bg-color: var(--el-bg-color-overlay);
+  --el-fill-color-blank: var(--el-card-bg-color);
+  --el-table-bg-color: var(--el-bg-color-overlay);
+  --el-table-tr-bg-color: var(--el-bg-color-overlay);
+  --el-table-header-bg-color: var(--el-fill-color);
+  --el-table-current-row-bg-color: var(--el-fill-color-light);
+  --el-table-row-hover-bg-color: var(--el-fill-color-dark);
+  --el-table-border-color: var(--el-border-color-light);
+  --el-table-header-text-color: var(--el-color-primary);
+  --el-table-text-color: var(--el-text-color-primary);
+}
+html.theme-gnu .el-empty {
+  --el-empty-fill-color-0: #000;
+  --el-empty-fill-color-1: #1a3a1a;
+  --el-empty-fill-color-2: #142e14;
+  --el-empty-fill-color-3: #0e1e0e;
+  --el-empty-fill-color-4: #0e200e;
+  --el-empty-fill-color-5: #0c1c0c;
+  --el-empty-fill-color-6: #0a1a0a;
+  --el-empty-fill-color-7: #0a180a;
+  --el-empty-fill-color-8: #081608;
+  --el-empty-fill-color-9: #061406;
+}

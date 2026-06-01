@@ -1,0 +1,60 @@
+/* 莫兰迪色系 */
+html.theme-morandi {
+  --el-color-primary: #9e8c8c;
+  --el-color-primary-light-3: #b5a4a4;
+  --el-color-primary-light-5: #c5b6b6;
+  --el-color-primary-light-7: #d5c8c8;
+  --el-color-primary-light-8: #e0d5d5;
+  --el-color-primary-light-9: #ede5e5;
+  --el-color-primary-dark-2: #7e6e6e;
+  --el-color-success: #a3b5a3;
+  --el-color-warning: #c4b89e;
+  --el-color-danger: #c49e9e;
+  --el-color-info: #b5b0b0;
+  --el-bg-color-page: #e8e4e0;
+  --el-bg-color: #f2efed;
+  --el-bg-color-overlay: #f5f2f0;
+  --el-text-color-primary: #5c5350;
+  --el-text-color-regular: #6b6260;
+  --el-text-color-secondary: #8a8280;
+  --el-text-color-placeholder: #a09890;
+  --el-text-color-disabled: #c0b8b0;
+  --el-border-color-darker: #c5bfb8;
+  --el-border-color-dark: #cec8c0;
+  --el-border-color: #d6d0ca;
+  --el-border-color-light: #ddd8d2;
+  --el-border-color-lighter: #e5e0da;
+  --el-border-color-extra-light: #ece8e2;
+  --el-fill-color-darker: #ccc6be;
+  --el-fill-color-dark: #d8d2ca;
+  --el-fill-color: #e8e2dd;
+  --el-fill-color-light: #f0ebe7;
+  --el-fill-color-lighter: #f5f0ec;
+  --el-fill-color-extra-light: #f8f5f2;
+  --el-fill-color-blank: #f2efed;
+  --app-bg: #e8e4e0;
+  --nav-bg: #d5cdc5;
+  --nav-text: #5c5350;
+  --nav-border: #c5bbb0;
+  --sidebar-bg: #8a7e78;
+  --sidebar-text: #f0ebe7;
+  --sidebar-active: #d5cdc5;
+  --content-bg: #f5f2f0;
+  --card-shadow: rgba(90,80,70,0.12);
+}
+html.theme-morandi .el-card,
+html.theme-morandi .el-table,
+html.theme-morandi .el-table__header-wrapper,
+html.theme-morandi .el-table__body-wrapper,
+html.theme-morandi .el-table__inner-wrapper {
+  --el-card-bg-color: var(--el-bg-color-overlay);
+  --el-fill-color-blank: var(--el-card-bg-color);
+  --el-table-bg-color: var(--el-bg-color-overlay);
+  --el-table-tr-bg-color: var(--el-bg-color-overlay);
+  --el-table-header-bg-color: var(--el-fill-color);
+  --el-table-current-row-bg-color: var(--el-fill-color-light);
+  --el-table-row-hover-bg-color: var(--el-fill-color-dark);
+  --el-table-border-color: var(--el-border-color-light);
+  --el-table-header-text-color: var(--el-text-color-primary);
+  --el-table-text-color: var(--el-text-color-primary);
+}

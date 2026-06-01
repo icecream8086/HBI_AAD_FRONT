@@ -1,9 +1,11 @@
-interface ContainerImage {
+interface ImageInfo {
   id: string
-  repo: string
-  tag: string
-  size: number
-  created: number
+  tags: string[]
+  created?: number
+  size?: number
+  architecture?: string
+  os?: string
+  layers?: number
 }
 
 interface ImagePullRequest {

@@ -7,6 +7,13 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import './assets/themes/index.css'
+import './assets/themes/light.css'
+import './assets/themes/dark.css'
+import './assets/themes/morandi.css'
+import './assets/themes/forest.css'
+import './assets/themes/ocean.css'
+import './assets/themes/sakura.css'
+import './assets/themes/gnu.css'
 
 const app = createApp(App)
 

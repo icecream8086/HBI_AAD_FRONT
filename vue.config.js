@@ -10,7 +10,7 @@ module.exports = defineConfig({
       .merge(['.ts', '.vue'])
   },
   devServer: {
-    port: 8080,
+    port: 8086,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

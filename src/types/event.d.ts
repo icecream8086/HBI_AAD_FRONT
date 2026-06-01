@@ -1,16 +1,20 @@
-interface TriggerEvent {
-  type: string
-  payload: unknown
-}
-
 interface EventLoopStatus {
   running: boolean
-  tickInterval: number
+  paused: boolean
   queueSize: number
-  lastTick: number
+  processedCount: number
+  uptimeMs: number
+  config: {
+    intervalMs: number
+    batchSize: number
+    autoStart: boolean
+    maxQueueSize: number
+  }
 }
 
 interface EventLoopConfig {
-  tickInterval?: number
-  maxRetries?: number
+  intervalMs: number
+  batchSize: number
+  autoStart: boolean
+  maxQueueSize: number
 }

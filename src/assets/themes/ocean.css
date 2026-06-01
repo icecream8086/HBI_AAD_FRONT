@@ -1,0 +1,60 @@
+/* 海洋色系 */
+html.theme-ocean {
+  --el-color-primary: #4a7a9e;
+  --el-color-primary-light-3: #6e9ab8;
+  --el-color-primary-light-5: #92b6ce;
+  --el-color-primary-light-7: #b8d0e0;
+  --el-color-primary-light-8: #d4e2ec;
+  --el-color-primary-light-9: #eaf0f5;
+  --el-color-primary-dark-2: #2a5a7e;
+  --el-color-success: #5a9e8a;
+  --el-color-warning: #b0a07a;
+  --el-color-danger: #b07a7a;
+  --el-color-info: #7a92a0;
+  --el-bg-color-page: #dce4ea;
+  --el-bg-color: #e8eef2;
+  --el-bg-color-overlay: #eef2f5;
+  --el-text-color-primary: #1a2e3e;
+  --el-text-color-regular: #3a5262;
+  --el-text-color-secondary: #6a7e8a;
+  --el-text-color-placeholder: #8a9aaa;
+  --el-text-color-disabled: #b0c0d0;
+  --el-border-color-darker: #b0bcc8;
+  --el-border-color-dark: #b8c4d0;
+  --el-border-color: #c0ccd6;
+  --el-border-color-light: #d0d8e0;
+  --el-border-color-lighter: #dce4ea;
+  --el-border-color-extra-light: #e6ecf2;
+  --el-fill-color-darker: #c4d0d8;
+  --el-fill-color-dark: #ced8e0;
+  --el-fill-color: #d8e0e8;
+  --el-fill-color-light: #e6ecf2;
+  --el-fill-color-lighter: #eef2f5;
+  --el-fill-color-extra-light: #f4f6f8;
+  --el-fill-color-blank: #e8eef2;
+  --app-bg: #dce4ea;
+  --nav-bg: #2a5a7e;
+  --nav-text: #e8f0f5;
+  --nav-border: #1a4a6e;
+  --sidebar-bg: #1a4a6e;
+  --sidebar-text: #c0d8e8;
+  --sidebar-active: #6ab0e0;
+  --content-bg: #eef2f5;
+  --card-shadow: rgba(30,60,90,0.15);
+}
+html.theme-ocean .el-card,
+html.theme-ocean .el-table,
+html.theme-ocean .el-table__header-wrapper,
+html.theme-ocean .el-table__body-wrapper,
+html.theme-ocean .el-table__inner-wrapper {
+  --el-card-bg-color: var(--el-bg-color-overlay);
+  --el-fill-color-blank: var(--el-card-bg-color);
+  --el-table-bg-color: var(--el-bg-color-overlay);
+  --el-table-tr-bg-color: var(--el-bg-color-overlay);
+  --el-table-header-bg-color: var(--el-fill-color);
+  --el-table-current-row-bg-color: var(--el-fill-color-light);
+  --el-table-row-hover-bg-color: var(--el-fill-color-dark);
+  --el-table-border-color: var(--el-border-color-light);
+  --el-table-header-text-color: var(--el-text-color-primary);
+  --el-table-text-color: var(--el-text-color-primary);
+}
