@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>平台 / Provider</h2>
-    <el-table :data="platforms" v-loading="loading" stripe empty-text="暂无可用平台">
+    <el-table :data="platforms || []" v-loading="loading" stripe empty-text="暂无可用平台">
       <el-table-column label="名称">
         <template #default="{ row }">
           <div class="platform-item">
@@ -29,7 +29,7 @@ const platforms = ref<PlatformInfo[]>([])
 
 onMounted(async () => {
   loading.value = true
-  try { platforms.value = await api.extract<PlatformInfo[]>(api.platforms.apiPlatformsGet()) } catch { /* ignore */ }
+  try { platforms.value = await api.extractArray<PlatformInfo>(api.platforms.apiPlatformsGet()) } catch { /* ignore */ }
   finally { loading.value = false }
 })
 </script>

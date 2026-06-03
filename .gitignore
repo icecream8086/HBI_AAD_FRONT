@@ -8,3 +8,5 @@ test-results
 openapi.json
 openapi-summary.json
 .claude
+claude.md
+.vscode

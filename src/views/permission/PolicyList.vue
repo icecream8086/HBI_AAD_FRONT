@@ -5,7 +5,7 @@
       <h2>策略</h2>
       <el-button type="primary" size="small" @click="openCreate">新建策略</el-button>
     </div>
-    <el-table :data="policies" v-loading="loading" stripe empty-text="暂无策略" @sort-change="onSort">
+    <el-table :data="policies || []" v-loading="loading" stripe empty-text="暂无策略" @sort-change="onSort">
       <el-table-column prop="name" label="名称" min-width="150" sortable="custom" />
       <el-table-column prop="effect" label="效果" width="80">
         <template #default="{ row }">
@@ -34,7 +34,7 @@
       v-model:current-page="page"
       v-model:page-size="limit"
       :total="total"
-      :page-sizes="[10, 20, 50, 100]"
+      :page-sizes="[10, 15, 30, 50]"
       layout="total, sizes, prev, pager, next"
       @size-change="fetchData"
       @current-change="fetchData"
@@ -73,7 +73,7 @@ const loading = ref(false)
 const saving = ref(false)
 const policies = ref<StoredPolicy[]>([])
 const page = ref(1)
-const limit = ref(20)
+const limit = ref(15)
 const total = ref(0)
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 const form = reactive({ name: '', effect: 'allow' as 'allow' | 'deny', actions: [] as string[], resource: '', priority: 100 })

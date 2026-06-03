@@ -3,12 +3,16 @@
     <h2>审计日志</h2>
     <el-card class="filters">
       <el-form :inline="true" @submit.prevent="fetchData">
-        <el-form-item label="级别">
-          <el-select v-model="f.levelMax" clearable placeholder="最大级别" style="width:120px">
-            <el-option label="DEBUG" value="DEBUG" />
-            <el-option label="INFO" value="INFO" />
-            <el-option label="WARN" value="WARN" />
-            <el-option label="ERROR" value="ERROR" />
+        <el-form-item label="最低级别">
+          <el-select v-model="f.levelMin" clearable placeholder="全部" style="width:140px">
+            <el-option label="0 EMERG" :value="0" />
+            <el-option label="1 ALERT" :value="1" />
+            <el-option label="2 CRIT" :value="2" />
+            <el-option label="3 ERR" :value="3" />
+            <el-option label="4 WARNING" :value="4" />
+            <el-option label="5 NOTICE" :value="5" />
+            <el-option label="6 INFO" :value="6" />
+            <el-option label="7 DEBUG" :value="7" />
           </el-select>
         </el-form-item>
         <el-form-item label="设施">
@@ -19,18 +23,18 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchData">查询</el-button>
-          <el-button @click="f={levelMax:'',facility:'',search:''};fetchData()">重置</el-button>
+          <el-button @click="f={levelMin:'',facility:'',search:''};fetchData()">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="logs" v-loading="loading" stripe empty-text="暂无日志">
+    <el-table :data="logs || []" v-loading="loading" stripe empty-text="暂无日志">
       <el-table-column label="时间" width="180">
         <template #default="{ row }">{{ fmt(row.timestamp) }}</template>
       </el-table-column>
-      <el-table-column prop="level" label="级别" width="80">
+      <el-table-column prop="level" label="级别" width="100">
         <template #default="{ row }">
-          <el-tag :type="row.level==='ERROR'?'danger':row.level==='WARN'?'warning':'info'" size="small">{{ row.level }}</el-tag>
+          <el-tag :type="levelType(row.level)" size="small">{{ levelName(row.level) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="facility" label="设施" width="130" />
@@ -41,7 +45,7 @@
       v-model:current-page="page"
       v-model:page-size="pageSize"
       :total="total"
-      :page-sizes="[10, 20, 50, 100]"
+      :page-sizes="[10, 15, 30, 50]"
       layout="total, sizes, prev, pager, next"
       @size-change="fetchData"
       @current-change="fetchData"
@@ -57,20 +61,28 @@ import { api } from '../api'
 const loading = ref(false)
 const logs = ref<AuditLog[]>([])
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(15)
 const total = ref(0)
-const f = reactive({ levelMax: '', facility: '', search: '' })
+const f = reactive({ levelMin: '' as number | string, facility: '', search: '' })
+
+const LEVEL_NAMES: Record<number, string> = { 0:'EMERG',1:'ALERT',2:'CRIT',3:'ERR',4:'WARNING',5:'NOTICE',6:'INFO',7:'DEBUG' }
+const LEVEL_TAGS: Record<number, string> = { 0:'danger',1:'danger',2:'danger',3:'danger',4:'warning',5:'warning',6:'info',7:'info' }
+function levelName(lv: number) { return LEVEL_NAMES[lv] ?? `LEVEL_${lv}` }
+function levelType(lv: number) { return LEVEL_TAGS[lv] ?? 'info' }
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 async function fetchData() {
   loading.value = true
   try {
-    const res = await api.audit.apiAuditLogsGet({ params: { page: page.value, limit: pageSize.value } })
-    const d = (res.data as Record<string, any>).data as { lines: AuditLog[]; total: number }
-    logs.value = d.lines || []
-    total.value = d.total ?? 0
-  } catch { ElMessage.error('获取日志失败') }
+    const params: Record<string, any> = { page: page.value, limit: pageSize.value }
+    if (f.levelMin !== '') params.levelMin = f.levelMin
+    if (f.facility) params.facility = f.facility
+    if (f.search) params.search = f.search
+    const res = await api.extract<{ lines: AuditLog[]; total: number }>(api.audit.apiAuditLogsGet({ params }))
+    logs.value = (res.lines || []).map((l: any) => typeof l === 'string' ? JSON.parse(l) : l)
+    total.value = res.total ?? logs.value.length
+  } catch (e) { console.error(e); ElMessage.error('获取日志失败') }
   finally { loading.value = false }
 }
 

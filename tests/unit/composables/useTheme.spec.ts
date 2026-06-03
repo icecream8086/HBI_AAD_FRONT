@@ -23,51 +23,38 @@ describe('useTheme', () => {
   it('defaults to light theme when no theme stored', async () => {
     const { useTheme } = await loadModule()
     const theme = useTheme()
-    expect(theme.theme.value).toBe('light')
-    expect(theme.isDark.value).toBe(false)
+    expect(theme.currentTheme.value).toBe('light')
   })
 
   it('reads theme from localStorage', async () => {
-    mockStorage.set('theme', 'dark')
+    mockStorage.set('app-theme', 'dark')
     const { useTheme } = await loadModule()
     const theme = useTheme()
-    expect(theme.theme.value).toBe('dark')
-    expect(theme.isDark.value).toBe(true)
+    expect(theme.currentTheme.value).toBe('dark')
   })
 
-  it('toggleTheme switches between light and dark', async () => {
-    const { useTheme } = await loadModule()
-    const theme = useTheme()
-
-    expect(theme.theme.value).toBe('light')
-    theme.toggleTheme()
-
-    await nextTick()
-    expect(theme.theme.value).toBe('dark')
-    expect(theme.isDark.value).toBe(true)
-  })
-
-  it('setTheme sets specific theme', async () => {
+  it('setTheme sets specific theme and applies css class', async () => {
     const { useTheme } = await loadModule()
     const theme = useTheme()
 
     theme.setTheme('dark')
     await nextTick()
-    expect(theme.theme.value).toBe('dark')
-    expect(theme.isDark.value).toBe(true)
+    expect(theme.currentTheme.value).toBe('dark')
+    expect(document.documentElement.classList.contains('theme-dark')).toBe(true)
 
     theme.setTheme('light')
     await nextTick()
-    expect(theme.theme.value).toBe('light')
-    expect(theme.isDark.value).toBe(false)
+    expect(theme.currentTheme.value).toBe('light')
+    expect(document.documentElement.classList.contains('theme-light')).toBe(true)
   })
 
-  it('sets data-theme attribute on document', async () => {
+  it('toggleTheme cycles through themes', async () => {
     const { useTheme } = await loadModule()
     const theme = useTheme()
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
-    theme.setTheme('dark')
+
+    const initial = theme.currentTheme.value
+    theme.toggleTheme()
     await nextTick()
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    expect(theme.currentTheme.value).not.toBe(initial)
   })
 })

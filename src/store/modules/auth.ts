@@ -29,8 +29,11 @@ const authModule: Module<AuthState, State> = {
       s.token = null
       s.currentUser = null
       s.isLoggedIn = false
+      // Preserve theme, clear everything else
+      const theme = localStorage.getItem('app-theme')
       localStorage.clear()
       sessionStorage.clear()
+      if (theme) localStorage.setItem('app-theme', theme)
       document.cookie.split(';').forEach(c => {
         document.cookie = c.replace(/^ +/, '').replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`)
       })

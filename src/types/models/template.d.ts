@@ -3,38 +3,89 @@ type TemplateVisibility = 'public' | 'private'
 interface SandboxTemplate {
   id: string
   name: string
-  spec: TemplateSpec
+  description?: string
   dependsOn?: string[]
-  visibility: TemplateVisibility
-  creatorId: string
-  instanceLimit?: { fixed?: number; perSystem?: number; perUser?: number }
-  resourceBinding?: { domain?: string; port?: number }
   createdAt: number
   updatedAt: number
+  creatorId?: string
+  visibility?: TemplateVisibility
+  userGroupIds?: string[]
+  singleton?: boolean
+  instanceLimit?: { type: 'fixed' | 'perUser' | 'perSystem'; max: number }
+  resourceBinding?: { domain?: string; port?: number }
+  container?: ContainerSpec
+  healthChecks?: HealthCheckDef[]
+  network?: TemplateNetworkSpec
+  extensions?: TemplateExtensions
 }
 
-interface TemplateSpec {
-  containers: TemplateContainerSpec[]
-  network?: NetworkSpec
-  storage?: StorageSpec[]
-  labels?: Record<string, string>
+interface ContainerSpec {
+  region: string
+  zone?: string
+  account?: string
+  restartPolicy?: string
+  containers: ContainerDef[]
+  initContainers?: ContainerDef[]
 }
 
-interface TemplateContainerSpec {
+interface ContainerDef {
   name: string
   image: string
   command?: string[]
-  env?: Record<string, string>
-  ports?: { container: number; host?: number; protocol?: string }[]
-  resources?: { cpu?: number; memory?: string }
-  volumes?: { name: string; mountPath: string; subPath?: string }[]
+  args?: string[]
+  env?: { name: string; value?: string; valueFrom?: string }[]
+  ports?: { containerPort: number; protocol?: string }[]
+  resources?: {
+    requests?: { cpu?: number; memory?: number }
+    limits?: { cpu?: number; memory?: number; gpu?: number }
+  }
+}
+
+interface HealthCheckDef {
+  name: string
+  target: string
+  type: 'liveness' | 'readiness' | 'startup'
+  probe: ProbeSpec
+  initialDelaySeconds?: number
+  periodSeconds?: number
+  timeoutSeconds?: number
+  successThreshold?: number
+  failureThreshold?: number
+}
+
+interface TemplateNetworkSpec {
+  mode?: 'public' | 'private' | 'vpc'
+  publicIp?: { allocate?: boolean; bandwidth?: number }
+  vpc?: { id?: string; subnetIds?: string[]; securityGroupId?: string }
+}
+
+interface TemplateExtensions {
+  storage?: TemplateStorage[]
+  spotStrategy?: string
+  providerOverrides?: Record<string, unknown>
+  healthMaxRetries?: number
+  autoStart?: boolean
+  webTerminal?: boolean
+  lifecycleHooks?: Record<string, unknown>
+}
+
+interface TemplateStorage {
+  name: string
+  type: 'oss' | 'nfs' | 'hostPath' | 'emptyDir'
+  mountPath: string
+  oss?: { bucket: string; path: string; readOnly?: boolean }
+  nfs?: { server: string; path: string; readOnly?: boolean }
+  hostPath?: { path: string }
+  size?: number
+  providerOverrides?: Record<string, unknown>
 }
 
 interface CreateTemplateRequest {
   name: string
-  spec: TemplateSpec
+  description?: string
+  container?: ContainerSpec
+  healthChecks?: HealthCheckDef[]
+  network?: TemplateNetworkSpec
+  extensions?: TemplateExtensions
   dependsOn?: string[]
-  visibility?: TemplateVisibility
-  instanceLimit?: { fixed?: number; perSystem?: number; perUser?: number }
-  resourceBinding?: { domain?: string; port?: number }
 }

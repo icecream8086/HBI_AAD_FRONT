@@ -3,13 +3,13 @@
     <div class="page-head">
       <h2>镜像</h2>
       <div class="page-actions">
-        <el-select v-model="platform" placeholder="全部平台" clearable style="width:150px;margin-right:8px" @change="fetchData">
+        <el-select v-model="platform" placeholder="全部平台" clearable style="width:150px;margin-right:8px" @change="page=1;fetchData()">
           <el-option v-for="p in platforms" :key="p.name" :label="p.name" :value="p.name" />
         </el-select>
         <el-button type="primary" @click="showPull = true">拉取镜像</el-button>
       </div>
     </div>
-    <el-table :data="images" v-loading="loading" stripe empty-text="暂无镜像">
+    <el-table :data="images || []" v-loading="loading" stripe empty-text="暂无镜像">
       <el-table-column label="镜像" min-width="300" show-overflow-tooltip>
         <template #default="{ row }">{{ row.tags?.[0] || row.id }}</template>
       </el-table-column>
@@ -35,6 +35,16 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-pagination
+      v-if="total > pageSize"
+      v-model:current-page="page"
+      v-model:page-size="pageSize"
+      :total="total"
+      :page-sizes="[10, 15, 30, 50]"
+      layout="total, sizes, prev, pager, next"
+      @size-change="fetchData"
+      @current-change="fetchData"
+    />
 
     <!-- Pull dialog -->
     <el-dialog v-model="showPull" title="拉取镜像" width="500px">
@@ -76,6 +86,9 @@ const loading = ref(false)
 const pulling = ref(false)
 const images = ref<ImageInfo[]>([])
 const platforms = ref<{ name: string; containerAvailable: boolean }[]>([])
+const page = ref(1)
+const pageSize = ref(15)
+const total = ref(0)
 const platform = ref('')
 const showPull = ref(false)
 const pullImage = ref('')
@@ -92,9 +105,11 @@ function fmtSize(bytes?: number) {
 async function fetchData() {
   loading.value = true
   try {
-    const opts: any = {}
-    if (platform.value) opts.params = { platform: platform.value }
-    images.value = await api.extract<ImageInfo[]>(api.images.apiImagesGet(opts))
+    const opts: any = { params: { page: page.value, limit: pageSize.value } }
+    if (platform.value) opts.params.platform = platform.value
+    const pageRes = await api.extractPage<ImageInfo>(api.images.apiImagesGet(opts))
+    images.value = pageRes.items
+    total.value = pageRes.total
   } catch { ElMessage.error('获取镜像列表失败') }
   finally { loading.value = false }
 }
@@ -127,7 +142,7 @@ async function handleDelete(id: string) {
 }
 
 onMounted(async () => {
-  try { platforms.value = await api.extract<{ name: string; containerAvailable: boolean }[]>(api.platforms.apiPlatformsGet()) } catch { /* ignore */ }
+  try { platforms.value = await api.extractArray<{ name: string; containerAvailable: boolean }>(api.platforms.apiPlatformsGet()) } catch { /* ignore */ }
   await fetchData()
 })
 </script>

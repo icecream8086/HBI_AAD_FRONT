@@ -2,16 +2,16 @@
   <div>
     <el-button text @click="$router.push('/permissions')" class="back">← 权限管理</el-button>
     <div class="page-head"><h2>路由 ACL</h2><el-button type="primary" size="small" @click="openCreate">新建 ACL</el-button></div>
-    <el-table :data="acls" v-loading="loading" stripe empty-text="暂无 ACL">
+    <el-table :data="acls || []" v-loading="loading" stripe empty-text="暂无 ACL">
       <el-table-column prop="method" label="方法" width="80"><template #default="{ row }"><el-tag size="small">{{ row.method }}</el-tag></template></el-table-column>
       <el-table-column prop="pathPrefix" label="路径" min-width="200" show-overflow-tooltip />
       <el-table-column prop="matchType" label="匹配" width="80" />
       <el-table-column prop="effect" label="效果" width="70"><template #default="{ row }"><el-tag :type="row.effect==='allow'?'success':'danger'" size="small">{{ row.effect }}</el-tag></template></el-table-column>
-      <el-table-column label="用户/组" width="180" show-overflow-tooltip><template #default="{ row }">{{ row.userId || row.userGroupId || '-' }}</template></el-table-column>
+      <el-table-column label="用户/组" width="180" show-overflow-tooltip><template #default="{ row }">{{ row.userId ? userName(row.userId) : row.userGroupId ? groupName(row.userGroupId) : '-' }}</template></el-table-column>
       <el-table-column prop="priority" label="优先级" width="80" />
       <el-table-column label="操作" width="160" fixed="right"><template #default="{ row }"><el-button size="small" @click="openEdit(row)">编辑</el-button><el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button></template></el-table-column>
     </el-table>
-    <el-pagination v-if="total > limit" v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,20,50,100]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
+    <el-pagination v-if="total > limit" v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
 
     <el-dialog v-model="dialog.show" :title="dialog.isEdit?'编辑 ACL':'新建 ACL'" width="550px">
       <el-form :model="form" label-width="100px">
@@ -30,10 +30,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useResolver } from '../../composables/useResolver'
 import { api } from '../../api'
 
+const { load: loadRefs, userName, groupName } = useResolver()
 const loading = ref(false); const saving = ref(false)
-const acls = ref<RouteAcl[]>([]); const page = ref(1); const limit = ref(20); const total = ref(0)
+const acls = ref<RouteAcl[]>([]); const page = ref(1); const limit = ref(15); const total = ref(0)
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 const form = reactive({ method: 'GET', pathPrefix: '', matchType: 'prefix' as 'prefix'|'exact', effect: 'allow' as 'allow'|'deny', userId: '', priority: 500 })
 
@@ -58,7 +60,7 @@ async function handleSave() {
   finally { saving.value = false }
 }
 async function handleDelete(id: string) { try { await ElMessageBox.confirm('确定删除？','确认'); await api.permissions.apiPermissionsRouteAclsIdDelete(id); ElMessage.success('已删除'); await fetchData() } catch {/* ignore */} }
-onMounted(fetchData)
+onMounted(async () => { await loadRefs(); await fetchData() })
 </script>
 
 <style scoped>

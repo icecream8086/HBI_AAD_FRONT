@@ -3,7 +3,7 @@
     <div class="page-head">
       <h2>用户管理</h2>
     </div>
-    <el-table :data="users" v-loading="loading" stripe empty-text="暂无用户">
+    <el-table :data="users || []" v-loading="loading" stripe empty-text="暂无用户">
       <el-table-column prop="name" label="名称" min-width="120" />
       <el-table-column prop="email" label="邮箱" min-width="200" />
       <el-table-column prop="role" label="角色" width="100">
@@ -36,6 +36,7 @@ import { ref, onMounted } from 'vue'
 import { api } from '../../api'
 
 const loading = ref(false)
+const ready = ref(false)
 const users = ref<User[]>([])
 
 function roleType(r: string) { const m: Record<string, string> = { root: 'danger', Operator: 'warning', Viewer: 'info' }; return m[r] || 'info' }
@@ -43,7 +44,7 @@ function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 onMounted(async () => {
   loading.value = true
-  try { users.value = await api.extract<User[]>(api.users.apiUsersGet()) } catch { /* ignore */ }
+  try { users.value = await api.extractArray<User>(api.users.apiUsersGet()) } catch { /* ignore */ }
   finally { loading.value = false }
 })
 </script>

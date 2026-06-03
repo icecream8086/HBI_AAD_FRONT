@@ -35,9 +35,16 @@ axios.interceptors.request.use((cfg) => {
 axios.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const status = err.response?.status
+    if (status === 401) {
       localStorage.removeItem('access_token')
       window.location.href = '/#/login'
+    }
+    if (status && status >= 500) {
+      console.group(`[API 5xx] ${err.config?.method?.toUpperCase()} ${err.config?.url}`)
+      console.log('请求体:', err.config?.data)
+      console.log('响应体:', err.response?.data)
+      console.groupEnd()
     }
     return Promise.reject(err)
   },
@@ -102,6 +109,9 @@ export const api = {
     becomeWheel(userId: string) {
       return axios.post('/__become-wheel', { userId })
     },
+    sudo() {
+      return axios.post('/api/sudo', {}).then(r => r.data as { expiry: number; durationMs: number })
+    },
     migrateUserIndex(ids: string[]) {
       return axios.post('/__admin/migrate-user-index', { ids })
     },
@@ -110,19 +120,48 @@ export const api = {
     },
   },
 
+  // ─── WebSocket (info.http) ───
+  ws: {
+    /** Connect to the global notification channel. Requires Workers + DO binding. */
+    notifications(token?: string): WebSocket | null {
+      try {
+        const wsUrl = API_BASE.replace(/^http/, 'ws') + '/api/ws/notifications'
+        const ws = new WebSocket(wsUrl)
+        ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token: token || getToken() }))
+        return ws
+      } catch { return null }
+    },
+  },
+
   // ─── Extract helpers ───
   extract<T>(promise: AxiosPromise<object>): Promise<T> { return extract<T>(promise) },
+  /** For endpoints that return either `T[]` (flat array) or `{ items: T[] }` (paginated wrapper). */
+  extractArray<T>(promise: AxiosPromise<object>): Promise<T[]> {
+    return promise.then((res) => {
+      const d = (res.data as Record<string, unknown>).data
+      if (Array.isArray(d)) return d as T[]
+      if (d && typeof d === 'object' && 'items' in d) return (d as { items: T[] }).items
+      return []
+    })
+  },
   extractItems<T>(promise: AxiosPromise<object>): Promise<T[]> {
-    return promise.then((res) => ((res.data as ApiResponse<{ items: T[] }>).data).items)
+    return promise.then((res) => { const d = (res.data as ApiResponse<{ items: T[] }>).data; return d?.items ?? [] })
   },
   extractPage<T>(promise: AxiosPromise<object>): Promise<{ items: T[]; total: number }> {
     return promise.then((res) => {
       const d = (res.data as ApiResponse<{ items: T[]; total: number }>).data
-      return { items: d.items || [], total: d.total ?? d.items?.length ?? 0 }
+      return { items: d?.items ?? [], total: d?.total ?? 0 }
     })
   },
   extractLines<T>(promise: AxiosPromise<object>): Promise<T[]> {
-    return promise.then((res) => ((res.data as ApiResponse<{ lines: T[] }>).data).lines)
+    return promise.then((res) => {
+      const d = (res.data as ApiResponse<{ lines: unknown[] }>).data
+      const raw = d?.lines ?? []
+      return raw.map((item: unknown) => {
+        if (typeof item === 'string') try { return JSON.parse(item) as T } catch { return item as T }
+        return item as T
+      })
+    })
   },
 
   // ─── Permissions helpers (perm.http) ───

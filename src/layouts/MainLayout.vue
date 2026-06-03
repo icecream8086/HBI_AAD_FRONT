@@ -21,7 +21,7 @@
         </el-menu-item>
         <el-menu-item index="/sandboxes">
           <el-icon><Monitor /></el-icon>
-          <template #title>沙箱</template>
+          <template #title>容器实例</template>
         </el-menu-item>
         <el-menu-item index="/templates">
           <el-icon><Document /></el-icon>
@@ -95,7 +95,7 @@
 
           <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-trigger">
-              <el-avatar :size="28" style="margin-right:6px">
+              <el-avatar :size="28" :src="avatarBlob" style="margin-right:6px">
                 {{ (user?.name || user?.email || 'U')[0].toUpperCase() }}
               </el-avatar>
               <span class="username">{{ user?.name || user?.email || '用户' }}</span>
@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
@@ -137,6 +137,19 @@ const { themes, currentInfo, setTheme } = useTheme()
 
 const user = computed(() => store.state.auth.currentUser)
 const isCollapsed = computed(() => store.state.app.sidebarCollapsed)
+const API_BASE = 'http://localhost:3000'
+const avatarBlob = ref('')
+async function loadAvatar() {
+  if (!user.value?.id) { avatarBlob.value = ''; return }
+  if (avatarBlob.value) URL.revokeObjectURL(avatarBlob.value)
+  try {
+    const token = localStorage.getItem('access_token')
+    const res = await fetch(`${API_BASE}/api/users/${user.value.id}/avatar`, { headers: { 'Authorization': `Bearer ${token}` } })
+    if (!res.ok) { avatarBlob.value = ''; return }
+    avatarBlob.value = URL.createObjectURL(await res.blob())
+  } catch { avatarBlob.value = '' }
+}
+watch([user], loadAvatar, { immediate: true })
 
 function toggleSidebar() { store.commit('app/TOGGLE_SIDEBAR') }
 

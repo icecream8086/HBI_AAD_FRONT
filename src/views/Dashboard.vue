@@ -39,7 +39,7 @@
           <template #header>快捷操作</template>
           <div class="quick-actions">
             <el-button type="primary" @click="$router.push('/sandboxes')">
-              管理沙箱
+              管理容器实例
             </el-button>
             <el-button @click="$router.push('/templates')">
               管理模板
@@ -77,7 +77,7 @@ const roleTag = computed(() => {
 
 const info = reactive<ServerInfo>({ name: '', version: '', platform: '', features: [], uptime: 0, storeMetrics: {} })
 const statCards = reactive([
-  { label: '沙箱', value: 0, tag: '', tagType: '' },
+  { label: '容器实例', value: 0, tag: '', tagType: '' },
   { label: '模板', value: 0, tag: '', tagType: '' },
   { label: '镜像', value: 0, tag: '', tagType: '' },
   { label: '用户', value: 0, tag: '', tagType: '' },
@@ -98,9 +98,9 @@ onMounted(async () => {
   try {
     const [sb, tm, im, us] = await Promise.allSettled([
       api.extractItems<unknown>(api.sandboxes.apiSandboxesGet()),
-      api.extract<unknown[]>(api.templates.apiTemplatesGet()),
-      api.extract<unknown[]>(api.images.apiImagesGet()),
-      api.extract<unknown[]>(api.users.apiUsersGet()),
+      api.extractArray<unknown>(api.templates.apiTemplatesGet()),
+      api.extractArray<unknown>(api.images.apiImagesGet()),
+      api.extractArray<unknown>(api.users.apiUsersGet()),
     ])
     if (sb.status === 'fulfilled') { statCards[0].value = sb.value.length; statCards[0].tag = '活跃' }
     if (tm.status === 'fulfilled') statCards[1].value = tm.value.length

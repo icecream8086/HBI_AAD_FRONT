@@ -17,8 +17,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', name: 'Dashboard', component: () => import('../views/Dashboard.vue'), meta: { title: '仪表盘' } },
 
       // Sandbox
-      { path: 'sandboxes', name: 'Sandboxes', component: () => import('../views/sandbox/SandboxList.vue'), meta: { title: '沙箱列表' } },
-      { path: 'sandboxes/:id', name: 'SandboxDetail', component: () => import('../views/sandbox/SandboxDetail.vue'), meta: { title: '沙箱详情' } },
+      { path: 'sandboxes', name: 'Sandboxes', component: () => import('../views/sandbox/SandboxList.vue'), meta: { title: '容器实例列表' } },
+      { path: 'sandboxes/:id', name: 'SandboxDetail', component: () => import('../views/sandbox/SandboxDetail.vue'), meta: { title: '容器实例详情' } },
 
       // Templates
       { path: 'templates', name: 'Templates', component: () => import('../views/template/TemplateList.vue'), meta: { title: '模板列表' } },
