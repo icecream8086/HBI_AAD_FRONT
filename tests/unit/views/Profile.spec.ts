@@ -1,6 +1,14 @@
 import { describe, it, expect, vi } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import { createStore } from 'vuex'
+import { createI18n } from 'vue-i18n'
+import zhCN from '../../../src/i18n/locales/zh-CN'
+
+const i18n = createI18n({
+  legacy: false,
+  locale: 'zh-CN',
+  messages: { 'zh-CN': zhCN, en: {} },
+})
 
 describe('Profile.vue', () => {
   it('renders user info when logged in', async () => {
@@ -26,12 +34,20 @@ describe('Profile.vue', () => {
     const Profile = await import('../../../src/views/Profile.vue')
     const wrapper = shallowMount(Profile.default, {
       global: {
-        plugins: [store],
+        plugins: [store, i18n],
         stubs: {
           'el-card': { template: '<div><slot /></div>' },
           'el-descriptions': { template: '<div><slot /></div>' },
           'el-descriptions-item': { template: '<div><slot /></div>' },
           'el-tag': { template: '<span><slot /></span>' },
+          'el-dialog': { template: '<div><slot /></div>' },
+          'el-form': { template: '<div><slot /></div>' },
+          'el-form-item': { template: '<div><slot /></div>' },
+          'el-input': { template: '<input />' },
+          'el-button': { template: '<button><slot /></button>' },
+          'el-empty': { template: '<div><slot /></div>' },
+          'el-upload': { template: '<div><slot /></div>' },
+          'el-avatar': { template: '<span><slot /></span>' },
         },
       },
     })
@@ -55,11 +71,20 @@ describe('Profile.vue', () => {
     const Profile = await import('../../../src/views/Profile.vue')
     const wrapper = shallowMount(Profile.default, {
       global: {
-        plugins: [store],
+        plugins: [store, i18n],
         stubs: {
           'el-card': { template: '<div><slot /></div>' },
           'el-descriptions': { template: '<div><slot /></div>' },
           'el-descriptions-item': { template: '<div><slot /></div>' },
+          'el-tag': { template: '<span><slot /></span>' },
+          'el-dialog': { template: '<div><slot /></div>' },
+          'el-form': { template: '<div><slot /></div>' },
+          'el-form-item': { template: '<div><slot /></div>' },
+          'el-input': { template: '<input />' },
+          'el-button': { template: '<button><slot /></button>' },
+          'el-empty': { template: '<div><slot /></div>' },
+          'el-upload': { template: '<div><slot /></div>' },
+          'el-avatar': { template: '<span><slot /></span>' },
         },
       },
     })

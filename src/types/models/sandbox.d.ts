@@ -17,6 +17,7 @@ interface CreateSandboxInput {
   name: string
   description?: string
   region: string
+  instanceId?: string
   resourceSpec: ResourceSpec
   spotStrategy: string
   restartPolicy: string
@@ -151,6 +152,8 @@ interface VolumeMount {
 }
 
 interface SandboxNetworkConfig {
+  networkId?: string
+  instanceId?: string
   subnetIds?: string[]
   securityGroupId?: string
   allocatePublicIp: boolean

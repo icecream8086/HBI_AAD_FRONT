@@ -59,7 +59,12 @@ function extract<T>(promise: AxiosPromise<object>): Promise<T> {
 export const api = {
   // ─── Generated API classes (CORS → 后端直连) ───
   audit: new AuditApi(config, undefined, axios),
-  images: new ImagesApi(config, undefined, axios),
+  images: {
+    ...new ImagesApi(config, undefined, axios),
+    pull(body: { image: string; instanceId?: string }) {
+      return axios.post<ApiResponse<ImageInfo>>('/api/images/pull', body).then(r => r.data.data)
+    },
+  },
   info: new InfoApi(config, undefined, axios),
   permissions: new PermissionsApi(config, undefined, axios),
   platforms: new PlatformsApi(config, undefined, axios),
@@ -88,6 +93,114 @@ export const api = {
     },
     deleteSession(token: string) {
       return axios.delete(`/api/users/sessions/${token}`)
+    },
+    search(q: string) {
+      return axios.get<ApiResponse<User | null>>('/api/users/search', { params: { q } }).then(r => r.data.data)
+    },
+  },
+
+  // ─── Topology (topo.http) ───
+  topology: {
+    // Regions
+    regions: {
+      list(platform?: string) {
+        return axios.get<ApiResponse<PlatformRegions>>('/api/topology/regions', { params: { platform } }).then(r => r.data.data)
+      },
+    },
+    // Instances (core topology node — replaces old clusters)
+    instances: {
+      list(params?: { region?: string; platform?: string; status?: string }) {
+        return axios.get<ApiResponse<{ items: ComputeInstance[] }>>('/api/topology/instances', { params }).then(r => r.data.data.items)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<ComputeInstance>>(`/api/topology/instances/${id}`).then(r => r.data.data)
+      },
+      create(body: CreateInstanceInput) {
+        return axios.post<ApiResponse<ComputeInstance>>('/api/topology/instances', body).then(r => r.data.data)
+      },
+      update(id: string, body: UpdateInstanceInput) {
+        return axios.put<ApiResponse<ComputeInstance>>(`/api/topology/instances/${id}`, body).then(r => r.data.data)
+      },
+      delete(id: string) {
+        return axios.delete(`/api/topology/instances/${id}`)
+      },
+      heartbeat(id: string, body: HeartbeatBody) {
+        return axios.post(`/api/topology/instances/${id}/heartbeat`, body)
+      },
+    },
+    // Credentials
+    credentials: {
+      list(params?: { platform?: string }) {
+        return axios.get<ApiResponse<{ items: MaskedCredential[] }>>('/api/topology/credentials', { params }).then(r => r.data.data.items)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<MaskedCredential>>(`/api/topology/credentials/${id}`).then(r => r.data.data)
+      },
+      create(body: CreateCredentialInput) {
+        return axios.post<ApiResponse<MaskedCredential>>('/api/topology/credentials', body).then(r => r.data.data)
+      },
+      update(id: string, body: UpdateCredentialInput) {
+        return axios.put<ApiResponse<MaskedCredential>>(`/api/topology/credentials/${id}`, body).then(r => r.data.data)
+      },
+      delete(id: string) {
+        return axios.delete(`/api/topology/credentials/${id}`)
+      },
+    },
+    // Buckets
+    buckets: {
+      list(params?: { platform?: string; region?: string }) {
+        return axios.get<ApiResponse<{ items: RegionBucket[] }>>('/api/topology/buckets', { params }).then(r => r.data.data.items)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<RegionBucket>>(`/api/topology/buckets/${id}`).then(r => r.data.data)
+      },
+      create(body: CreateBucketInput) {
+        return axios.post<ApiResponse<RegionBucket>>('/api/topology/buckets', body).then(r => r.data.data)
+      },
+      update(id: string, body: UpdateBucketInput) {
+        return axios.put<ApiResponse<RegionBucket>>(`/api/topology/buckets/${id}`, body).then(r => r.data.data)
+      },
+      delete(id: string) {
+        return axios.delete(`/api/topology/buckets/${id}`)
+      },
+    },
+  },
+
+  // ─── Security Groups (/api/networks) ───
+  securityGroups: {
+    list(params?: { page?: number; limit?: number }) {
+      return axios.get('/api/networks/', { params })
+    },
+    get(id: string) {
+      return axios.get(`/api/networks/${id}`)
+    },
+    create(body: CreateSecurityGroupInput) {
+      return axios.post('/api/networks/', body)
+    },
+    update(id: string, body: UpdateSecurityGroupInput) {
+      return axios.put(`/api/networks/${id}`, body)
+    },
+    delete(id: string) {
+      return axios.delete(`/api/networks/${id}`)
+    },
+  },
+
+  // ─── Subnets (/api/subnets) ───
+  subnets: {
+    list(params?: { page?: number; limit?: number }) {
+      return axios.get('/api/subnets/', { params })
+    },
+    get(id: string) {
+      return axios.get(`/api/subnets/${id}`)
+    },
+    create(body: CreateSubnetInput) {
+      return axios.post('/api/subnets/', body)
+    },
+    update(id: string, body: UpdateSubnetInput) {
+      return axios.put(`/api/subnets/${id}`, body)
+    },
+    delete(id: string) {
+      return axios.delete(`/api/subnets/${id}`)
     },
   },
 

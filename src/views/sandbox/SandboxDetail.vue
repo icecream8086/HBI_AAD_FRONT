@@ -1,18 +1,18 @@
 <template>
   <div v-loading="loading">
-    <el-button text @click="$router.push('/sandboxes')" class="back">← 返回容器实例列表</el-button>
+    <el-button text @click="$router.push('/sandboxes')" class="back">{{ $t('sandbox.backToList') }}</el-button>
 
     <div v-if="sandbox">
       <div class="page-head">
         <div>
-          <h2>{{ sandbox.config?.name || sandbox.name || '容器实例' }}</h2>
+          <h2>{{ sandbox.config?.name || sandbox.name || $t('sandbox.title') }}</h2>
           <el-tag :type="statusType(sandbox.status)" effect="dark" size="large">{{ sandbox.status }}</el-tag>
         </div>
         <div class="actions">
-          <el-button :type="sandbox.status==='Running'?'warning':''" @click="handleStop" :disabled="sandbox.status!=='Running'">停止</el-button>
-          <el-button type="danger" @click="handleDelete">删除</el-button>
-          <el-button @click="handleSync">同步状态</el-button>
-          <el-button @click="fetchHealth">健康检查</el-button>
+          <el-button :type="sandbox.status==='Running'?'warning':''" @click="handleStop" :disabled="sandbox.status!=='Running'">{{ $t('table.stop') }}</el-button>
+          <el-button type="danger" @click="handleDelete">{{ $t('table.delete') }}</el-button>
+          <el-button @click="handleSync">{{ $t('sandbox.sync') }}</el-button>
+          <el-button @click="fetchHealth">{{ $t('sandbox.healthCheck') }}</el-button>
         </div>
       </div>
 
@@ -20,107 +20,109 @@
         <el-descriptions-item label="ID" :span="3"><code>{{ sandbox.id }}</code></el-descriptions-item>
         <el-descriptions-item label="Provider">{{ sandbox.providerId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="Region">{{ sandbox.config?.region || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="网络">{{ fmtNetwork(sandbox.network) }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ fmt(sandbox.createdAt) }}</el-descriptions-item>
-        <el-descriptions-item label="更新时间">{{ fmt(sandbox.updatedAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('table.network')">{{ fmtNetwork(sandbox.network) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('table.createdAt')">{{ fmt(sandbox.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('table.updatedAt')">{{ fmt(sandbox.updatedAt) }}</el-descriptions-item>
       </el-descriptions>
 
       <!-- Labels -->
       <el-card class="section" v-if="sandbox.config?.labels">
-        <template #header>标签</template>
+        <template #header>{{ $t('table.tags') }}</template>
         <el-tag v-for="(v, k) in sandbox.config.labels" :key="k" size="small" style="margin-right:6px">{{ k }}={{ v }}</el-tag>
       </el-card>
 
       <!-- Runtime Containers -->
       <el-card class="section">
-        <template #header>运行时容器 ({{ sandbox.containers?.length || 0 }})</template>
+        <template #header>{{ $t('sandbox.containerLabel') }} ({{ sandbox.containers?.length || 0 }})</template>
         <div v-for="(c, ci) in sandbox.containers || []" :key="ci" class="cont-box">
-          <h4>{{ c.name || `容器 ${ci+1}` }}</h4>
+          <h4>{{ c.name || `${$t('sandbox.containerLabel')} ${ci+1}` }}</h4>
           <el-descriptions :column="4" border size="small">
-            <el-descriptions-item label="镜像" :span="2"><code>{{ c.image || '-' }}</code></el-descriptions-item>
-            <el-descriptions-item label="状态">
+            <el-descriptions-item :label="$t('table.image')" :span="2"><code>{{ c.image || '-' }}</code></el-descriptions-item>
+            <el-descriptions-item :label="$t('table.status')">
               <el-tag :type="ctStatusType(c)" size="small">{{ ctStatus(c) }}</el-tag>
-              <el-tag v-if="c.state?.ready" type="success" size="small" effect="plain" style="margin-left:4px">就绪</el-tag>
+              <el-tag v-if="c.state?.ready" type="success" size="small" effect="plain" style="margin-left:4px">{{ $t('sandbox.ready') }}</el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="CPU/内存">{{ c.cpu ?? '-' }}核 / {{ c.memory ?? '-' }}Mi</el-descriptions-item>
+            <el-descriptions-item :label="$t('sandbox.cpuMem')">{{ c.cpu ?? '-' }}{{ $t('sandbox.cores') }} / {{ c.memory ?? '-' }}Mi</el-descriptions-item>
           </el-descriptions>
-          <div v-if="c.state?.startTime" class="sub">启动时间: {{ fmtStr(c.state.startTime) }}</div>
+          <div v-if="c.state?.startTime" class="sub">{{ $t('sandbox.startTime') }}: {{ fmtStr(c.state.startTime) }}</div>
           <div v-if="c.health?.status" class="sub">
-            <strong>健康状态:</strong>
+            <strong>Health:</strong>
             <el-tag :type="c.health.status==='healthy'?'success':'warning'" size="small">{{ c.health.status }}</el-tag>
             <span v-if="c.health.message" class="muted"> {{ c.health.message }}</span>
           </div>
         </div>
-        <el-empty v-if="!sandbox.containers?.length" description="无运行时容器" :image-size="50" />
+        <el-empty v-if="!sandbox.containers?.length" :description="$t('sandbox.noContainers')" :image-size="50" />
       </el-card>
 
       <!-- Config Containers (desired spec) -->
       <el-card class="section" v-if="sandbox.config?.containers?.length">
-        <template #header>配置定义 ({{ sandbox.config.containers.length }})</template>
+        <template #header>{{ $t('sandbox.configContainers') }} ({{ sandbox.config.containers.length }})</template>
         <div v-for="(c, ci) in sandbox.config.containers" :key="ci" class="cont-box">
-          <h4>{{ c.name || `容器 ${ci+1}` }}</h4>
+          <h4>{{ c.name || `${$t('sandbox.containerLabel')} ${ci+1}` }}</h4>
           <el-descriptions :column="4" border size="small">
-            <el-descriptions-item label="镜像" :span="2"><code>{{ c.image }}</code></el-descriptions-item>
-            <el-descriptions-item label="命令" :span="2">{{ c.command?.join(' ') || '-' }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('table.image')" :span="2"><code>{{ c.image }}</code></el-descriptions-item>
+            <el-descriptions-item :label="$t('table.command')" :span="2">{{ c.command?.join(' ') || '-' }}</el-descriptions-item>
           </el-descriptions>
           <div v-if="c.ports?.length" class="sub">
-            <strong>端口:</strong>
+            <strong>{{ $t('table.port') }}:</strong>
             <el-tag v-for="(p, pi) in c.ports" :key="pi" size="small" style="margin-right:4px">{{ p.containerPort || p.container }}{{ p.protocol ? '/'+p.protocol : '' }}{{ p.hostPort ? '→'+p.hostPort : '' }}</el-tag>
           </div>
           <div v-if="c.resources?.limits" class="sub">
-            <strong>资源:</strong>
-            <span v-if="c.resources.limits.cpu">{{ c.resources.limits.cpu }}核 </span>
+            <strong>{{ $t('table.resources') }}:</strong>
+            <span v-if="c.resources.limits.cpu">{{ c.resources.limits.cpu }}{{ $t('sandbox.cores') }} </span>
             <span v-if="c.resources.limits.memory">{{ c.resources.limits.memory }}Mi</span>
             <span v-else>-</span>
           </div>
           <div v-if="c.env?.length" class="sub">
-            <strong>环境变量:</strong>
+            <strong>{{ $t('table.env') }}:</strong>
             <el-tag v-for="(e, ei) in c.env" :key="ei" size="small" style="margin-right:4px">{{ e.name }}={{ e.value || e.valueFrom || '' }}</el-tag>
           </div>
           <div v-else-if="c.env && typeof c.env === 'object' && !Array.isArray(c.env)" class="sub">
-            <strong>环境变量:</strong>
+            <strong>{{ $t('table.env') }}:</strong>
             <el-tag v-for="(v,k) in c.env" :key="k" size="small" style="margin-right:4px">{{ k }}={{ v }}</el-tag>
           </div>
           <div v-if="c.volumeMounts?.length" class="sub">
-            <strong>挂载卷:</strong>
+            <strong>{{ $t('table.volume') }}:</strong>
             <el-tag v-for="(vl, vi) in c.volumeMounts" :key="vi" size="small" style="margin-right:4px">{{ vl.volumeId || vl.mountPath }}{{ vl.mountPath ? '→'+vl.mountPath : '' }}</el-tag>
           </div>
           <div v-if="c.livenessProbe" class="sub">
-            <strong>启动探测:</strong> <code>{{ fmtCmd(c.livenessProbe.exec?.command) }}</code>
-            <span class="muted"> 延迟{{ c.livenessProbe.initialDelaySeconds }}s/间隔{{ c.livenessProbe.periodSeconds }}s</span>
+            <strong>{{ $t('sandbox.livenessProbe') }}:</strong> <code>{{ fmtCmd(c.livenessProbe.exec?.command) }}</code>
+            <span class="muted"> {{ $t('table.delay') }}{{ c.livenessProbe.initialDelaySeconds }}s/{{ $t('table.interval') }}{{ c.livenessProbe.periodSeconds }}s</span>
           </div>
           <div v-if="c.readinessProbe" class="sub">
-            <strong>就绪探测:</strong> <code>{{ fmtCmd(c.readinessProbe.exec?.command) }}</code>
-            <span class="muted"> 间隔{{ c.readinessProbe.periodSeconds }}s/延迟{{ c.readinessProbe.initialDelaySeconds }}s</span>
+            <strong>{{ $t('sandbox.readinessProbe') }}:</strong> <code>{{ fmtCmd(c.readinessProbe.exec?.command) }}</code>
+            <span class="muted"> {{ $t('table.interval') }}{{ c.readinessProbe.periodSeconds }}s/{{ $t('table.delay') }}{{ c.readinessProbe.initialDelaySeconds }}s</span>
           </div>
         </div>
       </el-card>
 
       <!-- Events -->
       <el-card class="section">
-        <template #header>事件 ({{ sandbox.events?.length || 0 }})</template>
-        <el-table :data="sandbox.events || []" empty-text="暂无事件" size="small">
-          <el-table-column label="时间" width="180"><template #default="{ row }">{{ fmtEventTime(row) }}</template></el-table-column>
-          <el-table-column label="类型" width="80"><template #default="{ row }"><el-tag :type="row.type==='Warning'?'warning':'info'" size="small">{{ row.type }}</el-tag></template></el-table-column>
-          <el-table-column prop="reason" label="原因" width="140" />
-          <el-table-column prop="message" label="消息" />
-          <el-table-column label="次数" width="70"><template #default="{ row }">{{ row.count ?? 1 }}</template></el-table-column>
+        <template #header>{{ $t('sandbox.events') }} ({{ sandbox.events?.length || 0 }})</template>
+        <el-table :data="sandbox.events || []" :empty-text="$t('sandbox.noEvents')" size="small">
+          <el-table-column :label="$t('sandbox.time')" width="180"><template #default="{ row }">{{ fmtEventTime(row) }}</template></el-table-column>
+          <el-table-column :label="$t('sandbox.type')" width="80"><template #default="{ row }"><el-tag :type="row.type==='Warning'?'warning':'info'" size="small">{{ row.type }}</el-tag></template></el-table-column>
+          <el-table-column prop="reason" :label="$t('sandbox.reason')" width="140" />
+          <el-table-column prop="message" :label="$t('sandbox.message')" />
+          <el-table-column :label="$t('sandbox.count')" width="70"><template #default="{ row }">{{ row.count ?? 1 }}</template></el-table-column>
         </el-table>
       </el-card>
     </div>
 
-    <el-empty v-else-if="!loading" description="容器实例不存在" />
+    <el-empty v-else-if="!loading" :description="$t('sandbox.notFound')" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const loading = ref(false)
 const sandbox = ref<Sandbox | null>(null)
 
@@ -154,33 +156,33 @@ function fmtNetwork(net: any): string {
 async function load() {
   loading.value = true
   try { sandbox.value = await api.extract<Sandbox>(api.sandboxes.apiSandboxesIdGet(route.params.id as string)) }
-  catch { ElMessage.error('加载失败') }
+  catch { ElMessage.error(t('sandbox.loadFailed')) }
   finally { loading.value = false }
 }
 
 onMounted(load)
 
 async function handleStop() {
-  try { await api.sandboxes.apiSandboxesIdStopPost(route.params.id as string); ElMessage.success('已停止'); await load() }
-  catch { ElMessage.error('操作失败') }
+  try { await api.sandboxes.apiSandboxesIdStopPost(route.params.id as string); ElMessage.success(t('sandbox.stopSuccess')); await load() }
+  catch { ElMessage.error(t('sandbox.actionFailed')) }
 }
 async function handleDelete() {
   try {
-    await ElMessageBox.confirm('确定删除此容器实例？', '确认')
+    await ElMessageBox.confirm(t('sandbox.deleteConfirm'), t('table.confirm'))
     await api.sandboxes.apiSandboxesIdDelete(route.params.id as string)
-    ElMessage.success('已删除'); router.push('/sandboxes')
+    ElMessage.success(t('sandbox.deleteSuccess')); router.push('/sandboxes')
   } catch { /* ignore */ }
 }
 async function handleSync() {
-  try { await api.sandboxes.apiSandboxesIdSyncPost(route.params.id as string); ElMessage.success('同步完成'); await load() }
-  catch { ElMessage.error('同步失败') }
+  try { await api.sandboxes.apiSandboxesIdSyncPost(route.params.id as string); ElMessage.success(t('sandbox.syncSuccess')); await load() }
+  catch { ElMessage.error(t('sandbox.syncFailed')) }
 }
 async function fetchHealth() {
   try {
     const h = await api.extract<ContainerHealth[]>(api.sandboxes.apiSandboxesIdHealthGet(route.params.id as string))
-    if (!h?.length) { ElMessage.info('无容器健康数据'); return }
-    h.forEach(c => ElMessage.info(`容器 ${c.containerName}: ${c.status}${c.ready ? ' ✓' : ''}`))
-  } catch { ElMessage.error('获取健康状态失败') }
+    if (!h?.length) { ElMessage.info('No container health data'); return }
+    h.forEach(c => ElMessage.info(`${t('sandbox.containerLabel')} ${c.containerName}: ${c.status}${c.ready ? ' ✓' : ''}`))
+  } catch { ElMessage.error('Health check failed') }
 }
 </script>
 

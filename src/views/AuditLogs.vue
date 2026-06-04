@@ -1,10 +1,10 @@
 <template>
   <div>
-    <h2>审计日志</h2>
+    <h2>{{ $t('audit.title') }}</h2>
     <el-card class="filters">
       <el-form :inline="true" @submit.prevent="fetchData">
-        <el-form-item label="最低级别">
-          <el-select v-model="f.levelMin" clearable placeholder="全部" style="width:140px">
+        <el-form-item :label="$t('audit.minLevel')">
+          <el-select v-model="f.levelMin" clearable :placeholder="$t('table.selectPlaceholder')" style="width:140px">
             <el-option label="0 EMERG" :value="0" />
             <el-option label="1 ALERT" :value="1" />
             <el-option label="2 CRIT" :value="2" />
@@ -15,30 +15,31 @@
             <el-option label="7 DEBUG" :value="7" />
           </el-select>
         </el-form-item>
-        <el-form-item label="设施">
-          <el-input v-model="f.facility" placeholder="过滤设施" style="width:150px" clearable />
+        <el-form-item :label="$t('audit.facility')">
+          <el-input v-model="f.facility" :placeholder="$t('audit.facilityPlaceholder')" style="width:150px" clearable />
         </el-form-item>
-        <el-form-item label="搜索">
-          <el-input v-model="f.search" placeholder="搜索消息内容" style="width:200px" clearable />
+        <el-form-item :label="$t('audit.search')">
+          <el-input v-model="f.search" :placeholder="$t('audit.searchPlaceholder')" style="width:200px" clearable />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="fetchData">查询</el-button>
-          <el-button @click="f={levelMin:'',facility:'',search:''};fetchData()">重置</el-button>
+          <el-button type="primary" @click="fetchData">{{ $t('audit.query') }}</el-button>
+          <el-button @click="f={levelMin:'',facility:'',search:''};fetchData()">{{ $t('audit.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="logs || []" v-loading="loading" stripe empty-text="暂无日志">
-      <el-table-column label="时间" width="180">
+    <el-table :data="logs || []" v-loading="loading" stripe :empty-text="$t('audit.empty')">
+      <el-table-column :label="$t('audit.time')" width="180">
         <template #default="{ row }">{{ fmt(row.timestamp) }}</template>
       </el-table-column>
-      <el-table-column prop="level" label="级别" width="100">
+      <el-table-column prop="level" :label="$t('audit.level')" width="100">
         <template #default="{ row }">
           <el-tag :type="levelType(row.level)" size="small">{{ levelName(row.level) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="facility" label="设施" width="130" />
-      <el-table-column prop="message" label="消息" min-width="300" show-overflow-tooltip />
+      <el-table-column prop="facility" :label="$t('audit.facility')" width="130" />
+      <el-table-column prop="actorId" label="Actor" width="100" show-overflow-tooltip />
+      <el-table-column prop="message" :label="$t('audit.message')" min-width="280" show-overflow-tooltip />
     </el-table>
     <el-pagination
       v-if="total > pageSize"
@@ -56,7 +57,10 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { api } from '../api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const logs = ref<AuditLog[]>([])
@@ -82,7 +86,7 @@ async function fetchData() {
     const res = await api.extract<{ lines: AuditLog[]; total: number }>(api.audit.apiAuditLogsGet({ params }))
     logs.value = (res.lines || []).map((l: any) => typeof l === 'string' ? JSON.parse(l) : l)
     total.value = res.total ?? logs.value.length
-  } catch (e) { console.error(e); ElMessage.error('获取日志失败') }
+  } catch (e) { console.error(e); ElMessage.error(t('audit.fetchFailed')) }
   finally { loading.value = false }
 }
 

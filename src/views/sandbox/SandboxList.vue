@@ -1,96 +1,101 @@
 <template>
   <div class="page-container">
     <div class="page-head">
-      <h2>容器实例</h2>
-      <el-button type="primary" @click="showCreate = true">创建容器实例</el-button>
+      <h2>{{ $t('sandbox.title') }}</h2>
+      <el-button type="primary" @click="showCreate = true">{{ $t('sandbox.create') }}</el-button>
     </div>
 
     <!-- Filters -->
     <el-card class="filters">
       <el-form :inline="true" @submit.prevent>
-        <el-form-item label="状态">
-          <el-select v-model="filter.status" clearable placeholder="全部" style="width:140px">
-            <el-option label="运行中" value="Running" />
-            <el-option label="暂停" value="Stopped" />
-            <el-option label="待定" value="Pending" />
-            <el-option label="失败" value="Failed" />
-            <el-option label="已终止" value="Terminated" />
+        <el-form-item :label="$t('sandbox.filterStatus')">
+          <el-select v-model="filter.status" clearable :placeholder="$t('sandbox.filterAll')" style="width:140px">
+            <el-option :label="$t('sandbox.statusRunning')" value="Running" />
+            <el-option :label="$t('sandbox.statusStopped')" value="Stopped" />
+            <el-option :label="$t('sandbox.statusPending')" value="Pending" />
+            <el-option :label="$t('sandbox.statusFailed')" value="Failed" />
+            <el-option :label="$t('sandbox.statusTerminated')" value="Terminated" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="fetchData">查询</el-button>
-          <el-button @click="filter.status='';fetchData()">重置</el-button>
+          <el-button type="primary" @click="fetchData">{{ $t('table.query') }}</el-button>
+          <el-button @click="filter.status='';fetchData()">{{ $t('table.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <!-- Table -->
-    <el-table :data="sandboxes || []" v-loading="loading" stripe style="width:100%" empty-text="暂无容器实例">
+    <el-table :data="sandboxes || []" v-loading="loading" stripe style="width:100%" :empty-text="$t('table.empty')">
       <el-table-column label="" width="50">
         <template #default>
           <el-icon :size="20"><Monitor /></el-icon>
         </template>
       </el-table-column>
       <el-table-column prop="id" label="ID" width="200" show-overflow-tooltip />
-      <el-table-column prop="status" label="状态" width="120">
+      <el-table-column prop="status" :label="$t('table.status')" width="120">
         <template #default="{ row }">
           <el-tag :type="statusType(row.status)" size="small" effect="dark">{{ row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="容器数" width="90">
+      <el-table-column :label="$t('table.containerCount')" width="90">
         <template #default="{ row }">{{ row.containers?.length || 0 }}</template>
       </el-table-column>
       <el-table-column prop="providerId" label="Provider" width="130" />
-      <el-table-column label="网络" width="160" show-overflow-tooltip>
+      <el-table-column :label="$t('table.network')" width="160" show-overflow-tooltip>
         <template #default="{ row }">{{ fmtNetwork(row.network) }}</template>
       </el-table-column>
-      <el-table-column label="创建时间" width="170">
+      <el-table-column :label="$t('table.createdAt')" width="170">
         <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="200">
+      <el-table-column :label="$t('table.actions')" width="200">
         <template #default="{ row }">
-          <el-button size="small" @click="$router.push(`/sandboxes/${row.id}`)">详情</el-button>
-          <el-button size="small" :type="row.status==='Running'?'warning':''" @click="handleStop(row)" :disabled="row.status!=='Running'">停止</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+          <el-button size="small" @click="$router.push(`/sandboxes/${row.id}`)">{{ $t('table.detail') }}</el-button>
+          <el-button size="small" :type="row.status==='Running'?'warning':''" @click="handleStop(row)" :disabled="row.status!=='Running'">{{ $t('table.stop') }}</el-button>
+          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
     <div class="page-footer">
-      <el-button v-if="nextCursor" :loading="loading" @click="loadMore">加载更多</el-button>
+      <el-button v-if="nextCursor" :loading="loading" @click="loadMore">{{ $t('table.loadMore') }}</el-button>
     </div>
 
     <!-- Create Dialog -->
-    <el-dialog v-model="showCreate" title="创建容器实例" width="700px">
+    <el-dialog v-model="showCreate" :title="$t('sandbox.createTitle')" width="700px">
       <el-form :model="createForm" label-width="100px" v-loading="creating">
-        <el-form-item label="模板">
-          <el-select v-model="createForm.templateId" filterable placeholder="选择模板" style="width:100%">
+        <el-form-item :label="$t('sandbox.template')">
+          <el-select v-model="createForm.templateId" filterable :placeholder="$t('sandbox.selectTemplate')" style="width:100%">
             <el-option v-for="t in templates" :key="t.id" :label="t.name" :value="t.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="Provider">
-          <el-select v-model="createForm.provider" placeholder="选择平台" style="width:100%">
+          <el-select v-model="createForm.provider" :placeholder="$t('sandbox.selectPlatform')" style="width:100%">
             <el-option v-for="p in platforms" :key="p" :label="p" :value="p" />
           </el-select>
         </el-form-item>
-        <el-divider>容器配置</el-divider>
-        <el-form-item v-for="(c, i) in createForm.containers" :key="i" :label="`容器 ${i+1}`">
-          <el-input v-model="c.image" placeholder="镜像名" style="width:300px;margin-right:8px" />
-          <el-input v-model="c.name" placeholder="名称" style="width:150px" />
+        <el-form-item :label="$t('topology.instanceTitle')">
+          <el-select v-model="createForm.instanceId" filterable clearable placeholder="Optional" style="width:100%">
+            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+          </el-select>
+        </el-form-item>
+        <el-divider>{{ $t('sandbox.containerConfig') }}</el-divider>
+        <el-form-item v-for="(c, i) in createForm.containers" :key="i" :label="`${$t('sandbox.containerLabel')} ${i+1}`">
+          <el-input v-model="c.image" :placeholder="$t('table.image')" style="width:300px;margin-right:8px" />
+          <el-input v-model="c.name" :placeholder="$t('table.name')" style="width:150px" />
           <el-button type="danger" size="small" @click="createForm.containers.splice(i,1)" circle>−</el-button>
         </el-form-item>
         <el-form-item>
-          <el-button size="small" @click="createForm.containers.push({name:'',image:''})">+ 添加容器</el-button>
+          <el-button size="small" @click="createForm.containers.push({name:'',image:''})">{{ $t('sandbox.addContainer') }}</el-button>
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="footer-left">
-          <el-button size="small" @click="exportConfig">导出配置</el-button>
-          <el-button size="small" @click="fileInput.value?.click()">导入配置</el-button>
+          <el-button size="small" @click="exportConfig">{{ $t('table.export') }}</el-button>
+          <el-button size="small" @click="fileInput.value?.click()">{{ $t('table.import') }}</el-button>
           <input ref="fileInput" type="file" accept=".json" style="display:none" @change="importConfig" />
         </div>
         <div>
-          <el-button @click="showCreate=false">取消</el-button>
-          <el-button type="primary" :loading="creating" @click="handleCreate">创建</el-button>
+          <el-button @click="showCreate=false">{{ $t('table.cancel') }}</el-button>
+          <el-button type="primary" :loading="creating" @click="handleCreate">{{ $t('table.create') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -100,20 +105,23 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { api } from '../../api'
 
+const { t } = useI18n()
 const loading = ref(false)
 const creating = ref(false)
 const sandboxes = ref<Sandbox[]>([])
 const templates = ref<SandboxTemplate[]>([])
+const instances = ref<ComputeInstance[]>([])
 const nextCursor = ref<string | undefined>(undefined)
 const PAGE_LIMIT = 15
 const platforms = ref<string[]>([])
 const showCreate = ref(false)
 const fileInput = ref<HTMLInputElement>()
-watch(showCreate, (v) => { if (!v) { createForm.templateId = ''; createForm.provider = ''; createForm.containers = [{ name: '', image: '' }] } })
+watch(showCreate, (v) => { if (!v) { createForm.templateId = ''; createForm.provider = ''; createForm.instanceId = ''; createForm.containers = [{ name: '', image: '' }] } })
 const filter = reactive({ status: '' })
-const createForm = reactive({ templateId: '', provider: '', containers: [{ name: '', image: '' }] })
+const createForm = reactive({ templateId: '', provider: '', instanceId: '', containers: [{ name: '', image: '' }] })
 const resolvedTpl = ref<SandboxTemplate | null>(null)
 
 watch(() => createForm.templateId, async (id) => {
@@ -159,10 +167,11 @@ function importConfig(e: Event) {
     try {
       const data = JSON.parse(reader.result as string)
       createForm.provider = data.provider || ''
+      createForm.instanceId = data.instanceId || ''
       createForm.templateId = data.templateId || ''
       createForm.containers = data.containers?.length ? data.containers.map((c: any) => ({ name: c.name || '', image: c.image || '' })) : [{ name: '', image: '' }]
-      ElMessage.success('配置已导入')
-    } catch { ElMessage.error('无效的 JSON 文件') }
+      ElMessage.success(t('table.importSuccess'))
+    } catch { ElMessage.error(t('table.invalidJson')) }
   }
   reader.readAsText(file)
   ;(e.target as HTMLInputElement).value = ''
@@ -178,7 +187,7 @@ async function fetchData() {
     const d = (res.data as any)?.data as { items: Sandbox[]; nextCursor?: string } | undefined
     sandboxes.value = d?.items ?? []
     nextCursor.value = d?.nextCursor
-  } catch { ElMessage.error('获取容器实例列表失败') }
+  } catch { ElMessage.error(t('sandbox.loadFailed')) }
   finally { loading.value = false }
 }
 
@@ -192,20 +201,20 @@ async function loadMore() {
     const d = (res.data as any)?.data as { items: Sandbox[]; nextCursor?: string } | undefined
     sandboxes.value.push(...(d?.items ?? []))
     nextCursor.value = d?.nextCursor
-  } catch { ElMessage.error('加载失败') }
+  } catch { ElMessage.error(t('sandbox.loadFailed')) }
   finally { loading.value = false }
 }
 
 async function handleStop(row: Sandbox) {
-  try { await api.sandboxes.apiSandboxesIdStopPost(row.id); ElMessage.success('已停止'); await fetchData() }
-  catch { ElMessage.error('停止失败') }
+  try { await api.sandboxes.apiSandboxesIdStopPost(row.id); ElMessage.success(t('sandbox.stopSuccess')); await fetchData() }
+  catch { ElMessage.error(t('sandbox.actionFailed')) }
 }
 
 async function handleDelete(id: string) {
   try {
-    await ElMessageBox.confirm('确定删除此容器实例？所有数据将丢失。', '确认删除', { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' })
+    await ElMessageBox.confirm(t('sandbox.deleteConfirm'), t('table.confirm'), { confirmButtonText: t('table.delete'), cancelButtonText: t('table.cancel'), type: 'warning' })
     await api.sandboxes.apiSandboxesIdDelete(id)
-    ElMessage.success('已删除')
+    ElMessage.success(t('sandbox.deleteSuccess'))
     await fetchData()
   } catch { /* canceled or error */ }
 }
@@ -216,12 +225,13 @@ async function handleCreate() {
     if (createForm.templateId) {
       const applyBody: Record<string, any> = { name: 'sandbox-' + Date.now() }
       if (createForm.provider) applyBody.provider = createForm.provider
+      if (createForm.instanceId) applyBody.instanceId = createForm.instanceId
       await api.templates.apiTemplatesIdApplyPost(createForm.templateId, applyBody as any)
     }
-    ElMessage.success('容器实例创建中')
+    ElMessage.success(t('sandbox.createSuccess'))
     showCreate.value = false
     await fetchData()
-  } catch { ElMessage.error('创建失败') }
+  } catch { ElMessage.error(t('sandbox.createFailed')) }
   finally { creating.value = false }
 }
 
@@ -229,9 +239,10 @@ onMounted(async () => {
   await fetchData()
   try { templates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) } catch { /* ignore */ }
   try {
-  const plats = await api.extractArray<any>(api.platforms.apiPlatformsGet())
-  platforms.value = plats.map(p => p.name)
-} catch { /* ignore */ }
+    const insts = await api.topology.instances.list()
+    instances.value = insts
+    platforms.value = [...new Set(insts.map(i => i.platform))]
+  } catch { /* ignore */ }
 })
 </script>
 

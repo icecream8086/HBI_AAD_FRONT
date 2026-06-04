@@ -22,6 +22,7 @@ interface SandboxTemplate {
 interface ContainerSpec {
   region: string
   zone?: string
+  instanceId?: string
   account?: string
   restartPolicy?: string
   containers: ContainerDef[]
@@ -56,7 +57,7 @@ interface HealthCheckDef {
 interface TemplateNetworkSpec {
   mode?: 'public' | 'private' | 'vpc'
   publicIp?: { allocate?: boolean; bandwidth?: number }
-  vpc?: { id?: string; subnetIds?: string[]; securityGroupId?: string }
+  vpc?: { id?: string; instanceId?: string; subnetIds?: string[]; securityGroupId?: string }
 }
 
 interface TemplateExtensions {

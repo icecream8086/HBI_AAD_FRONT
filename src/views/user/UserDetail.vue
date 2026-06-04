@@ -1,6 +1,6 @@
 <template>
   <div v-loading="loading">
-    <el-button text @click="$router.push('/users')" class="back">← 返回用户列表</el-button>
+    <el-button text @click="$router.push('/users')" class="back">{{ $t('user.back') }}</el-button>
 
     <div v-if="user">
       <h2>{{ user.name }}</h2>
@@ -9,13 +9,13 @@
         <el-form-item label="ID">
           <el-input :model-value="user.id" disabled />
         </el-form-item>
-        <el-form-item label="名称">
+        <el-form-item :label="$t('user.name')">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item :label="$t('user.email')">
           <el-input :model-value="user.email" disabled />
         </el-form-item>
-        <el-form-item label="角色">
+        <el-form-item :label="$t('user.role')">
           <el-select v-model="form.role">
             <el-option label="Viewer" value="Viewer" />
             <el-option label="Operator" value="Operator" />
@@ -23,45 +23,45 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
-          <el-button @click="handleRefresh" :disabled="refreshing">刷新缓存{{ refreshing ? '中' : '' }}</el-button>
+          <el-button type="primary" :loading="saving" @click="handleSave">{{ $t('user.save') }}</el-button>
+          <el-button @click="handleRefresh" :disabled="refreshing">{{ $t('user.refreshCache') }}{{ refreshing ? $t('user.refreshing') : '' }}</el-button>
         </el-form-item>
       </el-form>
 
       <!-- Login Policy -->
       <el-card class="section">
         <template #header>
-          <span>登录策略</span>
-          <el-button size="small" style="float:right;margin-left:6px" @click="fetchPolicy">刷新</el-button>
-          <el-button size="small" style="float:right" @click="openPolicyEdit">编辑</el-button>
+          <span>{{ $t('user.loginPolicy') }}</span>
+          <el-button size="small" style="float:right;margin-left:6px" @click="fetchPolicy">{{ $t('user.refresh') }}</el-button>
+          <el-button size="small" style="float:right" @click="openPolicyEdit">{{ $t('user.editPolicy') }}</el-button>
         </template>
         <div v-if="policy">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="启用">
+            <el-descriptions-item :label="$t('user.enabled')">
               <el-tag :type="policy.enabled?'success':'danger'">{{ policy.enabled ? '是' : '否' }}</el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="时间限制">
-              {{ policy.timeRanges?.length ? policy.timeRanges.map((t:any)=>`${t.start}-${t.end}`).join('; ') : '无' }}
+            <el-descriptions-item :label="$t('user.timeLimit')">
+              {{ policy.timeRanges?.length ? policy.timeRanges.map((t:any)=>`${t.start}-${t.end}`).join('; ') : $t('common.none') }}
             </el-descriptions-item>
-            <el-descriptions-item label="IP 限制">
-              {{ policy.allowedCIDRs?.join(', ') || '无' }}
+            <el-descriptions-item :label="$t('user.ipLimit')">
+              {{ policy.allowedCIDRs?.join(', ') || $t('common.none') }}
             </el-descriptions-item>
           </el-descriptions>
         </div>
-        <el-empty v-else description="无登录策略" :image-size="60" />
+        <el-empty v-else :description="$t('user.noPolicy')" :image-size="60" />
       </el-card>
 
-      <el-dialog v-model="showPolicyDialog" title="编辑登录策略" width="550px">
+      <el-dialog v-model="showPolicyDialog" :title="$t('user.policyTitle')" width="550px">
         <el-form :model="policyForm" label-width="120px">
-          <el-form-item label="启用">
+          <el-form-item :label="$t('user.enabled')">
             <el-switch v-model="policyForm.enabled" />
           </el-form-item>
-          <el-form-item label="IP 白名单">
-            <el-select v-model="policyForm.allowedCIDRs" multiple filterable allow-create default-first-option style="width:100%" placeholder="输入 CIDR 后回车，如 10.0.0.0/8">
+          <el-form-item :label="$t('user.ipWhitelist')">
+            <el-select v-model="policyForm.allowedCIDRs" multiple filterable allow-create default-first-option style="width:100%" :placeholder="$t('user.cidrPlaceholder')">
               <el-option v-for="c in policyForm.allowedCIDRs" :key="c" :label="c" :value="c" />
             </el-select>
           </el-form-item>
-          <el-form-item label="时间限制">
+          <el-form-item :label="$t('user.timeLimit')">
             <div v-for="(r, i) in policyForm.timeRanges" :key="i" class="range-row">
               <el-input v-model="r.start" placeholder="09:00" style="width:100px" size="small" />
               <span style="margin:0 6px">至</span>
@@ -70,50 +70,50 @@
               <span style="font-size:12px;color:var(--el-text-color-secondary)">{{ Array.isArray(r.days) ? r.days.join(',') : (r.days || '') }}</span>
               <el-button type="danger" size="small" @click="policyForm.timeRanges.splice(i,1)" circle>−</el-button>
             </div>
-            <el-button size="small" @click="policyForm.timeRanges.push({start:'09:00',end:'18:00',days:[1,2,3,4,5]})">+ 添加时段</el-button>
-            <p class="hint">时间格式 HH:mm，days 为星期几 (1=周一)</p>
+            <el-button size="small" @click="policyForm.timeRanges.push({start:'09:00',end:'18:00',days:[1,2,3,4,5]})">{{ $t('user.addTimeRange') }}</el-button>
+            <p class="hint">{{ $t('user.timeHint') }}</p>
           </el-form-item>
         </el-form>
         <template #footer>
-          <el-button @click="showPolicyDialog=false">取消</el-button>
-          <el-button type="primary" :loading="savingPolicy" @click="handleSavePolicy">保存</el-button>
+          <el-button @click="showPolicyDialog=false">{{ $t('table.cancel') }}</el-button>
+          <el-button type="primary" :loading="savingPolicy" @click="handleSavePolicy">{{ $t('user.save') }}</el-button>
         </template>
       </el-dialog>
 
       <!-- 用户组 -->
       <el-card class="section">
         <template #header>
-          <span>用户组 ({{ userGroups.length }})</span>
-          <el-button size="small" style="float:right" @click="showGroupDialog = true">管理</el-button>
+          <span>{{ $t('user.userGroups') }} ({{ userGroups.length }})</span>
+          <el-button size="small" style="float:right" @click="showGroupDialog = true">{{ $t('user.manageGroups') }}</el-button>
         </template>
         <div v-if="userGroups.length">
           <el-tag v-for="g in userGroups" :key="g.id" style="margin-right:6px;margin-bottom:6px">
             {{ g.name }}
           </el-tag>
         </div>
-        <el-empty v-else description="未加入任何用户组" :image-size="50" />
+        <el-empty v-else :description="$t('user.noGroups')" :image-size="50" />
       </el-card>
 
-      <el-dialog v-model="showGroupDialog" title="管理用户组" width="500px">
-        <p class="group-hint">选择此用户所属的用户组</p>
+      <el-dialog v-model="showGroupDialog" :title="$t('user.manageGroupsTitle')" width="500px">
+        <p class="group-hint">{{ $t('user.groupHint') }}</p>
         <el-checkbox-group v-model="selectedGroupIds">
           <div v-for="g in allGroups" :key="g.id" class="group-item">
             <el-checkbox :value="g.id" :label="`${g.name} (${(g.memberIds?.length||0)} 人)`" />
           </div>
         </el-checkbox-group>
         <template #footer>
-          <el-button @click="showGroupDialog=false">取消</el-button>
-          <el-button type="primary" :loading="savingGroups" @click="handleSaveGroups">保存</el-button>
+          <el-button @click="showGroupDialog=false">{{ $t('table.cancel') }}</el-button>
+          <el-button type="primary" :loading="savingGroups" @click="handleSaveGroups">{{ $t('user.save') }}</el-button>
         </template>
       </el-dialog>
 
       <!-- Public Key -->
       <el-card class="section">
-        <template #header>Ed25519 公钥</template>
+        <template #header>{{ $t('user.ed25519Key') }}</template>
         <div v-if="publicKey !== null">
           <code style="word-break:break-all">{{ publicKey }}</code>
         </div>
-        <el-empty v-else description="未设置公钥" :image-size="60" />
+        <el-empty v-else :description="$t('user.noPublicKey')" :image-size="60" />
       </el-card>
     </div>
   </div>
@@ -122,10 +122,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { api } from '../../api'
 
 const route = useRoute()
+const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 const refreshing = ref(false)
@@ -158,10 +160,10 @@ async function handleSavePolicy() {
       timeRanges: policyForm.timeRanges,
       allowedCIDRs: policyForm.allowedCIDRs,
     })
-    ElMessage.success('登录策略已更新')
+    ElMessage.success(t('user.policyUpdated'))
     showPolicyDialog.value = false
     await fetchPolicy()
-  } catch { ElMessage.error('保存失败') }
+  } catch { ElMessage.error(t('user.saveFailed')) }
   finally { savingPolicy.value = false }
 }
 const userGroups = ref<UserGroup[]>([])
@@ -175,7 +177,7 @@ async function load() {
   try {
     user.value = await api.extract<User>(api.users.apiUsersIdGet(route.params.id as string))
     form.name = user.value.name; form.role = user.value.role
-  } catch { ElMessage.error('加载失败') }
+  } catch { ElMessage.error(t('user.loadFailed')) }
   finally { loading.value = false }
 }
 
@@ -209,10 +211,10 @@ async function handleSaveGroups() {
         await api.permissions.apiPermissionsUserGroupsIdPut(g.id, { name: g.name, memberIds: members } as any)
       }
     }
-    ElMessage.success('用户组已更新')
+    ElMessage.success(t('user.groupUpdated'))
     showGroupDialog.value = false
     await fetchGroups()
-  } catch { ElMessage.error('保存失败') }
+  } catch { ElMessage.error(t('user.saveFailed')) }
   finally { savingGroups.value = false }
 }
 
@@ -229,8 +231,8 @@ async function handleSave() {
   saving.value = true
   try {
     await api.users.apiUsersIdPut(route.params.id as string, { name: form.name, role: form.role, privateKeyEd25519: user.value?.privateKeyEd25519 || '' })
-    ElMessage.success('已保存')
-  } catch { ElMessage.error('保存失败') }
+    ElMessage.success(t('user.saved'))
+  } catch { ElMessage.error(t('user.saveFailed')) }
   finally { saving.value = false }
 }
 
@@ -238,8 +240,8 @@ async function handleRefresh() {
   refreshing.value = true
   try {
     await api.users.apiUsersIdRefreshPost(route.params.id as string)
-    ElMessage.success('缓存已刷新')
-  } catch { ElMessage.error('刷新失败') }
+    ElMessage.success(t('user.cacheRefreshed'))
+  } catch { ElMessage.error(t('user.refreshFailed')) }
   finally { refreshing.value = false }
 }
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2>权限管理</h2>
+    <h2>{{ $t('permission.title') }}</h2>
     <el-row :gutter="16">
       <el-col v-for="item in items" :key="item.path" :span="6">
         <el-card shadow="hover" class="nav-card" @click="$router.push(item.path)">
@@ -15,13 +15,18 @@
 </template>
 
 <script setup lang="ts">
-const items = [
-  { title: '策略', desc: '管理个体制权策略', path: '/permissions/policies' },
-  { title: '权限组', desc: '管理权限组及 DAG 继承', path: '/permissions/groups' },
-  { title: '用户组', desc: '管理用户组及成员', path: '/permissions/user-groups' },
-  { title: '路由 ACL', desc: '管理路由级别访问控制', path: '/permissions/route-acls' },
-  { title: '系统组', desc: '全局系统权限组', path: '/permissions/system-groups' },
-]
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+const items = computed(() => [
+  { title: t('permission.policies'), desc: t('permission.policiesDesc'), path: '/permissions/policies' },
+  { title: t('permission.permGroups'), desc: t('permission.permGroupsDesc'), path: '/permissions/groups' },
+  { title: t('permission.userGroups'), desc: t('permission.userGroupsDesc'), path: '/permissions/user-groups' },
+  { title: t('permission.routeAcls'), desc: t('permission.routeAclsDesc'), path: '/permissions/route-acls' },
+  { title: t('permission.systemGroups'), desc: t('permission.systemGroupsDesc'), path: '/permissions/system-groups' },
+])
 </script>
 
 <style scoped>

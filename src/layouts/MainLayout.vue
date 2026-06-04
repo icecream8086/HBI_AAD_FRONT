@@ -17,48 +17,63 @@
       >
         <el-menu-item index="/dashboard">
           <el-icon><Odometer /></el-icon>
-          <template #title>仪表盘</template>
+          <template #title>{{ $t('menu.dashboard') }}</template>
         </el-menu-item>
         <el-menu-item index="/sandboxes">
           <el-icon><Monitor /></el-icon>
-          <template #title>容器实例</template>
+          <template #title>{{ $t('menu.sandboxes') }}</template>
         </el-menu-item>
         <el-menu-item index="/templates">
           <el-icon><Document /></el-icon>
-          <template #title>模板</template>
+          <template #title>{{ $t('menu.templates') }}</template>
         </el-menu-item>
         <el-menu-item index="/images">
           <el-icon><PictureFilled /></el-icon>
-          <template #title>镜像</template>
+          <template #title>{{ $t('menu.images') }}</template>
         </el-menu-item>
         <el-menu-item index="/users">
           <el-icon><User /></el-icon>
-          <template #title>用户</template>
+          <template #title>{{ $t('menu.users') }}</template>
         </el-menu-item>
 
         <el-sub-menu index="admin">
           <template #title>
             <el-icon><Setting /></el-icon>
-            <span>权限管理</span>
+            <span>{{ $t('menu.permissions') }}</span>
           </template>
-          <el-menu-item index="/permissions/policies">策略</el-menu-item>
-          <el-menu-item index="/permissions/groups">权限组</el-menu-item>
-          <el-menu-item index="/permissions/user-groups">用户组</el-menu-item>
-          <el-menu-item index="/permissions/route-acls">路由 ACL</el-menu-item>
-          <el-menu-item index="/permissions/system-groups">系统组</el-menu-item>
+          <el-menu-item index="/permissions/policies">{{ $t('menu.policies') }}</el-menu-item>
+          <el-menu-item index="/permissions/groups">{{ $t('menu.permissionGroups') }}</el-menu-item>
+          <el-menu-item index="/permissions/user-groups">{{ $t('menu.userGroups') }}</el-menu-item>
+          <el-menu-item index="/permissions/route-acls">{{ $t('menu.routeAcls') }}</el-menu-item>
+          <el-menu-item index="/permissions/system-groups">{{ $t('menu.systemGroups') }}</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="topology">
+          <template #title>
+            <el-icon><MapLocation /></el-icon>
+            <span>{{ $t('menu.topology') }}</span>
+          </template>
+          <el-menu-item index="/topology/instances">{{ $t('menu.instances') }}</el-menu-item>
+          <el-menu-item index="/topology/credentials">{{ $t('menu.credentials') }}</el-menu-item>
+          <el-menu-item index="/topology/buckets">{{ $t('menu.buckets') }}</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="network">
+          <template #title>
+            <el-icon><Connection /></el-icon>
+            <span>{{ $t('menu.network') }}</span>
+          </template>
+          <el-menu-item index="/networks">{{ $t('menu.securityGroups') }}</el-menu-item>
+          <el-menu-item index="/subnets">{{ $t('menu.subnets') }}</el-menu-item>
         </el-sub-menu>
 
         <el-menu-item index="/audit">
           <el-icon><List /></el-icon>
-          <template #title>审计日志</template>
-        </el-menu-item>
-        <el-menu-item index="/platforms">
-          <el-icon><Connection /></el-icon>
-          <template #title>平台</template>
+          <template #title>{{ $t('menu.audit') }}</template>
         </el-menu-item>
         <el-menu-item index="/events">
           <el-icon><Refresh /></el-icon>
-          <template #title>事件循环</template>
+          <template #title>{{ $t('menu.events') }}</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -72,42 +87,70 @@
             <Expand v-else />
           </el-icon>
           <el-breadcrumb>
-            <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="route.meta?.title">{{ route.meta.title }}</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/dashboard' }">{{ $t('common.home') }}</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="route.meta?.title">{{ $t(route.meta.title as string) }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <!-- Language switcher -->
+          <el-dropdown trigger="click" @command="cmd => setLang(cmd)">
+            <span class="user-trigger">
+              <el-icon :size="16"><ChatDotSquare /></el-icon>
+              <span style="margin:0 2px">{{ locale === 'zh-CN' ? '简体中文' : 'English' }}</span>
+              <el-icon><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="opt in LANG_OPTIONS" :key="opt.id" :command="opt.id">
+                  {{ opt.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+
           <!-- Theme switcher -->
           <el-dropdown trigger="click" @command="cmd => setTheme(cmd)">
             <span class="user-trigger">
               <el-icon :size="18"><MagicStick /></el-icon>
-              <span style="margin:0 4px">{{ currentInfo.name }}</span>
+              <span style="margin:0 4px">{{ $t('theme.' + currentInfo.id) }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item v-for="t in themes" :key="t.id" :command="t.id">
-                  <el-icon><component :is="t.icon as any" /></el-icon>{{ t.name }}
+                  <el-icon><component :is="t.icon as any" /></el-icon>{{ $t('theme.' + t.id) }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+
+          <!-- Sudo button -->
+          <el-tooltip v-if="sudoRemainingMs > 0" :content="$t('common.sudoRemaining') + ': ' + fmtDuration(sudoRemainingMs)" placement="bottom">
+            <el-button size="small" type="warning" @click="handleSudo" class="sudo-btn">
+              <el-icon><WarningFilled /></el-icon>
+              {{ $t('common.sudoActive') }}
+            </el-button>
+          </el-tooltip>
+          <el-button v-else size="small" @click="handleSudo" class="sudo-btn">
+            <el-icon><Top /></el-icon>
+            {{ $t('common.sudo') }}
+          </el-button>
 
           <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-trigger">
               <el-avatar :size="28" :src="avatarBlob" style="margin-right:6px">
                 {{ (user?.name || user?.email || 'U')[0].toUpperCase() }}
               </el-avatar>
-              <span class="username">{{ user?.name || user?.email || '用户' }}</span>
+              <span class="username">{{ user?.name || user?.email || $t('common.profile') }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">
-                  <el-icon><User /></el-icon>个人设置
+                  <el-icon><User /></el-icon>{{ $t('common.profile') }}
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
-                  <el-icon><SwitchButton /></el-icon>退出登录
+                  <el-icon><SwitchButton /></el-icon>{{ $t('common.logout') }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -123,17 +166,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
+import { useLocale, LANG_OPTIONS } from '../composables/useLocale'
 import { api } from '../api'
 
 const route = useRoute()
 const router = useRouter()
 const store = useStore<State>()
 const { themes, currentInfo, setTheme } = useTheme()
+const { locale, setLang, toggleLang } = useLocale()
+const { t } = useI18n()
 
 const user = computed(() => store.state.auth.currentUser)
 const isCollapsed = computed(() => store.state.app.sidebarCollapsed)
@@ -153,11 +200,79 @@ watch([user], loadAvatar, { immediate: true })
 
 function toggleSidebar() { store.commit('app/TOGGLE_SIDEBAR') }
 
+// ─── Sudo ───
+const SUDO_EXPIRY_KEY = 'sudo_expiry'
+const sudoExpiry = ref(Number(localStorage.getItem(SUDO_EXPIRY_KEY)) || 0)
+const sudoRemainingMs = ref(0)
+let sudoTimer: ReturnType<typeof setInterval> | null = null
+
+function updateSudoRemaining() {
+  const rem = sudoExpiry.value - Date.now()
+  if (rem > 0) {
+    sudoRemainingMs.value = rem
+  } else {
+    sudoRemainingMs.value = 0
+    sudoExpiry.value = 0
+    localStorage.removeItem(SUDO_EXPIRY_KEY)
+    if (sudoTimer) { clearInterval(sudoTimer); sudoTimer = null }
+  }
+}
+
+// On mount, resume countdown if sudo was active
+if (sudoExpiry.value > 0) {
+  updateSudoRemaining()
+  if (sudoRemainingMs.value > 0) {
+    sudoTimer = setInterval(updateSudoRemaining, 1000)
+  } else {
+    sudoExpiry.value = 0
+    localStorage.removeItem(SUDO_EXPIRY_KEY)
+  }
+}
+
+async function handleSudo() {
+  // If sudo is already active, show remaining time
+  if (sudoRemainingMs.value > 0) {
+    ElMessage.info(`${t('common.sudoRemaining')}: ${fmtDuration(sudoRemainingMs.value)}`)
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      t('common.sudoConfirmMsg'),
+      t('common.sudoConfirmTitle'),
+      { confirmButtonText: t('common.sudo'), cancelButtonText: t('table.cancel'), type: 'warning' },
+    )
+  } catch { return /* user cancelled */ }
+
+  try {
+    const res = await api.dev.sudo()
+    const expiry = res.expiry
+    sudoExpiry.value = expiry
+    localStorage.setItem(SUDO_EXPIRY_KEY, String(expiry))
+    updateSudoRemaining()
+    sudoTimer = setInterval(updateSudoRemaining, 1000)
+    ElMessage.success(t('common.sudoGranted'))
+  } catch {
+    ElMessage.error(t('common.sudoFailed'))
+  }
+}
+
+function fmtDuration(ms: number): string {
+  const totalSec = Math.floor(ms / 1000)
+  const min = Math.floor(totalSec / 60)
+  const sec = totalSec % 60
+  return `${min}:${sec.toString().padStart(2, '0')}`
+}
+
+onUnmounted(() => { if (sudoTimer) clearInterval(sudoTimer) })
+
 function handleCommand(cmd: string) {
   if (cmd === 'profile') router.push('/profile')
   if (cmd === 'logout') {
+    sudoExpiry.value = 0; sudoRemainingMs.value = 0
+    localStorage.removeItem(SUDO_EXPIRY_KEY)
+    if (sudoTimer) { clearInterval(sudoTimer); sudoTimer = null }
     store.commit('auth/CLEAR_AUTH')
-    ElMessage.success('已退出')
+    ElMessage.success(t('common.logoutSuccess'))
     router.push('/login')
   }
 }
@@ -209,6 +324,8 @@ onMounted(async () => {
 .header-right { display: flex; align-items: center; gap: 16px; }
 .collapse-btn { cursor: pointer; }
 .user-trigger { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.lang-switch { cursor: pointer; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px; user-select: none; }
+.lang-switch:hover { background: var(--el-fill-color-light); }
 .header :deep(.el-breadcrumb__inner) { color: var(--nav-text, var(--el-text-color-regular)) !important; }
 .header :deep(.el-breadcrumb__separator) { color: var(--nav-text, var(--el-text-color-placeholder)) !important; }
 .username { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -216,4 +333,6 @@ onMounted(async () => {
   background-color: var(--app-bg, var(--el-bg-color-page));
   overflow-y: auto;
 }
+.sudo-btn { margin-right: 4px; }
+.sudo-btn .el-icon { margin-right: 3px; }
 </style>

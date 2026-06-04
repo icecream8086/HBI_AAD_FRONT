@@ -4,6 +4,8 @@ interface AuditLog {
   level: string
   facility: string
   message: string
+  actorId?: string
+  metadata?: Record<string, unknown>
 }
 
 interface AuditLogQuery {

@@ -1,30 +1,57 @@
 <template>
   <div>
     <div class="page-head">
-      <h2>用户管理</h2>
+      <h2>{{ $t('user.title') }}</h2>
+      <div class="search-bar">
+        <el-input
+          v-model="searchQuery"
+          :placeholder="$t('user.searchPlaceholder')"
+          clearable
+          style="width:320px"
+          size="small"
+          @keyup.enter="handleSearch"
+          @clear="clearSearch"
+        >
+          <template #append>
+            <el-button @click="handleSearch" :loading="searching">{{ $t('user.search') }}</el-button>
+          </template>
+        </el-input>
+      </div>
     </div>
-    <el-table :data="users || []" v-loading="loading" stripe empty-text="暂无用户">
-      <el-table-column prop="name" label="名称" min-width="120" />
-      <el-table-column prop="email" label="邮箱" min-width="200" />
-      <el-table-column prop="role" label="角色" width="100">
+
+    <!-- Search result banner -->
+    <div v-if="searchResult" class="search-result">
+      <span class="result-label">{{ $t('user.searchResult') }}:</span>
+      <el-tag closable @close="clearSearch" style="margin-left:8px">
+        {{ searchResult.name }} ({{ searchResult.email }}) — {{ searchResult.role }}
+      </el-tag>
+      <el-button size="small" text @click="$router.push(`/users/${searchResult.id}`)" style="margin-left:8px">
+        {{ $t('table.detail') }} →
+      </el-button>
+    </div>
+
+    <el-table :data="users" v-loading="loading" stripe :empty-text="$t('table.empty')">
+      <el-table-column prop="name" :label="$t('table.name')" min-width="120" />
+      <el-table-column prop="email" :label="$t('table.email')" min-width="200" />
+      <el-table-column prop="role" :label="$t('table.role')" width="100">
         <template #default="{ row }">
           <el-tag :type="roleType(row.role)" size="small">{{ row.role }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="170">
+      <el-table-column :label="$t('table.createdAt')" width="170">
         <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="更新时间" width="170">
+      <el-table-column :label="$t('table.updatedAt')" width="170">
         <template #default="{ row }">{{ fmt(row.updatedAt) }}</template>
       </el-table-column>
       <el-table-column label="Ed25519" width="80">
         <template #default="{ row }">
-          <el-tag :type="row.privateKeyEd25519 ? 'success' : 'info'" size="small">{{ row.privateKeyEd25519 ? '有' : '无' }}</el-tag>
+          <el-tag :type="row.privateKeyEd25519 ? 'success' : 'info'" size="small">{{ row.privateKeyEd25519 ? $t('common.yes') : $t('common.no') }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right">
+      <el-table-column :label="$t('table.actions')" width="120" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" @click="$router.push(`/users/${row.id}`)">编辑</el-button>
+          <el-button size="small" @click="$router.push(`/users/${row.id}`)">{{ $t('table.edit') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -33,14 +60,41 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { api } from '../../api'
 
+const { t } = useI18n()
+
 const loading = ref(false)
-const ready = ref(false)
 const users = ref<User[]>([])
+const searchQuery = ref('')
+const searching = ref(false)
+const searchResult = ref<User | null>(null)
 
 function roleType(r: string) { const m: Record<string, string> = { root: 'danger', Operator: 'warning', Viewer: 'info' }; return m[r] || 'info' }
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
+
+async function handleSearch() {
+  const q = searchQuery.value.trim()
+  if (!q) return
+  searching.value = true
+  searchResult.value = null
+  try {
+    const user = await api.users.search(q)
+    if (user) {
+      searchResult.value = user
+    } else {
+      ElMessage.info(t('user.notFound'))
+    }
+  } catch { ElMessage.error(t('common.actionFailed')) }
+  finally { searching.value = false }
+}
+
+function clearSearch() {
+  searchQuery.value = ''
+  searchResult.value = null
+}
 
 onMounted(async () => {
   loading.value = true
@@ -50,5 +104,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.search-bar { display: flex; align-items: center; }
+.search-result { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 12px; background: var(--el-color-primary-light-9); border-radius: 4px; font-size: 13px; }
+.result-label { color: var(--el-text-color-secondary); }
 </style>

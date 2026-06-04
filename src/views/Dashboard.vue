@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <h2>仪表盘</h2>
+    <h2>{{ $t('page.dashboard') }}</h2>
 
     <!-- Stat cards -->
     <el-row :gutter="16" class="stat-cards">
@@ -19,13 +19,13 @@
       <!-- Server info -->
       <el-col :span="14">
         <el-card>
-          <template #header>服务器信息</template>
+          <template #header>{{ $t('dashboard.serverInfo') }}</template>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="名称">{{ info.name || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="版本">{{ info.version || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="平台">{{ info.platform || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="运行时间">{{ formatUptime(info.uptime) }}</el-descriptions-item>
-            <el-descriptions-item label="功能" :span="2">
+            <el-descriptions-item :label="$t('dashboard.name')">{{ info.name || '-' }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('dashboard.version')">{{ info.version || '-' }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('dashboard.platform')">{{ info.platform || '-' }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('dashboard.uptime')">{{ formatUptime(info.uptime) }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('dashboard.features')" :span="2">
               <el-tag v-for="f in info.features" :key="f" size="small" class="tag">{{ f }}</el-tag>
               <span v-if="!info.features?.length">-</span>
             </el-descriptions-item>
@@ -36,27 +36,27 @@
       <!-- Quick actions -->
       <el-col :span="10">
         <el-card>
-          <template #header>快捷操作</template>
+          <template #header>{{ $t('dashboard.quickActions') }}</template>
           <div class="quick-actions">
             <el-button type="primary" @click="$router.push('/sandboxes')">
-              管理容器实例
+              {{ $t('dashboard.manageSandboxes') }}
             </el-button>
             <el-button @click="$router.push('/templates')">
-              管理模板
+              {{ $t('dashboard.manageTemplates') }}
             </el-button>
             <el-button @click="$router.push('/audit')">
-              查看审计
+              {{ $t('dashboard.viewAudit') }}
             </el-button>
           </div>
         </el-card>
 
         <el-card class="user-card">
-          <template #header>当前用户</template>
+          <template #header>{{ $t('dashboard.currentUser') }}</template>
           <div v-if="user">
             <p><strong>{{ user.name }}</strong> ({{ user.email }})</p>
             <el-tag :type="roleTag" size="small">{{ user.role }}</el-tag>
           </div>
-          <p v-else class="muted">未登录</p>
+          <p v-else class="muted">{{ $t('dashboard.notLoggedIn') }}</p>
         </el-card>
       </el-col>
     </el-row>
@@ -64,10 +64,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, onMounted, ref } from 'vue'
+import { reactive, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { useI18n } from 'vue-i18n'
 import { api } from '../api'
 
+const { t } = useI18n()
 const store = useStore<State>()
 const user = computed(() => store.state.auth.currentUser)
 const roleTag = computed(() => {
@@ -77,10 +79,10 @@ const roleTag = computed(() => {
 
 const info = reactive<ServerInfo>({ name: '', version: '', platform: '', features: [], uptime: 0, storeMetrics: {} })
 const statCards = reactive([
-  { label: '容器实例', value: 0, tag: '', tagType: '' },
-  { label: '模板', value: 0, tag: '', tagType: '' },
-  { label: '镜像', value: 0, tag: '', tagType: '' },
-  { label: '用户', value: 0, tag: '', tagType: '' },
+  { label: t('menu.sandboxes'), value: 0, tag: '', tagType: '' },
+  { label: t('menu.templates'), value: 0, tag: '', tagType: '' },
+  { label: t('menu.images'), value: 0, tag: '', tagType: '' },
+  { label: t('menu.users'), value: 0, tag: '', tagType: '' },
 ])
 
 function formatUptime(ms: number): string {
@@ -102,7 +104,7 @@ onMounted(async () => {
       api.extractArray<unknown>(api.images.apiImagesGet()),
       api.extractArray<unknown>(api.users.apiUsersGet()),
     ])
-    if (sb.status === 'fulfilled') { statCards[0].value = sb.value.length; statCards[0].tag = '活跃' }
+    if (sb.status === 'fulfilled') { statCards[0].value = sb.value.length; statCards[0].tag = t('dashboard.active') }
     if (tm.status === 'fulfilled') statCards[1].value = tm.value.length
     if (im.status === 'fulfilled') statCards[2].value = im.value.length
     if (us.status === 'fulfilled') statCards[3].value = us.value.length

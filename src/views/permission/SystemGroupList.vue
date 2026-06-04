@@ -1,20 +1,20 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/permissions')" class="back">← 权限管理</el-button>
-    <h2>系统组</h2>
-    <el-table :data="groups || []" v-loading="loading" stripe empty-text="暂无系统组">
-      <el-table-column prop="name" label="名称" min-width="180" />
-      <el-table-column label="规则" min-width="300">
+    <el-button text @click="$router.push('/permissions')" class="back">{{ $t('permission.back') }}</el-button>
+    <h2>{{ $t('permission.systemGroupTitle') }}</h2>
+    <el-table :data="groups || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
+      <el-table-column prop="name" :label="$t('table.name')" min-width="180" />
+      <el-table-column :label="$t('permission.rules')" min-width="300">
         <template #default="{ row }">
           <el-tag v-for="r in row.rules" :key="r.action" size="small" style="margin-right:4px">
             {{ r.effect === 'allow' ? '✓' : '✗' }} {{ r.actions?.join(',') }} @{{ r.resource || '*' }} ({{ r.priority }})
           </el-tag>
-          <span v-if="!row.rules?.length">-</span>
+          <span v-if="!row.rules?.length">{{ $t('common.none') }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="priority" label="优先级" width="80" />
-      <el-table-column label="依赖" width="200" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.dependsOn?.map(id => sysGroupName(id)).join(', ') || '-' }}</template>
+      <el-table-column prop="priority" :label="$t('permission.priority')" width="80" />
+      <el-table-column :label="$t('permission.dependencies')" width="200" show-overflow-tooltip>
+        <template #default="{ row }">{{ row.dependsOn?.map(id => sysGroupName(id)).join(', ') || $t('common.none') }}</template>
       </el-table-column>
     </el-table>
   </div>
@@ -22,8 +22,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { api } from '../../api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const groups = ref<SystemGroup[]>([])
@@ -36,7 +39,7 @@ function sysGroupName(id: string) {
 onMounted(async () => {
   loading.value = true
   try { groups.value = await api.extractArray<SystemGroup>(api.systemGroups.apiSystemGroupsGet()) }
-  catch { ElMessage.error('获取系统组失败') }
+  catch { ElMessage.error(t('permission.systemGroupFetchFailed')) }
   finally { loading.value = false }
 })
 </script>

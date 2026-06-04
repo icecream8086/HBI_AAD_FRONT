@@ -1,133 +1,146 @@
 <template>
   <div>
     <div class="page-head">
-      <h2>模板</h2>
-      <el-button type="primary" @click="openCreate">新建模板</el-button>
+      <h2>{{ $t('template.title') }}</h2>
+      <el-button type="primary" @click="openCreate">{{ $t('template.create') }}</el-button>
     </div>
 
-    <el-table :data="templates || []" v-loading="loading" stripe empty-text="暂无模板">
-      <el-table-column prop="name" label="名称" min-width="150" />
-      <el-table-column label="容器" width="70">
+    <el-table :data="templates || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
+      <el-table-column prop="name" :label="$t('template.name')" min-width="150" />
+      <el-table-column :label="$t('template.containerLabel')" width="70">
         <template #default="{ row }">{{ row.container?.containers?.length || 0 }}</template>
       </el-table-column>
       <el-table-column label="Region" width="100">
         <template #default="{ row }">{{ row.container?.region || '-' }}</template>
       </el-table-column>
-      <el-table-column label="重启策略" width="100">
+      <el-table-column :label="$t('table.restartPolicy')" width="100">
         <template #default="{ row }">{{ row.container?.restartPolicy || '-' }}</template>
       </el-table-column>
-      <el-table-column label="限制" width="80">
-        <template #default="{ row }"><el-tag v-if="row.singleton" type="warning" size="small">单例</el-tag><span v-else-if="row.instanceLimit">{{ row.instanceLimit.type }}</span><span v-else>-</span></template>
+      <el-table-column :label="$t('table.limit')" width="80">
+        <template #default="{ row }">
+          <template v-if="row.instanceLimit">
+            <el-tag size="small">{{ fmtLimitType(row.instanceLimit.type) }}</el-tag> :{{ row.instanceLimit.max }}
+          </template>
+          <span v-else>-</span>
+        </template>
       </el-table-column>
-      <el-table-column label="DAG 依赖" width="160" show-overflow-tooltip>
+      <el-table-column :label="$t('table.dagDep')" width="160" show-overflow-tooltip>
         <template #default="{ row }">{{ row.dependsOn?.map(id => templateName(id)).join(', ') || '-' }}</template>
       </el-table-column>
-      <el-table-column label="创建时间" width="170">
+      <el-table-column :label="$t('table.createdAt')" width="170">
         <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="260" fixed="right">
+      <el-table-column :label="$t('table.actions')" width="260" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" @click="$router.push(`/templates/${row.id}`)">详情</el-button>
-          <el-button size="small" @click="handleApply(row)">应用</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+          <el-button size="small" @click="$router.push(`/templates/${row.id}`)">{{ $t('table.detail') }}</el-button>
+          <el-button size="small" @click="handleApply(row)">{{ $t('template.apply') }}</el-button>
+          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('template.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dlg.show" title="新建模板" width="860px" :close-on-click-modal="false">
+    <el-dialog v-model="dlg.show" :title="$t('template.createTitle')" width="860px" :close-on-click-modal="false">
       <el-form :model="f" label-width="100px" v-loading="dlg.saving">
-        <el-form-item label="名称"><el-input v-model="f.name" placeholder="模板名称" /></el-form-item>
-        <el-form-item label="描述"><el-input v-model="f.description" type="textarea" :rows="2" placeholder="可选" /></el-form-item>
+        <el-form-item :label="$t('template.name')"><el-input v-model="f.name" :placeholder="$t('template.name')" /></el-form-item>
+        <el-form-item :label="$t('template.description')"><el-input v-model="f.description" type="textarea" :rows="2" :placeholder="$t('template.description')" /></el-form-item>
 
-        <el-divider>部署目标</el-divider>
+        <el-divider>{{ $t('template.deployTarget') }}</el-divider>
         <el-row :gutter="12">
-          <el-col :span="8"><el-form-item label="平台">
-            <el-select v-model="f.account" filterable allow-create default-first-option placeholder="选择平台" style="width:100%">
+          <el-col :span="8"><el-form-item :label="$t('template.platform')">
+            <el-select v-model="f.account" filterable allow-create default-first-option :placeholder="$t('template.platform')" style="width:100%">
               <el-option v-for="p in providers" :key="p" :label="p" :value="p" />
             </el-select>
           </el-form-item></el-col>
           <el-col :span="8"><el-form-item label="Region"><el-input v-model="f.region" placeholder="local" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="重启策略">
-            <el-select v-model="f.restartPolicy" clearable placeholder="默认">
+          <el-col :span="8"><el-form-item :label="$t('template.restartPolicy')">
+            <el-select v-model="f.restartPolicy" clearable placeholder="Default">
               <el-option label="Always" value="Always" /><el-option label="OnFailure" value="OnFailure" /><el-option label="Never" value="Never" />
             </el-select>
           </el-form-item></el-col>
         </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12"><el-form-item :label="$t('topology.instanceTitle')">
+            <el-select v-model="f.instanceId" filterable clearable placeholder="Optional" style="width:100%">
+              <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+            </el-select>
+          </el-form-item></el-col>
+          <el-col :span="12"><el-form-item :label="$t('topology.zone')"><el-input v-model="f.zone" placeholder="e.g. cn-hangzhou-a" /></el-form-item></el-col>
+        </el-row>
 
-        <el-divider>DAG 继承</el-divider>
-        <el-form-item label="模板依赖">
-          <el-select v-model="f.dependsOn" multiple filterable placeholder="选择父模板继承" style="width:100%" @change="onDependsChange">
+        <el-divider>{{ $t('template.dagInherit') }}</el-divider>
+        <el-form-item :label="$t('template.dependsOn')">
+          <el-select v-model="f.dependsOn" multiple filterable :placeholder="$t('template.dependsPlaceholder')" style="width:100%" @change="onDependsChange">
             <el-option v-for="t in templates" :key="t.id" :label="t.name" :value="t.id" />
           </el-select>
         </el-form-item>
 
         <div v-if="inherited.length" class="inherited-box">
-          <p class="inherited-title">从父模板继承的容器 (只读)</p>
+          <p class="inherited-title">{{ $t('table.inheritedReadonly') }}</p>
           <el-tag v-for="(c, i) in inherited" :key="i" class="inherited-tag" type="info">{{ c.name || '?' }}:{{ c.image }}</el-tag>
         </div>
 
-        <el-divider>容器</el-divider>
+        <el-divider>{{ $t('template.containers') }}</el-divider>
         <div v-for="(c, ci) in f.containers" :key="ci" class="cont-card">
-          <el-form-item :label="`容器 ${ci+1}`">
-            <el-input v-model="c.name" placeholder="名称" style="width:160px;margin-right:6px" size="small" />
-            <el-input v-model="c.image" placeholder="镜像" style="width:320px;margin-right:6px" size="small" />
+          <el-form-item :label="`${$t('template.containerLabel')} ${ci+1}`">
+            <el-input v-model="c.name" :placeholder="$t('template.name')" style="width:160px;margin-right:6px" size="small" />
+            <el-input v-model="c.image" :placeholder="$t('table.image')" style="width:320px;margin-right:6px" size="small" />
             <el-button type="danger" size="small" @click="f.containers.splice(ci,1)" circle>−</el-button>
           </el-form-item>
-          <el-form-item label="命令">
+          <el-form-item :label="$t('table.command')">
             <el-input v-model="c.command" placeholder='["sleep","3600"]' style="width:500px" size="small" />
           </el-form-item>
-          <el-form-item label="端口">
+          <el-form-item :label="$t('template.port')">
             <div v-for="(p, pi) in c.ports" :key="pi" style="display:flex;gap:4px;margin-bottom:4px">
-              <el-input v-model="p.containerPort" placeholder="容器端口" style="width:110px" size="small" type="number" />
-              <el-select v-model="p.protocol" placeholder="协议" style="width:90px" size="small">
+              <el-input v-model="p.containerPort" placeholder="Container Port" style="width:110px" size="small" type="number" />
+              <el-select v-model="p.protocol" :placeholder="$t('table.protocol')" style="width:90px" size="small">
                 <el-option label="TCP" value="TCP" /><el-option label="UDP" value="UDP" />
               </el-select>
               <el-button type="danger" size="small" @click="c.ports.splice(pi,1)" circle>−</el-button>
             </div>
-            <el-button size="small" @click="c.ports.push({containerPort:80,protocol:'TCP'})">+ 端口</el-button>
+            <el-button size="small" @click="c.ports.push({containerPort:80,protocol:'TCP'})">{{ $t('template.addPort') }}</el-button>
           </el-form-item>
-          <el-form-item label="资源限制">
+          <el-form-item :label="$t('template.resources')">
             <span style="margin-right:6px">CPU</span>
             <el-input-number v-model="c.cpu" :min="0" :step="0.25" :precision="2" size="small" style="width:100px;margin-right:12px" />
-            <span style="margin-right:6px">内存 (Mi)</span>
+            <span style="margin-right:6px">{{ $t('template.memory') }}</span>
             <el-input-number v-model="c.memory" :min="0" :step="64" size="small" style="width:100px" />
           </el-form-item>
-          <el-form-item label="环境变量">
+          <el-form-item :label="$t('template.env')">
             <div v-for="(e, ei) in c.env" :key="ei" style="display:flex;gap:4px;margin-bottom:4px">
               <el-input v-model="e.key" placeholder="KEY" style="width:150px" size="small" />
               <el-input v-model="e.value" placeholder="value" style="width:250px" size="small" />
               <el-button type="danger" size="small" @click="c.env.splice(ei,1)" circle>−</el-button>
             </div>
-            <el-button size="small" @click="c.env.push({key:'',value:''})">+ 环境变量</el-button>
+            <el-button size="small" @click="c.env.push({key:'',value:''})">{{ $t('template.addEnvVar') }}</el-button>
           </el-form-item>
         </div>
-        <el-form-item><el-button size="small" @click="addContainer">+ 添加容器</el-button></el-form-item>
-        <el-divider>扩展参数</el-divider>
+        <el-form-item><el-button size="small" @click="addContainer">{{ $t('template.addContainer') }}</el-button></el-form-item>
+        <el-divider>{{ $t('template.extraParams') }}</el-divider>
         <el-row :gutter="12">
-          <el-col :span="8"><el-form-item label="公网 IP"><el-switch v-model="f.allocatePublicIp" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="健康重试">
+          <el-col :span="8"><el-form-item :label="$t('template.publicIp')"><el-switch v-model="f.allocatePublicIp" /></el-form-item></el-col>
+          <el-col :span="8"><el-form-item :label="$t('template.healthRetry')">
             <el-input-number v-model="f.healthMaxRetries" :min="-1" :step="1" style="width:100%" />
           </el-form-item></el-col>
         </el-row>
-        <el-form-item label="厂商透传">
+        <el-form-item :label="$t('template.vendorPassthrough')">
           <el-input v-model="f.providerOverridesStr" type="textarea" :rows="2" placeholder='{"eipBandwidth":100}' />
         </el-form-item>
 
-        <el-divider>健康检查</el-divider>
+        <el-divider>{{ $t('template.healthChecks') }}</el-divider>
         <div v-for="(hc, hi) in f.healthChecks" :key="hi" class="cont-card">
           <el-row :gutter="8">
-            <el-col :span="6"><el-form-item label="名称" label-width="50px"><el-input v-model="hc.name" size="small" /></el-form-item></el-col>
-            <el-col :span="6"><el-form-item label="目标" label-width="50px">
+            <el-col :span="6"><el-form-item :label="$t('template.name')" label-width="50px"><el-input v-model="hc.name" size="small" /></el-form-item></el-col>
+            <el-col :span="6"><el-form-item :label="$t('table.target')" label-width="50px">
               <el-select v-model="hc.target" filterable allow-create size="small" style="width:100%">
                 <el-option v-for="ct in f.containers" :key="ct.name" :label="'container:'+ct.name" :value="'container:'+ct.name" />
               </el-select>
             </el-form-item></el-col>
-            <el-col :span="5"><el-form-item label="类型" label-width="50px">
+            <el-col :span="5"><el-form-item label="Type" label-width="50px">
               <el-select v-model="hc.type" size="small">
                 <el-option label="liveness" value="liveness" /><el-option label="readiness" value="readiness" /><el-option label="startup" value="startup" />
               </el-select>
             </el-form-item></el-col>
-            <el-col :span="5"><el-form-item label="探测" label-width="50px">
+            <el-col :span="5"><el-form-item :label="$t('table.probe')" label-width="50px">
               <el-select v-model="hc.probeType" size="small">
                 <el-option label="exec" value="exec" /><el-option label="httpGet" value="httpGet" /><el-option label="tcpSocket" value="tcpSocket" />
               </el-select>
@@ -136,29 +149,29 @@
           </el-row>
           <el-row :gutter="8">
             <el-col :span="12" v-if="hc.probeType==='exec'">
-              <el-form-item label="命令" label-width="50px">
+              <el-form-item :label="$t('table.command')" label-width="50px">
                 <el-input v-model="hc.execCommand" placeholder='["/bin/sh","-c","..."]' size="small" />
               </el-form-item>
             </el-col>
             <el-col :span="6" v-if="hc.probeType==='httpGet'">
-              <el-form-item label="路径" label-width="50px"><el-input v-model="hc.httpPath" placeholder="/health" size="small" /></el-form-item>
+              <el-form-item label="Path" label-width="50px"><el-input v-model="hc.httpPath" placeholder="/health" size="small" /></el-form-item>
             </el-col>
             <el-col :span="6" v-if="hc.probeType==='httpGet'">
-              <el-form-item label="端口" label-width="50px"><el-input-number v-model="hc.httpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
+              <el-form-item label="Port" label-width="50px"><el-input-number v-model="hc.httpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
             </el-col>
             <el-col :span="6" v-if="hc.probeType==='tcpSocket'">
-              <el-form-item label="端口" label-width="50px"><el-input-number v-model="hc.tcpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
+              <el-form-item label="Port" label-width="50px"><el-input-number v-model="hc.tcpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
             </el-col>
-            <el-col :span="4"><el-form-item label="延迟" label-width="50px"><el-input-number v-model="hc.initialDelaySeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
-            <el-col :span="4"><el-form-item label="间隔" label-width="50px"><el-input-number v-model="hc.periodSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
-            <el-col :span="4"><el-form-item label="超时" label-width="50px"><el-input-number v-model="hc.timeoutSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
+            <el-col :span="4"><el-form-item :label="$t('table.delay')" label-width="50px"><el-input-number v-model="hc.initialDelaySeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
+            <el-col :span="4"><el-form-item :label="$t('table.interval')" label-width="50px"><el-input-number v-model="hc.periodSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
+            <el-col :span="4"><el-form-item :label="$t('table.timeout')" label-width="50px"><el-input-number v-model="hc.timeoutSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
           </el-row>
         </div>
-        <el-button size="small" style="margin-top:8px" @click="f.healthChecks.push(emptyHc())">+ 健康检查</el-button>
+        <el-button size="small" style="margin-top:8px" @click="f.healthChecks.push(emptyHc())">{{ $t('template.addHealthCheck') }}</el-button>
       </el-form>
       <template #footer>
-        <el-button @click="dlg.show = false">取消</el-button>
-        <el-button type="primary" :loading="dlg.saving" @click="handleSave">创建</el-button>
+        <el-button @click="dlg.show = false">{{ $t('template.cancel') }}</el-button>
+        <el-button type="primary" :loading="dlg.saving" @click="handleSave">{{ $t('template.save') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -167,11 +180,15 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useResolver } from '../../composables/useResolver'
 import { api } from '../../api'
 
+const { t } = useI18n()
+
 const loading = ref(false)
 const templates = ref<SandboxTemplate[]>([])
+const instances = ref<ComputeInstance[]>([])
 const providers = ref<string[]>([])
 const { load: loadRefs, templateName } = useResolver()
 const inherited = ref<{ name: string; image: string }[]>([])
@@ -179,6 +196,7 @@ const inherited = ref<{ name: string; image: string }[]>([])
 const dlg = reactive({ show: false, saving: false })
 const f = reactive({
   name: '', description: '', account: '', region: '', restartPolicy: '', allocatePublicIp: false,
+  instanceId: '', zone: '',
   dependsOn: [] as string[],
   healthMaxRetries: 0, providerOverridesStr: '',
   containers: [] as ContainerForm[],
@@ -216,10 +234,16 @@ function buildHcSpec(hc: HealthCheckForm): Record<string, any> {
 function addContainer() { f.containers.push(emptyContainer()) }
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
+function fmtLimitType(type: string): string {
+  const key = `template.limit${type.charAt(0).toUpperCase()}${type.slice(1)}`
+  return t(key)
+}
 
 function specFromForm() {
   const container: Record<string, any> = {}
   if (f.region) container.region = f.region
+  if (f.zone) container.zone = f.zone
+  if (f.instanceId) container.instanceId = f.instanceId
   if (f.account) container.account = f.account
   if (f.restartPolicy) container.restartPolicy = f.restartPolicy
 
@@ -262,6 +286,7 @@ async function onDependsChange(ids: string[]) {
 
 function openCreate() {
   f.name = ''; f.description = ''; f.account = ''; f.region = ''; f.restartPolicy = ''; f.allocatePublicIp = false
+  f.zone = ''
   f.dependsOn = []; f.containers = []; f.healthChecks = []
   f.healthMaxRetries = 0; f.providerOverridesStr = ''
   inherited.value = []; dlg.show = true
@@ -270,12 +295,12 @@ function openCreate() {
 async function fetchData() {
   loading.value = true
   try { templates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) }
-  catch { ElMessage.error('获取模板失败') }
+  catch { ElMessage.error(t('template.fetchFailed')) }
   finally { loading.value = false }
 }
 
 async function handleSave() {
-  if (!f.name) { ElMessage.warning('请输入名称'); return }
+  if (!f.name) { ElMessage.warning(t('template.nameRequired')); return }
   dlg.saving = true
   try {
     const body: Record<string, any> = { name: f.name, ...(specFromForm() || {}) }
@@ -283,32 +308,33 @@ async function handleSave() {
     if (f.dependsOn.length) body.dependsOn = f.dependsOn
 
     await api.templates.apiTemplatesPost(body as any)
-    ElMessage.success('已创建')
+    ElMessage.success(t('template.createSuccess'))
     dlg.show = false; await fetchData()
-  } catch (e: any) { ElMessage.error(e?.response?.data?.error?.message || '操作失败') }
+  } catch (e: any) { ElMessage.error(e?.response?.data?.error?.message || t('common.actionFailed')) }
   finally { dlg.saving = false }
 }
 
 async function handleApply(row: SandboxTemplate) {
   try {
     await api.templates.apiTemplatesIdApplyPost(row.id, { name: row.name } as any)
-    ElMessage.success('模板已应用，沙箱创建中')
-  } catch { ElMessage.error('应用失败') }
+    ElMessage.success(t('template.applySandboxSuccess'))
+  } catch { ElMessage.error(t('template.applyFailed')) }
 }
 
 async function handleDelete(id: string) {
   try {
-    await ElMessageBox.confirm('确定删除此模板？', '确认删除', { type: 'warning' })
+    await ElMessageBox.confirm(t('template.deleteConfirm'), t('table.confirm'), { type: 'warning' })
     await api.templates.apiTemplatesIdDelete(id)
-    ElMessage.success('已删除'); await fetchData()
+    ElMessage.success(t('template.deleteSuccess')); await fetchData()
   } catch { /* ignore */ }
 }
 
 onMounted(async () => {
   await loadRefs(); await fetchData()
   try {
-    const plats = await api.extractArray<{ name: string }>(api.platforms.apiPlatformsGet())
-    providers.value = plats.map((p: any) => p.name || p)
+    const insts = await api.topology.instances.list()
+    instances.value = insts
+    providers.value = [...new Set(insts.map(i => i.platform))]
   } catch { /* ignore */ }
 })
 </script>

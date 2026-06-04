@@ -6,7 +6,7 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'Login',
     component: () => import('../views/Login.vue'),
-    meta: { requiresAuth: false, title: '登录' },
+    meta: { requiresAuth: false, title: 'route.login' },
   },
   {
     path: '/',
@@ -14,38 +14,47 @@ const routes: RouteRecordRaw[] = [
     redirect: '/dashboard',
     meta: { requiresAuth: true },
     children: [
-      { path: 'dashboard', name: 'Dashboard', component: () => import('../views/Dashboard.vue'), meta: { title: '仪表盘' } },
+      { path: 'dashboard', name: 'Dashboard', component: () => import('../views/Dashboard.vue'), meta: { title: 'route.dashboard' } },
 
       // Sandbox
-      { path: 'sandboxes', name: 'Sandboxes', component: () => import('../views/sandbox/SandboxList.vue'), meta: { title: '容器实例列表' } },
-      { path: 'sandboxes/:id', name: 'SandboxDetail', component: () => import('../views/sandbox/SandboxDetail.vue'), meta: { title: '容器实例详情' } },
+      { path: 'sandboxes', name: 'Sandboxes', component: () => import('../views/sandbox/SandboxList.vue'), meta: { title: 'route.sandboxes' } },
+      { path: 'sandboxes/:id', name: 'SandboxDetail', component: () => import('../views/sandbox/SandboxDetail.vue'), meta: { title: 'route.sandboxDetail' } },
 
       // Templates
-      { path: 'templates', name: 'Templates', component: () => import('../views/template/TemplateList.vue'), meta: { title: '模板列表' } },
-      { path: 'templates/:id', name: 'TemplateDetail', component: () => import('../views/template/TemplateDetail.vue'), meta: { title: '模板详情' } },
+      { path: 'templates', name: 'Templates', component: () => import('../views/template/TemplateList.vue'), meta: { title: 'route.templates' } },
+      { path: 'templates/:id', name: 'TemplateDetail', component: () => import('../views/template/TemplateDetail.vue'), meta: { title: 'route.templateDetail' } },
 
       // Images
-      { path: 'images', name: 'Images', component: () => import('../views/ImageList.vue'), meta: { title: '镜像管理' } },
+      { path: 'images', name: 'Images', component: () => import('../views/ImageList.vue'), meta: { title: 'route.images' } },
 
       // Users
-      { path: 'users', name: 'Users', component: () => import('../views/user/UserList.vue'), meta: { title: '用户管理' } },
-      { path: 'users/:id', name: 'UserDetail', component: () => import('../views/user/UserDetail.vue'), meta: { title: '用户详情' } },
+      { path: 'users', name: 'Users', component: () => import('../views/user/UserList.vue'), meta: { title: 'route.users' } },
+      { path: 'users/:id', name: 'UserDetail', component: () => import('../views/user/UserDetail.vue'), meta: { title: 'route.userDetail' } },
 
       // Permissions
-      { path: 'permissions', name: 'Permissions', component: () => import('../views/permission/PermissionList.vue'), meta: { title: '权限管理' } },
-      { path: 'permissions/policies', name: 'Policies', component: () => import('../views/permission/PolicyList.vue'), meta: { title: '策略管理' } },
-      { path: 'permissions/groups', name: 'PermissionGroups', component: () => import('../views/permission/PermGroupList.vue'), meta: { title: '权限组管理' } },
-      { path: 'permissions/user-groups', name: 'UserGroups', component: () => import('../views/permission/UserGroupList.vue'), meta: { title: '用户组管理' } },
-      { path: 'permissions/route-acls', name: 'RouteAcls', component: () => import('../views/permission/RouteAclList.vue'), meta: { title: '路由 ACL' } },
-      { path: 'permissions/system-groups', name: 'SystemGroups', component: () => import('../views/permission/SystemGroupList.vue'), meta: { title: '系统组' } },
+      { path: 'permissions', name: 'Permissions', component: () => import('../views/permission/PermissionList.vue'), meta: { title: 'route.permissions' } },
+      { path: 'permissions/policies', name: 'Policies', component: () => import('../views/permission/PolicyList.vue'), meta: { title: 'route.policies' } },
+      { path: 'permissions/groups', name: 'PermissionGroups', component: () => import('../views/permission/PermGroupList.vue'), meta: { title: 'route.permissionGroups' } },
+      { path: 'permissions/user-groups', name: 'UserGroups', component: () => import('../views/permission/UserGroupList.vue'), meta: { title: 'route.userGroups' } },
+      { path: 'permissions/route-acls', name: 'RouteAcls', component: () => import('../views/permission/RouteAclList.vue'), meta: { title: 'route.routeAcls' } },
+      { path: 'permissions/system-groups', name: 'SystemGroups', component: () => import('../views/permission/SystemGroupList.vue'), meta: { title: 'route.systemGroups' } },
+
+      // Topology
+      { path: 'topology/instances', name: 'InstanceList', component: () => import('../views/topology/InstanceList.vue'), meta: { title: 'route.instanceList' } },
+      { path: 'topology/credentials', name: 'CredentialList', component: () => import('../views/topology/CredentialList.vue'), meta: { title: 'route.credentialList' } },
+      { path: 'topology/buckets', name: 'BucketList', component: () => import('../views/topology/BucketList.vue'), meta: { title: 'route.bucketList' } },
+
+      // Security Groups
+      { path: 'networks', name: 'SecurityGroups', component: () => import('../views/network/SecurityGroupList.vue'), meta: { title: 'route.securityGroupList' } },
+      // Subnets
+      { path: 'subnets', name: 'Subnets', component: () => import('../views/network/SubnetList.vue'), meta: { title: 'route.subnetList' } },
 
       // Logs & Monitoring
-      { path: 'audit', name: 'AuditLogs', component: () => import('../views/AuditLogs.vue'), meta: { title: '审计日志' } },
-      { path: 'platforms', name: 'Platforms', component: () => import('../views/PlatformList.vue'), meta: { title: '平台列表' } },
-      { path: 'events', name: 'Events', component: () => import('../views/EventLoop.vue'), meta: { title: '事件循环' } },
+      { path: 'audit', name: 'AuditLogs', component: () => import('../views/AuditLogs.vue'), meta: { title: 'route.audit' } },
+      { path: 'events', name: 'Events', component: () => import('../views/EventLoop.vue'), meta: { title: 'route.events' } },
 
       // Profile
-      { path: 'profile', name: 'Profile', component: () => import('../views/Profile.vue'), meta: { title: '个人设置' } },
+      { path: 'profile', name: 'Profile', component: () => import('../views/Profile.vue'), meta: { title: 'route.profile' } },
     ],
   },
 ]

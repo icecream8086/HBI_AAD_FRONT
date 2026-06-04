@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import { createStore } from 'vuex'
+import { createI18n } from 'vue-i18n'
+import zhCN from '../../../src/i18n/locales/zh-CN'
 
 vi.mock('../../../src/api', () => ({
   api: {
@@ -12,6 +14,12 @@ vi.mock('../../../src/api', () => ({
     extract: vi.fn(),
   },
 }))
+
+const i18n = createI18n({
+  legacy: false,
+  locale: 'zh-CN',
+  messages: { 'zh-CN': zhCN, en: {} },
+})
 
 describe('Dashboard.vue', () => {
   it('renders successfully', async () => {
@@ -28,7 +36,7 @@ describe('Dashboard.vue', () => {
     const Dashboard = await import('../../../src/views/Dashboard.vue')
     const wrapper = shallowMount(Dashboard.default, {
       global: {
-        plugins: [store],
+        plugins: [store, i18n],
         stubs: {
           'el-row': { template: '<div><slot /></div>' },
           'el-col': { template: '<div><slot /></div>' },

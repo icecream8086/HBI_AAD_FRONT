@@ -5,25 +5,41 @@
         <div class="login-header">
           <div>
             <h2>HBI AAD</h2>
-            <p class="subtitle">容器编排管理平台 v4.0</p>
+            <p class="subtitle">{{ $t('login.subtitle') }}</p>
           </div>
-          <el-dropdown trigger="click" @command="cmd => setTheme(cmd)">
-            <span class="theme-btn">
-              <el-icon :size="16"><MagicStick /></el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-for="t in themes" :key="t.id" :command="t.id">
-                  <el-icon><component :is="t.icon as any" /></el-icon>{{ t.name }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <div class="header-actions">
+            <el-dropdown trigger="click" @command="cmd => setLang(cmd)">
+              <span class="lang-btn">
+                <el-icon :size="14"><ChatDotSquare /></el-icon>
+                <span style="margin-left:2px">{{ locale === 'zh-CN' ? '简体中文' : 'English' }}</span>
+                <el-icon><ArrowDown /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="opt in LANG_OPTIONS" :key="opt.id" :command="opt.id">
+                    {{ opt.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-dropdown trigger="click" @command="cmd => setTheme(cmd)">
+              <span class="theme-btn">
+                <el-icon :size="16"><MagicStick /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="t in themes" :key="t.id" :command="t.id">
+                    <el-icon><component :is="t.icon as any" /></el-icon>{{ $t('theme.' + t.id) }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </div>
       </template>
 
       <el-tabs v-model="activeTab" stretch>
-        <el-tab-pane label="登录" name="login">
+        <el-tab-pane :label="$t('login.login')" name="login">
           <el-form
             ref="loginFormRef"
             :model="loginForm"
@@ -31,21 +47,21 @@
             @keyup.enter="handleLogin"
             label-position="top"
           >
-            <el-form-item label="邮箱" prop="email">
+            <el-form-item :label="$t('login.email')" prop="email">
               <el-input v-model="loginForm.email" />
             </el-form-item>
-            <el-form-item label="密码" prop="password">
+            <el-form-item :label="$t('login.password')" prop="password">
               <el-input v-model="loginForm.password" type="password" show-password />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="loading" @click="handleLogin" class="full-btn">
-                {{ loading ? '登录中...' : '登录' }}
+                {{ loading ? $t('login.loggingIn') : $t('login.login') }}
               </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="注册" name="register">
+        <el-tab-pane :label="$t('login.register')" name="register">
           <el-form
             ref="regFormRef"
             :model="regForm"
@@ -53,21 +69,21 @@
             @keyup.enter="handleRegister"
             label-position="top"
           >
-            <el-form-item label="用户名" prop="name">
+            <el-form-item :label="$t('login.username')" prop="name">
               <el-input v-model="regForm.name" />
             </el-form-item>
-            <el-form-item label="邮箱" prop="email">
+            <el-form-item :label="$t('login.email')" prop="email">
               <el-input v-model="regForm.email" />
             </el-form-item>
-            <el-form-item label="密码" prop="password">
+            <el-form-item :label="$t('login.password')" prop="password">
               <el-input v-model="regForm.password" type="password" show-password />
             </el-form-item>
-            <el-form-item label="确认密码" prop="confirm">
+            <el-form-item :label="$t('login.confirmPassword')" prop="confirm">
               <el-input v-model="regForm.confirm" type="password" show-password />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="loading" @click="handleRegister" class="full-btn">
-                {{ loading ? '注册中...' : '注册' }}
+                {{ loading ? $t('login.registering') : $t('login.register') }}
               </el-button>
             </el-form-item>
           </el-form>
@@ -75,7 +91,7 @@
       </el-tabs>
 
       <div class="login-footer">
-        <p class="hint">默认账号参考 <code>auth.http</code>: user@example.com / secret123</p>
+        <p class="hint">{{ $t('login.hint', { file: 'auth.http', credentials: 'user@example.com / secret123' }) }}</p>
       </div>
     </el-card>
   </div>
@@ -85,13 +101,17 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
+import { useLocale, LANG_OPTIONS } from '../composables/useLocale'
 import { api } from '../api'
 import { useStore } from 'vuex'
 
 const router = useRouter()
 const store = useStore<State>()
-const { themes, currentInfo, setTheme } = useTheme()
+const { t } = useI18n()
+const { locale, setLang } = useLocale()
+const { themes, setTheme } = useTheme()
 const loading = ref(false)
 const activeTab = ref('login')
 const loginFormRef = ref<FormInstance>()
@@ -100,24 +120,24 @@ const regFormRef = ref<FormInstance>()
 // Default credentials from http/auth.http
 const loginForm = reactive({ email: 'user@example.com', password: 'secret123' })
 const loginRules = {
-  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  email: [{ required: true, message: t('login.emailRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
 }
 
 const regForm = reactive({ name: 'Alice', email: 'user@example.com', password: 'secret123', confirm: 'secret123' })
 const validateConfirm = (_rule: any, value: string, callback: any) => {
-  if (value !== regForm.password) callback(new Error('两次密码不一致'))
+  if (value !== regForm.password) callback(new Error(t('login.passwordMismatch')))
   else callback()
 }
 const regRules = {
-  name: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+  name: [{ required: true, message: t('login.usernameRequired'), trigger: 'blur' }],
+  email: [{ required: true, message: t('login.emailRequired'), trigger: 'blur' }],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, message: '密码至少 8 位', trigger: 'blur' },
+    { required: true, message: t('login.passwordRequired'), trigger: 'blur' },
+    { min: 8, message: t('login.passwordMin'), trigger: 'blur' },
   ],
   confirm: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    { required: true, message: t('login.confirmRequired'), trigger: 'blur' },
     { validator: validateConfirm, trigger: 'blur' },
   ],
 }
@@ -131,10 +151,10 @@ async function handleLogin() {
     store.commit('auth/SET_TOKEN', authRes.token)
     store.commit('auth/SET_USER', authRes.user)
     try { await api.dev.becomeWheel(authRes.user.id) } catch { /* ignore */ }
-    ElMessage.success(`欢迎回来, ${authRes.user.name || authRes.user.email}!`)
+    ElMessage.success(t('login.loginSuccess', { name: authRes.user.name || authRes.user.email }))
     router.push('/dashboard')
   } catch (e: unknown) {
-    ElMessage.error((e as Error)?.message || '登录失败')
+    ElMessage.error((e as Error)?.message || t('login.loginFailed'))
   } finally {
     loading.value = false
   }
@@ -149,10 +169,10 @@ async function handleRegister() {
     store.commit('auth/SET_TOKEN', authRes.token)
     store.commit('auth/SET_USER', authRes.user)
     try { await api.dev.becomeWheel(authRes.user.id) } catch { /* ignore */ }
-    ElMessage.success(`注册成功, 欢迎 ${authRes.user.name}!`)
+    ElMessage.success(t('login.registerSuccess', { name: authRes.user.name }))
     router.push('/dashboard')
   } catch (e: unknown) {
-    ElMessage.error((e as Error)?.message || '注册失败')
+    ElMessage.error((e as Error)?.message || t('login.registerFailed'))
   } finally {
     loading.value = false
   }
@@ -169,10 +189,11 @@ async function handleRegister() {
 }
 .login-card { width: 420px; border-radius: 12px; }
 .login-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
 .login-header h2 { margin: 0; font-size: 24px; }
 .subtitle { color: var(--el-text-color-secondary); font-size: 12px; margin-top: 4px; }
-.theme-btn { cursor: pointer; padding: 4px; border-radius: 4px; display: flex; }
-.theme-btn:hover { background: var(--el-fill-color-light); }
+.theme-btn, .lang-btn { cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; }
+.theme-btn:hover, .lang-btn:hover { background: var(--el-fill-color-light); }
 .full-btn { width: 100%; }
 .login-footer { margin-top: 16px; text-align: center; }
 .hint { font-size: 11px; color: var(--el-text-color-placeholder); }

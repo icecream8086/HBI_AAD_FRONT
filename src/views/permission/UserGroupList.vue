@@ -1,63 +1,65 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/permissions')" class="back">← 权限管理</el-button>
-    <div class="page-head"><h2>用户组</h2><el-button type="primary" size="small" @click="openCreate">新建用户组</el-button></div>
-    <el-table :data="items || []" v-loading="loading" stripe empty-text="暂无用户组">
-      <el-table-column prop="name" label="名称" min-width="150" />
-      <el-table-column label="成员" width="250" show-overflow-tooltip>
+    <el-button text @click="$router.push('/permissions')" class="back">{{ $t('permission.back') }}</el-button>
+    <div class="page-head"><h2>{{ $t('permission.userGroupTitle') }}</h2><el-button type="primary" size="small" @click="openCreate">{{ $t('permission.createUserGroup') }}</el-button></div>
+    <el-table :data="items || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
+      <el-table-column prop="name" :label="$t('table.name')" min-width="150" />
+      <el-table-column :label="$t('permission.members')" width="250" show-overflow-tooltip>
         <template #default="{ row }">
           <el-tag v-for="mid in (row.memberIds?.slice(0,4)||[])" :key="mid" size="small" style="margin-right:4px">{{ userName(mid) }}</el-tag>
           <span v-if="(row.memberIds?.length||0) > 4">+{{ row.memberIds.length - 4 }}</span>
-          <span v-else-if="!row.memberIds?.length">-</span>
+          <span v-else-if="!row.memberIds?.length">{{ $t('common.none') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="绑定权限组" min-width="180" show-overflow-tooltip>
+      <el-table-column :label="$t('permission.boundPermGroups')" min-width="180" show-overflow-tooltip>
         <template #default="{ row }">
           <el-tag v-for="g in boundGroups(row.id)" :key="g.id" size="small" style="margin-right:4px;margin-bottom:4px">{{ g.name }}</el-tag>
-          <span v-if="!boundGroups(row.id).length">-</span>
+          <span v-if="!boundGroups(row.id).length">{{ $t('common.none') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="依赖" width="160" show-overflow-tooltip><template #default="{ row }">{{ row.dependsOn?.map(id => groupName(id)).join(', ') || '-' }}</template></el-table-column>
-      <el-table-column label="操作" width="160" fixed="right">
-        <template #default="{ row }"><el-button size="small" @click="openEdit(row)">编辑</el-button><el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button></template>
+      <el-table-column :label="$t('permission.dependencies')" width="160" show-overflow-tooltip><template #default="{ row }">{{ row.dependsOn?.map(id => groupName(id)).join(', ') || $t('common.none') }}</template></el-table-column>
+      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+        <template #default="{ row }"><el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button><el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button></template>
       </el-table-column>
     </el-table>
     <el-pagination v-if="total > limit" v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
 
-    <!-- 绑定权限组弹窗 -->
-    <el-dialog v-model="permDlg.show" title="绑定权限组" width="600px">
+    <!-- Bound permission groups dialog -->
+    <el-dialog v-model="permDlg.show" :title="$t('permission.boundPermGroups')" width="600px">
       <div v-if="permDlg.groups.length">
         <div v-for="g in permDlg.groups" :key="g.id" class="perm-group-card">
-          <div class="pg-header"><strong>{{ g.name }}</strong><el-tag size="small" type="info" style="margin-left:6px">{{ g.rules?.length || 0 }} 条规则</el-tag></div>
-          <div v-if="g.dependsOn?.length" class="pg-deps">继承: {{ g.dependsOn.map(id => permGroupName(id)).join(', ') }}</div>
-          <el-table :data="g.rules || []" size="small" empty-text="无规则">
-            <el-table-column label="效果" width="60"><template #default="{ row: r }"><el-tag :type="r.effect==='allow'?'success':'danger'" size="small">{{ r.effect }}</el-tag></template></el-table-column>
-            <el-table-column label="动作" min-width="180"><template #default="{ row: r }">{{ r.actions?.join(', ') }}</template></el-table-column>
-            <el-table-column label="资源" width="120"><template #default="{ row: r }">{{ r.resource || '*' }}</template></el-table-column>
-            <el-table-column label="优先级" width="70" prop="priority" />
+          <div class="pg-header"><strong>{{ g.name }}</strong><el-tag size="small" type="info" style="margin-left:6px">{{ $t('permission.ruleCount', { count: g.rules?.length || 0 }) }}</el-tag></div>
+          <div v-if="g.dependsOn?.length" class="pg-deps">{{ $t('permission.inheritsFrom') }}{{ g.dependsOn.map(id => permGroupName(id)).join(', ') }}</div>
+          <el-table :data="g.rules || []" size="small" :empty-text="$t('table.empty')">
+            <el-table-column :label="$t('permission.effect')" width="60"><template #default="{ row: r }"><el-tag :type="r.effect==='allow'?'success':'danger'" size="small">{{ r.effect }}</el-tag></template></el-table-column>
+            <el-table-column :label="$t('permission.actions')" min-width="180"><template #default="{ row: r }">{{ r.actions?.join(', ') }}</template></el-table-column>
+            <el-table-column :label="$t('permission.resource')" width="120"><template #default="{ row: r }">{{ r.resource || '*' }}</template></el-table-column>
+            <el-table-column :label="$t('permission.priority')" width="70" prop="priority" />
           </el-table>
         </div>
       </div>
-      <el-empty v-else description="此用户组未绑定任何权限组" :image-size="60" />
+      <el-empty v-else :description="$t('permission.noBoundPermGroups')" :image-size="60" />
     </el-dialog>
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit?'编辑用户组':'新建用户组'" width="550px">
+    <el-dialog v-model="dialog.show" :title="dialog.isEdit?$t('permission.editUserGroup'):$t('permission.createUserGroup')" width="550px">
       <el-form :model="form" label-width="80px">
-        <el-form-item label="名称"><el-input v-model="form.name" /></el-form-item>
-        <el-form-item label="依赖"><el-select v-model="form.dependsOn" multiple filterable placeholder="继承" style="width:100%"><el-option v-for="g in items" :key="g.id" :label="g.name" :value="g.id" /></el-select></el-form-item>
-        <el-form-item label="成员"><el-select v-model="form.memberIds" multiple filterable placeholder="选择用户" style="width:100%"><el-option v-for="u in users" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" /></el-select></el-form-item>
+        <el-form-item :label="$t('permission.name')"><el-input v-model="form.name" /></el-form-item>
+        <el-form-item :label="$t('permission.dependencies')"><el-select v-model="form.dependsOn" multiple filterable :placeholder="$t('permission.depSelectPlaceholder')" style="width:100%"><el-option v-for="g in items" :key="g.id" :label="g.name" :value="g.id" /></el-select></el-form-item>
+        <el-form-item :label="$t('permission.members')"><el-select v-model="form.memberIds" multiple filterable :placeholder="$t('permission.userSelectPlaceholder')" style="width:100%"><el-option v-for="u in users" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" /></el-select></el-form-item>
       </el-form>
-      <template #footer><el-button @click="dialog.show=false">取消</el-button><el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit?'保存':'创建' }}</el-button></template>
+      <template #footer><el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button><el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit?$t('table.save'):$t('table.create') }}</el-button></template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useResolver } from '../../composables/useResolver'
 import { api } from '../../api'
 
+const { t } = useI18n()
 const { load: loadRefs, userName, groupName, permGroupName } = useResolver()
 const loading = ref(false); const saving = ref(false)
 const items = ref<UserGroup[]>([]); const users = ref<User[]>([]); const page = ref(1); const limit = ref(15); const total = ref(0)
@@ -82,20 +84,20 @@ function openEdit(row: UserGroup) { dialog.isEdit = true; dialog.editId = row.id
 async function fetchData() {
   loading.value = true
   try { const r = await api.extractPage<UserGroup>(api.permissions.apiPermissionsUserGroupsGet({params:{page:page.value,limit:limit.value}})); items.value = r.items; total.value = r.total }
-  catch { ElMessage.error('获取用户组失败') }
+  catch { ElMessage.error(t('permission.userGroupFetchFailed')) }
   finally { loading.value = false }
 }
 async function handleSave() {
-  if (!form.name) { ElMessage.warning('请输入名称'); return }
+  if (!form.name) { ElMessage.warning(t('permission.nameRequired')); return }
   saving.value = true
   try {
-    if (dialog.isEdit) { await api.permissions.apiPermissionsUserGroupsIdPut(dialog.editId, { name: form.name, memberIds: form.memberIds } as any); ElMessage.success('已更新') }
-    else { await api.permissions.apiPermissionsUserGroupsPost({ name: form.name, memberIds: form.memberIds, dependsOn: form.dependsOn||undefined } as any); ElMessage.success('已创建') }
+    if (dialog.isEdit) { await api.permissions.apiPermissionsUserGroupsIdPut(dialog.editId, { name: form.name, memberIds: form.memberIds } as any); ElMessage.success(t('permission.updated')) }
+    else { await api.permissions.apiPermissionsUserGroupsPost({ name: form.name, memberIds: form.memberIds, dependsOn: form.dependsOn||undefined } as any); ElMessage.success(t('permission.created')) }
     dialog.show = false; await fetchData()
-  } catch { ElMessage.error('操作失败') }
+  } catch { ElMessage.error(t('permission.actionFailed')) }
   finally { saving.value = false }
 }
-async function handleDelete(id: string) { try { await ElMessageBox.confirm('确定删除？','确认'); await api.permissions.apiPermissionsUserGroupsIdDelete(id); ElMessage.success('已删除'); await fetchData() } catch {/* ignore */} }
+async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.groupDeleteConfirm'), t('table.confirm')); await api.permissions.apiPermissionsUserGroupsIdDelete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
 onMounted(async () => {
   await loadRefs()
   await fetchData()

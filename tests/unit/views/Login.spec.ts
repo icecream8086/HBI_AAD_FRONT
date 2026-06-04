@@ -1,11 +1,19 @@
 import { describe, it, expect, vi } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import { createStore } from 'vuex'
+import { createI18n } from 'vue-i18n'
+import zhCN from '../../../src/i18n/locales/zh-CN'
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() }),
   useRoute: () => ({ path: '/login' }),
 }))
+
+const i18n = createI18n({
+  legacy: false,
+  locale: 'zh-CN',
+  messages: { 'zh-CN': zhCN, en: {} },
+})
 
 describe('Login.vue', () => {
   it('renders successfully', async () => {
@@ -22,7 +30,7 @@ describe('Login.vue', () => {
     const Login = await import('../../../src/views/Login.vue')
     const wrapper = shallowMount(Login.default, {
       global: {
-        plugins: [store],
+        plugins: [store, i18n],
         stubs: {
           'el-card': { template: '<div><slot name="header" /><slot /></div>' },
           'el-tabs': { template: '<div><slot /></div>' },
@@ -31,6 +39,10 @@ describe('Login.vue', () => {
           'el-form-item': { template: '<div><slot /></div>' },
           'el-input': { template: '<input />' },
           'el-button': { template: '<button><slot /></button>' },
+          'el-icon': { template: '<span><slot /></span>' },
+          'el-dropdown': { template: '<div><slot /></div>' },
+          'el-dropdown-menu': { template: '<div><slot /></div>' },
+          'el-dropdown-item': { template: '<div><slot /></div>' },
         },
       },
     })
