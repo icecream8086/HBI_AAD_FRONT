@@ -17,6 +17,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', name: 'Dashboard', component: () => import('../views/Dashboard.vue'), meta: { title: 'route.dashboard' } },
 
       // Sandbox
+      { path: 'sandboxes/pods', name: 'SandboxPods', component: () => import('../views/sandbox/PodList.vue'), meta: { title: 'route.sandboxPods' } },
+      { path: 'sandboxes/pods/:providerId', name: 'PodDetail', component: () => import('../views/sandbox/PodDetail.vue'), meta: { title: 'pod.detail' } },
       { path: 'sandboxes', name: 'Sandboxes', component: () => import('../views/sandbox/SandboxList.vue'), meta: { title: 'route.sandboxes' } },
       { path: 'sandboxes/:id', name: 'SandboxDetail', component: () => import('../views/sandbox/SandboxDetail.vue'), meta: { title: 'route.sandboxDetail' } },
 

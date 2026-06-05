@@ -9,6 +9,7 @@
           <el-tag :type="statusType(sandbox.status)" effect="dark" size="large">{{ sandbox.status }}</el-tag>
         </div>
         <div class="actions">
+          <el-button v-if="sandbox.status==='Stopped'" type="success" @click="handleStart" :loading="starting">{{ $t('table.start') }}</el-button>
           <el-button :type="sandbox.status==='Running'?'warning':''" @click="handleStop" :disabled="sandbox.status!=='Running'">{{ $t('table.stop') }}</el-button>
           <el-button type="danger" @click="handleDelete">{{ $t('table.delete') }}</el-button>
           <el-button @click="handleSync">{{ $t('sandbox.sync') }}</el-button>
@@ -42,7 +43,7 @@
               <el-tag :type="ctStatusType(c)" size="small">{{ ctStatus(c) }}</el-tag>
               <el-tag v-if="c.state?.ready" type="success" size="small" effect="plain" style="margin-left:4px">{{ $t('sandbox.ready') }}</el-tag>
             </el-descriptions-item>
-            <el-descriptions-item :label="$t('sandbox.cpuMem')">{{ c.cpu ?? '-' }}{{ $t('sandbox.cores') }} / {{ c.memory ?? '-' }}Mi</el-descriptions-item>
+            <el-descriptions-item :label="$t('sandbox.cpuMem')">{{ c.cpu ?? '-' }}{{ $t('sandbox.cores') }} / {{ c.memory ?? '-' }}Mi<span v-if="c.gpu" style="margin-left:6px">GPU: {{ c.gpu }}{{ c.gpuType ? '×'+c.gpuType : '' }}</span></el-descriptions-item>
           </el-descriptions>
           <div v-if="c.state?.startTime" class="sub">{{ $t('sandbox.startTime') }}: {{ fmtStr(c.state.startTime) }}</div>
           <div v-if="c.health?.status" class="sub">
@@ -118,20 +119,22 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { api } from '../../api'
+import { api, axios } from '../../api'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const loading = ref(false)
+const starting = ref(false)
 const sandbox = ref<Sandbox | null>(null)
 
 function ctStatus(c: any): string {
-  return c.state?.state || c.status || c.health?.status || '-'
+  // state?.state is the real container state; fall back to '-' when absent (e.g. stopped)
+  return c.state?.state || c.status || '-'
 }
 function ctStatusType(c: any): string {
   const s = ctStatus(c).toLowerCase()
-  return s.includes('running') || s === 'healthy' ? 'success' : s.includes('wait') || s.includes('pending') ? 'warning' : 'info'
+  return s.includes('running') ? 'success' : s.includes('wait') || s.includes('pending') ? 'warning' : 'info'
 }
 function statusType(s: string) {
   const m: Record<string, string> = { Running: 'success', Pending: 'warning', Failed: 'danger', Stopped: 'info', Terminated: 'info', Deleted: 'info' }
@@ -162,9 +165,30 @@ async function load() {
 
 onMounted(load)
 
+async function handleStart() {
+  starting.value = true
+  try {
+    await axios.post(`/api/sandboxes/${route.params.id}/start`)
+    ElMessage.success(t('sandbox.startSuccess'))
+    for (let i = 0; i < 12; i++) {
+      await load()
+      if (sandbox.value?.status !== 'Stopped') return
+      await new Promise(r => setTimeout(r, 1000))
+    }
+  } catch { ElMessage.error(t('sandbox.actionFailed')) }
+  finally { starting.value = false }
+}
+
 async function handleStop() {
-  try { await api.sandboxes.apiSandboxesIdStopPost(route.params.id as string); ElMessage.success(t('sandbox.stopSuccess')); await load() }
-  catch { ElMessage.error(t('sandbox.actionFailed')) }
+  try {
+    await api.sandboxes.apiSandboxesIdStopPost(route.params.id as string)
+    ElMessage.success(t('sandbox.stopSuccess'))
+    for (let i = 0; i < 12; i++) {
+      await load()
+      if (sandbox.value?.status !== 'Running') return
+      await new Promise(r => setTimeout(r, 1000))
+    }
+  } catch { ElMessage.error(t('sandbox.actionFailed')) }
 }
 async function handleDelete() {
   try {
@@ -174,8 +198,15 @@ async function handleDelete() {
   } catch { /* ignore */ }
 }
 async function handleSync() {
-  try { await api.sandboxes.apiSandboxesIdSyncPost(route.params.id as string); ElMessage.success(t('sandbox.syncSuccess')); await load() }
-  catch { ElMessage.error(t('sandbox.syncFailed')) }
+  try {
+    await api.sandboxes.apiSandboxesIdSyncPost(route.params.id as string)
+    ElMessage.success(t('sandbox.syncSuccess'))
+    for (let i = 0; i < 12; i++) {
+      await load()
+      if (sandbox.value?.status !== 'Running') return
+      await new Promise(r => setTimeout(r, 1000))
+    }
+  } catch { ElMessage.error(t('sandbox.syncFailed')) }
 }
 async function fetchHealth() {
   try {

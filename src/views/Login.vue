@@ -150,7 +150,6 @@ async function handleLogin() {
     const authRes = await api.auth.login(loginForm)
     store.commit('auth/SET_TOKEN', authRes.token)
     store.commit('auth/SET_USER', authRes.user)
-    try { await api.dev.becomeWheel(authRes.user.id) } catch { /* ignore */ }
     ElMessage.success(t('login.loginSuccess', { name: authRes.user.name || authRes.user.email }))
     router.push('/dashboard')
   } catch (e: unknown) {
@@ -168,7 +167,6 @@ async function handleRegister() {
     const authRes = await api.auth.register({ name: regForm.name, email: regForm.email, password: regForm.password })
     store.commit('auth/SET_TOKEN', authRes.token)
     store.commit('auth/SET_USER', authRes.user)
-    try { await api.dev.becomeWheel(authRes.user.id) } catch { /* ignore */ }
     ElMessage.success(t('login.registerSuccess', { name: authRes.user.name }))
     router.push('/dashboard')
   } catch (e: unknown) {

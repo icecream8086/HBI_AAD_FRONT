@@ -17,9 +17,6 @@
           <el-tag :type="row.visibility==='public'?'success':'info'" size="small">{{ row.visibility }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('securityGroup.rules')" width="100">
-        <template #default="{ row }">{{ row.rules?.length ?? 0 }}</template>
-      </el-table-column>
       <el-table-column :label="$t('table.createdAt')" width="150">
         <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
@@ -42,6 +39,21 @@
           </el-select>
           <div v-if="selectedInst" class="inherit-hint">← {{ selectedInst.platform }} · {{ selectedInst.region }}</div>
         </el-form-item>
+        <div class="cont-card">
+          <div class="section-label">{{ $t('securityGroup.bandwidthControl') }}</div>
+          <el-form-item :label="$t('securityGroup.egressBw')" label-width="130px">
+            <el-input-number v-model="form.egressBandwidth" :min="0" :max="100000" :step="10" style="width:160px" />
+          </el-form-item>
+          <el-form-item :label="$t('securityGroup.ingressBw')" label-width="130px">
+            <el-input-number v-model="form.ingressBandwidth" :min="0" :max="100000" :step="10" style="width:160px" />
+          </el-form-item>
+          <el-form-item :label="$t('securityGroup.burstBw')" label-width="130px">
+            <el-input-number v-model="form.burstBandwidth" :min="0" :max="100000" :step="10" style="width:160px" />
+          </el-form-item>
+          <el-form-item :label="$t('securityGroup.qosPriority')" label-width="130px">
+            <el-input-number v-model="form.qosPriority" :min="1" :max="10" :step="1" style="width:160px" />
+          </el-form-item>
+        </div>
         <el-form-item :label="$t('topology.securityGroupId')">
           <el-input v-model="form.securityGroupId" placeholder="sg-xxx" />
         </el-form-item>
@@ -65,16 +77,24 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
+import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 
 const loading = ref(false)
 const saving = ref(false)
 const items = ref<SecurityGroup[]>([])
 const instances = ref<ComputeInstance[]>([])
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
+function resetForm() {
+  form.name = ''; form.instanceId = ''; form.securityGroupId = ''; form.visibility = 'private'
+  form.egressBandwidth = 100; form.ingressBandwidth = 50; form.burstBandwidth = 200; form.qosPriority = 5
+}
+
 const form = reactive({
   name: '', instanceId: '', securityGroupId: '', visibility: 'private' as 'public' | 'private',
+  egressBandwidth: 100, ingressBandwidth: 50, burstBandwidth: 200, qosPriority: 5,
 })
 
 const instMap = computed(() => {
@@ -93,14 +113,19 @@ function fmtInstance(id: string) {
 
 function openCreate() {
   dialog.isEdit = false; dialog.editId = ''
-  form.name = ''; form.instanceId = ''; form.securityGroupId = ''; form.visibility = 'private'
+  resetForm()
   dialog.show = true
 }
 
-function openEdit(row: SecurityGroup) {
+function openEdit(row: any) {
   dialog.isEdit = true; dialog.editId = row.id
   form.name = row.name; form.instanceId = row.instanceId; form.securityGroupId = row.securityGroupId || ''
   form.visibility = row.visibility
+  const bw = row.bandwidth || {}
+  form.egressBandwidth = bw.egress ?? 100
+  form.ingressBandwidth = bw.ingress ?? 50
+  form.burstBandwidth = bw.burst ?? 200
+  form.qosPriority = bw.priority ?? 5
   dialog.show = true
 }
 
@@ -119,17 +144,29 @@ async function handleSave() {
   if (!form.instanceId) { ElMessage.warning(t('topology.nameRequired')); return }
   saving.value = true
   try {
-    const body: CreateSecurityGroupInput = { name: form.name, instanceId: form.instanceId, visibility: form.visibility }
+    const body: Record<string, any> = { name: form.name, instanceId: form.instanceId, visibility: form.visibility }
     if (form.securityGroupId) body.securityGroupId = form.securityGroupId
+    const bw: Record<string, any> = {}
+    if (form.egressBandwidth) bw.egress = form.egressBandwidth
+    if (form.ingressBandwidth) bw.ingress = form.ingressBandwidth
+    if (form.burstBandwidth) bw.burst = form.burstBandwidth
+    if (form.qosPriority) bw.priority = form.qosPriority
+    if (Object.keys(bw).length) body.bandwidth = bw
     if (dialog.isEdit) {
-      await api.securityGroups.update(dialog.editId, { name: form.name, visibility: form.visibility } as UpdateSecurityGroupInput)
+      const upd: Record<string, any> = { name: form.name, visibility: form.visibility }
+      if (form.securityGroupId) upd.securityGroupId = form.securityGroupId
+      if (Object.keys(bw).length) upd.bandwidth = bw
+      await api.securityGroups.update(dialog.editId, upd)
       ElMessage.success(t('securityGroup.updateSuccess'))
     } else {
       await api.securityGroups.create(body)
       ElMessage.success(t('securityGroup.createSuccess'))
     }
     dialog.show = false; await fetchData()
-  } catch { ElMessage.error(t('securityGroup.actionFailed')) }
+  } catch (e) {
+    const msg = (e as any)?.response?.data?.error?.message || (e as any)?.message || t('securityGroup.actionFailed')
+    ElMessage.error(msg)
+  }
   finally { saving.value = false }
 }
 
@@ -143,7 +180,8 @@ async function handleDelete(id: string) {
 
 onMounted(async () => {
   await fetchData()
-  try { instances.value = await api.topology.instances.list() } catch { /* ignore */ }
+  await refCache.instances.load()
+  instances.value = refCache.instances.data.value
 })
 </script>
 
@@ -151,4 +189,6 @@ onMounted(async () => {
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .inherit-hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; }
+.cont-card { border: 1px solid var(--el-border-color); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+.section-label { font-size: 13px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 8px; }
 </style>

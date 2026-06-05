@@ -101,7 +101,7 @@ onMounted(async () => {
     const [sb, tm, im, us] = await Promise.allSettled([
       api.extractItems<unknown>(api.sandboxes.apiSandboxesGet()),
       api.extractArray<unknown>(api.templates.apiTemplatesGet()),
-      api.extractArray<unknown>(api.images.apiImagesGet()),
+      api.extractItems<unknown>(api.topology.images.list()),
       api.extractArray<unknown>(api.users.apiUsersGet()),
     ])
     if (sb.status === 'fulfilled') { statCards[0].value = sb.value.length; statCards[0].tag = t('dashboard.active') }
@@ -116,11 +116,11 @@ onMounted(async () => {
 .dashboard { padding: 16px; }
 .stat-cards { margin-bottom: 16px; }
 .stat-card { text-align: center; }
-.stat-label { color: var(--color-text-secondary); font-size: 14px; }
+.stat-label { color: var(--el-text-color-secondary); font-size: 14px; }
 .stat-value { font-size: 32px; font-weight: bold; margin: 8px 0; }
 .tag { margin-right: 4px; margin-bottom: 4px; }
 .row-section { margin-top: 16px; }
 .user-card { margin-top: 16px; }
 .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.muted { color: var(--color-text-secondary); }
+.muted { color: var(--el-text-color-secondary); }
 </style>

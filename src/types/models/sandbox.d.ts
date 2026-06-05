@@ -83,6 +83,7 @@ interface ContainerState {
 interface NetworkInfo {
   publicIp?: string
   privateIp?: string
+  ipAddress?: string
   vpcId?: string
   subnetId?: string
   securityGroupId?: string
@@ -158,4 +159,5 @@ interface SandboxNetworkConfig {
   securityGroupId?: string
   allocatePublicIp: boolean
   publicIpBandwidth?: number
+  ipAddress?: string
 }

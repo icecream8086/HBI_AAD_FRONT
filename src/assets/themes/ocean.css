@@ -14,11 +14,11 @@ html.theme-ocean {
   --el-bg-color-page: #dce4ea;
   --el-bg-color: #e8eef2;
   --el-bg-color-overlay: #eef2f5;
-  --el-text-color-primary: #1a2e3e;
-  --el-text-color-regular: #3a5262;
-  --el-text-color-secondary: #6a7e8a;
-  --el-text-color-placeholder: #8a9aaa;
-  --el-text-color-disabled: #b0c0d0;
+  --el-text-color-primary: #1a3040;
+  --el-text-color-regular: #3a5666;
+  --el-text-color-secondary: #5a7282;
+  --el-text-color-placeholder: #7a92a0;
+  --el-text-color-disabled: #a0b4c0;
   --el-border-color-darker: #b0bcc8;
   --el-border-color-dark: #b8c4d0;
   --el-border-color: #c0ccd6;
@@ -32,14 +32,14 @@ html.theme-ocean {
   --el-fill-color-lighter: #eef2f5;
   --el-fill-color-extra-light: #f4f6f8;
   --el-fill-color-blank: #e8eef2;
-  --app-bg: #dce4ea;
-  --nav-bg: #2a5a7e;
-  --nav-text: #e8f0f5;
-  --nav-border: #1a4a6e;
-  --sidebar-bg: #1a4a6e;
-  --sidebar-text: #c0d8e8;
-  --sidebar-active: #6ab0e0;
-  --content-bg: #eef2f5;
+  --app-bg: #d8e0e8;
+  --nav-bg: #1e4e72;
+  --nav-text: #e0eef8;
+  --nav-border: #123e5e;
+  --sidebar-bg: #163e5e;
+  --sidebar-text: #cce0ee;
+  --sidebar-active: #5ea8dc;
+  --content-bg: #eaf0f5;
   --card-shadow: rgba(30,60,90,0.15);
 }
 html.theme-ocean .el-card,

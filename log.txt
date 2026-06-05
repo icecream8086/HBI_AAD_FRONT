@@ -1,0 +1,98 @@
+================================================================================
+  HBI-AAD Frontend — 代码分析与优化日志
+  日期: 2026-06-06
+================================================================================
+
+一、静态分析工具
+--------------------------------------------------------------------------------
+
+  1. Knip — 未使用代码检测
+     - 未使用文件: src/api/generated/index.ts（已删除）
+     - 未使用 devDependencies: @vue/cli-plugin-typescript, @vue/compiler-sfc,
+       prettier, sass, sass-loader
+     - 未使用导出: 33 个（自动生成 SDK 的辅助类，无害）
+     - 未使用类型: 8 个（自动生成，无害）
+
+  2. Madge — 循环依赖检测
+     - 结果: 无循环依赖，模块结构健康
+
+  3. dependency-cruiser — 依赖图
+     - 已生成 deps.svg（112KB），可用浏览器查看
+
+二、API 请求分析
+--------------------------------------------------------------------------------
+
+  🔴 高优先级 — N+1 循环
+     文件: src/views/user/UserDetail.vue:205-213
+     问题: handleSaveGroups 在 for 循环里逐个 await PUT 请求
+     修复: 改为收集变更后 Promise.all() 并行发送
+
+  🟡 中优先级 — 重复请求 instances.list()
+     影响视图: SubnetList, SecurityGroupList, CredentialList, BucketList,
+               InstanceList, ImageList, SandboxList, TemplateDetail
+               （共 8 个页面各自请求一次）
+     修复: 新增 useReferenceCache composable，模块级单例缓存
+
+  🟡 中优先级 — users.apiUsersGet() 重复请求
+     影响视图: UserGroupList（useResolver + 自身各拉一次）
+               PermGroupList（自身拉取）
+     修复: UserGroupList 复用 useResolver 数据
+           PermGroupList 改用 useReferenceCache
+
+  🔵 低优先级 — TemplateDetail 请求最多
+     onMounted 最多发 8-11 个 HTTP 请求
+     修复: 4 个串行 try/catch 改为 1 次 Promise.all + 缓存
+
+三、新增文件
+--------------------------------------------------------------------------------
+
+  src/composables/useReferenceCache.ts
+  模块级共享缓存，支持 6 种参考数据:
+    - instances (ComputeInstance[])
+    - credentials (MaskedCredential[])
+    - images (ImageRepository[])
+    - users (User[])
+    - securityGroups (unknown[])
+    - subnets (unknown[])
+  特点: 首次加载后页面间跳转不重复请求
+        多个组件同时挂载时只发一次请求
+
+四、修改的文件 (共 12 个)
+--------------------------------------------------------------------------------
+
+  1. src/composables/useReferenceCache.ts          — 新增缓存 composable
+  2. src/views/user/UserDetail.vue                 — 修复 N+1 循环
+  3. src/views/permission/UserGroupList.vue        — 删除重复请求
+  4. src/views/permission/PermGroupList.vue        — 删除重复请求
+  5. src/views/network/SubnetList.vue              — 改用缓存
+  6. src/views/network/SecurityGroupList.vue       — 改用缓存
+  7. src/views/topology/CredentialList.vue         — 改用缓存
+  8. src/views/topology/BucketList.vue             — 改用缓存
+  9. src/views/topology/InstanceList.vue           — 改用缓存
+  10. src/views/ImageList.vue                      — 改用缓存
+  11. src/views/sandbox/SandboxList.vue            — 改用缓存
+  12. src/views/template/TemplateDetail.vue        — 改用缓存
+  13. src/api/generated/index.ts                   — 已删除
+
+五、测试结果
+--------------------------------------------------------------------------------
+
+  单元测试: 39 passed (全部通过)
+  TypeScript: 0 errors
+  ESLint: 0 errors
+
+六、已安装的 devDependencies
+--------------------------------------------------------------------------------
+
+  knip                 ^6.16.0   未使用代码检测
+  madge                ^8.0.0    循环依赖检测
+  dependency-cruiser   ^16.0.0   模块依赖图
+
+七、后续建议
+--------------------------------------------------------------------------------
+
+  1. Chrome DevTools Performance 录制运行时性能
+  2. Vue DevTools 组件 re-render 追踪
+  3. Network tab 验证缓存是否生效（页面间跳转应无重复请求）
+  4. 从视图里提取公共组件到 src/components/
+  5. 清理未使用的 devDependencies（prettier, sass 等）

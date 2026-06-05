@@ -15,6 +15,7 @@ import './assets/themes/forest.css'
 import './assets/themes/ocean.css'
 import './assets/themes/sakura.css'
 import './assets/themes/gnu.css'
+import './assets/themes/frutiger.css'
 
 const app = createApp(App)
 

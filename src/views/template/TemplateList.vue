@@ -7,11 +7,21 @@
 
     <el-table :data="templates || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="name" :label="$t('template.name')" min-width="150" />
-      <el-table-column :label="$t('template.containerLabel')" width="70">
-        <template #default="{ row }">{{ row.container?.containers?.length || 0 }}</template>
+      <el-table-column :label="$t('template.kind')" width="150">
+        <template #default="{ row }">
+          <el-tag :type="(row.kind || 'Container') === 'ContainerGroup' ? 'warning' : ''" size="small">
+            {{ row.apiVersion || 'hbi-aad/v1' }} / {{ row.kind || 'Container' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('template.containerLabel')" width="100">
+        <template #default="{ row }">
+          <template v-if="row.kind === 'ContainerGroup'">{{ Object.keys(row.podSpec?.services || {}).length || 0 }}</template>
+          <template v-else>{{ row.container?.containers?.length || 0 }}</template>
+        </template>
       </el-table-column>
       <el-table-column label="Region" width="100">
-        <template #default="{ row }">{{ row.container?.region || '-' }}</template>
+        <template #default="{ row }">{{ row.podSpec?.region || row.container?.region || '-' }}</template>
       </el-table-column>
       <el-table-column :label="$t('table.restartPolicy')" width="100">
         <template #default="{ row }">{{ row.container?.restartPolicy || '-' }}</template>
@@ -44,28 +54,41 @@
         <el-form-item :label="$t('template.name')"><el-input v-model="f.name" :placeholder="$t('template.name')" /></el-form-item>
         <el-form-item :label="$t('template.description')"><el-input v-model="f.description" type="textarea" :rows="2" :placeholder="$t('template.description')" /></el-form-item>
 
-        <el-divider>{{ $t('template.deployTarget') }}</el-divider>
-        <el-row :gutter="12">
-          <el-col :span="8"><el-form-item :label="$t('template.platform')">
-            <el-select v-model="f.account" filterable allow-create default-first-option :placeholder="$t('template.platform')" style="width:100%">
-              <el-option v-for="p in providers" :key="p" :label="p" :value="p" />
-            </el-select>
-          </el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="Region"><el-input v-model="f.region" placeholder="local" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item :label="$t('template.restartPolicy')">
-            <el-select v-model="f.restartPolicy" clearable placeholder="Default">
-              <el-option label="Always" value="Always" /><el-option label="OnFailure" value="OnFailure" /><el-option label="Never" value="Never" />
-            </el-select>
-          </el-form-item></el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="12"><el-form-item :label="$t('topology.instanceTitle')">
-            <el-select v-model="f.instanceId" filterable clearable placeholder="Optional" style="width:100%">
-              <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
-            </el-select>
-          </el-form-item></el-col>
-          <el-col :span="12"><el-form-item :label="$t('topology.zone')"><el-input v-model="f.zone" placeholder="e.g. cn-hangzhou-a" /></el-form-item></el-col>
-        </el-row>
+        <el-form-item :label="$t('template.templateType')">
+          <el-radio-group v-model="f.templateType">
+            <el-radio value="Container">{{ $t('template.kindContainer') }}</el-radio>
+            <el-radio value="ContainerGroup">{{ $t('template.kindContainerGroup') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="f.templateType === 'ContainerGroup'">
+          <el-button size="small" type="info" @click="fillDemoPod">{{ $t('template.demoPod') }}</el-button>
+          <span class="hint" style="margin-left:6px;margin-top:0">{{ $t('template.demoPodDesc') }}</span>
+        </el-form-item>
+
+        <template v-if="f.templateType === 'Container'">
+          <el-divider>{{ $t('template.deployTarget') }}</el-divider>
+          <el-row :gutter="12">
+            <el-col :span="8"><el-form-item :label="$t('template.platform')">
+              <el-select v-model="f.account" filterable allow-create default-first-option :placeholder="$t('template.platform')" style="width:100%">
+                <el-option v-for="p in providers" :key="p" :label="p" :value="p" />
+              </el-select>
+            </el-form-item></el-col>
+            <el-col :span="8"><el-form-item label="Region"><el-input v-model="f.region" placeholder="local" /></el-form-item></el-col>
+            <el-col :span="8"><el-form-item :label="$t('template.restartPolicy')">
+              <el-select v-model="f.restartPolicy" clearable placeholder="Default">
+                <el-option label="Always" value="Always" /><el-option label="OnFailure" value="OnFailure" /><el-option label="Never" value="Never" />
+              </el-select>
+            </el-form-item></el-col>
+          </el-row>
+          <el-row :gutter="12">
+            <el-col :span="12"><el-form-item :label="$t('topology.instanceTitle')">
+              <el-select v-model="f.instanceId" filterable clearable placeholder="Optional" style="width:100%">
+                <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+              </el-select>
+            </el-form-item></el-col>
+            <el-col :span="12"><el-form-item :label="$t('topology.zone')"><el-input v-model="f.zone" placeholder="e.g. cn-hangzhou-a" /></el-form-item></el-col>
+          </el-row>
+        </template>
 
         <el-divider>{{ $t('template.dagInherit') }}</el-divider>
         <el-form-item :label="$t('template.dependsOn')">
@@ -79,11 +102,65 @@
           <el-tag v-for="(c, i) in inherited" :key="i" class="inherited-tag" type="info">{{ c.name || '?' }}:{{ c.image }}</el-tag>
         </div>
 
+        <template v-if="f.templateType === 'ContainerGroup'">
+          <el-divider>{{ $t('template.podSpec') }}</el-divider>
+          <el-row :gutter="12">
+            <el-col :span="8"><el-form-item :label="$t('template.podName')"><el-input v-model="f.podName" :placeholder="$t('template.name')" /></el-form-item></el-col>
+            <el-col :span="8"><el-form-item :label="$t('template.podRegion')"><el-input v-model="f.podRegion" placeholder="cn-hangzhou" /></el-form-item></el-col>
+          </el-row>
+          <el-row :gutter="12">
+            <el-col :span="8"><el-form-item :label="$t('template.podCpu')"><el-input v-model="f.podCpu" placeholder="e.g. 1" /></el-form-item></el-col>
+            <el-col :span="8"><el-form-item :label="$t('template.podMemory')"><el-input v-model="f.podMemory" placeholder="e.g. 2Gi" /></el-form-item></el-col>
+          </el-row>
+          <el-divider>{{ $t('template.services') }}</el-divider>
+          <div v-for="(s, si) in f.services" :key="si" class="cont-card">
+            <el-form-item :label="`${$t('template.serviceName')} ${si+1}`">
+              <el-input v-model="s.name" :placeholder="$t('template.name')" style="width:140px;margin-right:6px" size="small" />
+              <el-input v-model="s.image" :placeholder="$t('template.imagePlaceholder')" style="width:300px;margin-right:6px" size="small" />
+              <el-button type="danger" size="small" @click="f.services.splice(si,1)" circle>−</el-button>
+            </el-form-item>
+            <el-form-item :label="$t('table.command')">
+              <el-input v-model="s.command" placeholder='["sleep","3600"]' style="width:500px" size="small" />
+            </el-form-item>
+            <el-form-item :label="$t('template.port')">
+              <div v-for="(p, pi) in s.ports" :key="pi" style="display:flex;gap:4px;margin-bottom:4px">
+                <el-input v-model="p.containerPort" placeholder="Container Port" style="width:110px" size="small" type="number" />
+                <el-select v-model="p.protocol" :placeholder="$t('table.protocol')" style="width:90px" size="small">
+                  <el-option label="TCP" value="TCP" /><el-option label="UDP" value="UDP" />
+                </el-select>
+                <el-button type="danger" size="small" @click="s.ports.splice(pi,1)" circle>−</el-button>
+              </div>
+              <el-button size="small" @click="s.ports.push({containerPort:80,protocol:'TCP'})">{{ $t('template.addPort') }}</el-button>
+            </el-form-item>
+            <el-form-item :label="$t('template.serviceResources')">
+              <span style="margin-right:6px">{{ $t('template.podCpu') }}</span>
+              <el-input v-model="s.cpu" placeholder="e.g. 0.5" style="width:100px;margin-right:12px" size="small" />
+              <span style="margin-right:6px">{{ $t('template.podMemory') }}</span>
+              <el-input v-model="s.memory" placeholder="e.g. 1Gi" style="width:100px" size="small" />
+            </el-form-item>
+            <el-form-item :label="$t('template.serviceDepends')">
+              <el-select v-model="s.dependsOn" multiple filterable :placeholder="$t('template.dependsPlaceholder')" style="width:100%" size="small">
+                <el-option v-for="other in f.services.filter((_, oi) => oi !== si)" :key="other.name" :label="other.name" :value="other.name" />
+              </el-select>
+            </el-form-item>
+            <el-form-item :label="$t('template.env')">
+              <div v-for="(e, ei) in s.env" :key="ei" style="display:flex;gap:4px;margin-bottom:4px">
+                <el-input v-model="e.key" placeholder="KEY" style="width:150px" size="small" />
+                <el-input v-model="e.value" placeholder="value" style="width:250px" size="small" />
+                <el-button type="danger" size="small" @click="s.env.splice(ei,1)" circle>−</el-button>
+              </div>
+              <el-button size="small" @click="s.env.push({key:'',value:''})">{{ $t('template.addEnvVar') }}</el-button>
+            </el-form-item>
+          </div>
+          <el-form-item><el-button size="small" @click="addService">{{ $t('template.addService') }}</el-button></el-form-item>
+        </template>
+
+        <template v-if="f.templateType === 'Container'">
         <el-divider>{{ $t('template.containers') }}</el-divider>
         <div v-for="(c, ci) in f.containers" :key="ci" class="cont-card">
           <el-form-item :label="`${$t('template.containerLabel')} ${ci+1}`">
             <el-input v-model="c.name" :placeholder="$t('template.name')" style="width:160px;margin-right:6px" size="small" />
-            <el-input v-model="c.image" :placeholder="$t('table.image')" style="width:320px;margin-right:6px" size="small" />
+            <el-input v-model="c.image" :placeholder="$t('template.imagePlaceholder')" style="width:320px;margin-right:6px" size="small" />
             <el-button type="danger" size="small" @click="f.containers.splice(ci,1)" circle>−</el-button>
           </el-form-item>
           <el-form-item :label="$t('table.command')">
@@ -103,7 +180,10 @@
             <span style="margin-right:6px">CPU</span>
             <el-input-number v-model="c.cpu" :min="0" :step="0.25" :precision="2" size="small" style="width:100px;margin-right:12px" />
             <span style="margin-right:6px">{{ $t('template.memory') }}</span>
-            <el-input-number v-model="c.memory" :min="0" :step="64" size="small" style="width:100px" />
+            <el-input-number v-model="c.memory" :min="0" :step="64" size="small" style="width:100px;margin-right:12px" />
+            <span style="margin-right:6px">GPU</span>
+            <el-input-number v-model="c.gpu" :min="0" :step="1" size="small" style="width:80px;margin-right:6px" />
+            <el-input v-model="c.gpuType" placeholder="型号 (A100/V100/T4)" size="small" style="width:150px" />
           </el-form-item>
           <el-form-item :label="$t('template.env')">
             <div v-for="(e, ei) in c.env" :key="ei" style="display:flex;gap:4px;margin-bottom:4px">
@@ -115,6 +195,7 @@
           </el-form-item>
         </div>
         <el-form-item><el-button size="small" @click="addContainer">{{ $t('template.addContainer') }}</el-button></el-form-item>
+        </template>
         <el-divider>{{ $t('template.extraParams') }}</el-divider>
         <el-row :gutter="12">
           <el-col :span="8"><el-form-item :label="$t('template.publicIp')"><el-switch v-model="f.allocatePublicIp" /></el-form-item></el-col>
@@ -122,6 +203,9 @@
             <el-input-number v-model="f.healthMaxRetries" :min="-1" :step="1" style="width:100%" />
           </el-form-item></el-col>
         </el-row>
+        <el-form-item label="IP 地址">
+          <el-input v-model="f.ipAddress" placeholder="不设=自动分配" />
+        </el-form-item>
         <el-form-item :label="$t('template.vendorPassthrough')">
           <el-input v-model="f.providerOverridesStr" type="textarea" :rows="2" placeholder='{"eipBandwidth":100}' />
         </el-form-item>
@@ -198,7 +282,10 @@ const f = reactive({
   name: '', description: '', account: '', region: '', restartPolicy: '', allocatePublicIp: false,
   instanceId: '', zone: '',
   dependsOn: [] as string[],
-  healthMaxRetries: 0, providerOverridesStr: '',
+  healthMaxRetries: 0, providerOverridesStr: '', ipAddress: '',
+  templateType: 'Container' as TemplateKind,
+  podName: '', podRegion: '', podCpu: '', podMemory: '',
+  services: [] as ServiceForm[],
   containers: [] as ContainerForm[],
   healthChecks: [] as HealthCheckForm[],
 })
@@ -208,7 +295,7 @@ interface PortForm { containerPort: number; protocol: string }
 interface ContainerForm {
   name: string; image: string; command: string
   ports: PortForm[]
-  cpu: number; memory: number
+  cpu: number; memory: number; gpu: number; gpuType: string
   env: EnvPair[]
 }
 interface HealthCheckForm {
@@ -217,9 +304,16 @@ interface HealthCheckForm {
   execCommand: string; httpPath: string; httpPort: number; tcpPort: number
   initialDelaySeconds: number; periodSeconds: number; timeoutSeconds: number
 }
+interface ServiceForm {
+  name: string; image: string; command: string
+  ports: PortForm[]
+  cpu: string; memory: string
+  dependsOn: string[]
+  env: EnvPair[]
+}
 
 function emptyContainer(): ContainerForm {
-  return { name: '', image: '', command: '', ports: [], cpu: 0, memory: 0, env: [] }
+  return { name: '', image: '', command: '', ports: [], cpu: 0, memory: 0, gpu: 0, gpuType: '', env: [] }
 }
 function emptyHc(): HealthCheckForm {
   return { name: '', target: '', type: 'readiness', probeType: 'tcpSocket', execCommand: '', httpPath: '', httpPort: 80, tcpPort: 80, initialDelaySeconds: 0, periodSeconds: 10, timeoutSeconds: 5 }
@@ -233,6 +327,22 @@ function buildHcSpec(hc: HealthCheckForm): Record<string, any> {
 }
 function addContainer() { f.containers.push(emptyContainer()) }
 
+function emptyService(): ServiceForm {
+  return { name: '', image: '', command: '', ports: [], cpu: '', memory: '', dependsOn: [], env: [] }
+}
+function addService() { f.services.push(emptyService()) }
+
+function fillDemoPod() {
+  f.templateType = 'ContainerGroup'
+  f.name = 'demo-pod'
+  f.description = 'Demo container group with nginx web server and alpine sidecar / 演示容器组，包含 nginx 和 alpine sidecar'
+  f.podName = 'demo-pod'; f.podRegion = 'cn-hangzhou'; f.podCpu = '1'; f.podMemory = '2Gi'
+  f.services = [
+    { name: 'nginx', image: 'nginx:latest', command: '', ports: [{ containerPort: 80, protocol: 'TCP' }], cpu: '0.5', memory: '1Gi', dependsOn: [], env: [] },
+    { name: 'alpine', image: 'alpine:latest', command: JSON.stringify(['sleep', '3600']), ports: [], cpu: '0.5', memory: '1Gi', dependsOn: ['nginx'], env: [] },
+  ]
+}
+
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 function fmtLimitType(type: string): string {
   const key = `template.limit${type.charAt(0).toUpperCase()}${type.slice(1)}`
@@ -240,34 +350,67 @@ function fmtLimitType(type: string): string {
 }
 
 function specFromForm() {
-  const container: Record<string, any> = {}
-  if (f.region) container.region = f.region
-  if (f.zone) container.zone = f.zone
-  if (f.instanceId) container.instanceId = f.instanceId
-  if (f.account) container.account = f.account
-  if (f.restartPolicy) container.restartPolicy = f.restartPolicy
+  const body: Record<string, any> = {}
 
-  const imgs = f.containers.filter(c => c.image)
-  if (imgs.length) {
-    container.containers = imgs.map(c => {
-      const ct: Record<string, any> = { name: c.name, image: c.image }
-      if (c.command) { try { ct.command = JSON.parse(c.command) } catch { ct.command = [c.command] } }
-      if (c.ports.length) ct.ports = c.ports.filter(p => p.containerPort).map(p => ({ containerPort: p.containerPort, ...(p.protocol ? { protocol: p.protocol } : {}) }))
-      if (c.cpu || c.memory) ct.resources = { limits: {} }
-      if (c.cpu) ct.resources.limits.cpu = c.cpu
-      if (c.memory) ct.resources.limits.memory = c.memory
-      if (c.env.length) ct.env = c.env.filter(e => e.key).map(e => ({ name: e.key, value: e.value }))
-      return ct
-    })
+  if (f.templateType === 'ContainerGroup') {
+    const podSpec: Record<string, any> = { name: f.podName || f.name }
+    if (f.podRegion) podSpec.region = f.podRegion
+    if (f.podCpu || f.podMemory) {
+      podSpec.resources = {}
+      if (f.podCpu) podSpec.resources.cpu = f.podCpu
+      if (f.podMemory) podSpec.resources.memory = f.podMemory
+    }
+    const svcs = f.services.filter(s => s.image)
+    if (svcs.length) {
+      podSpec.services = {}
+      svcs.forEach(s => {
+        const def: Record<string, any> = { image: s.image }
+        if (s.command) { try { def.command = JSON.parse(s.command) } catch { def.command = [s.command] } }
+        if (s.ports.length) def.ports = s.ports.filter(p => p.containerPort).map(p => ({ containerPort: p.containerPort, protocol: p.protocol || 'TCP' }))
+        def.resources = {}
+        if (s.cpu) def.resources.cpu = s.cpu
+        if (s.memory) def.resources.memory = s.memory
+        if (s.dependsOn.length) def.dependsOn = s.dependsOn
+        if (s.env.length) def.env = s.env.filter(e => e.key).map(e => ({ name: e.key, value: e.value }))
+        podSpec.services[s.name] = def
+      })
+    }
+    if (Object.keys(podSpec).length > 1 || podSpec.services) body.podSpec = podSpec
+  } else {
+    const container: Record<string, any> = {}
+    if (f.region) container.region = f.region
+    if (f.zone) container.zone = f.zone
+    if (f.instanceId) container.instanceId = f.instanceId
+    if (f.account) container.account = f.account
+    if (f.restartPolicy) container.restartPolicy = f.restartPolicy
+
+    const imgs = f.containers.filter(c => c.image)
+    if (imgs.length) {
+      container.containers = imgs.map(c => {
+        const ct: Record<string, any> = { name: c.name, image: c.image }
+        if (c.command) { try { ct.command = JSON.parse(c.command) } catch { ct.command = [c.command] } }
+        if (c.ports.length) ct.ports = c.ports.filter(p => p.containerPort).map(p => ({ containerPort: p.containerPort, ...(p.protocol ? { protocol: p.protocol } : {}) }))
+        if (c.cpu || c.memory || c.gpu) ct.resources = { limits: {} }
+        if (c.cpu) ct.resources.limits.cpu = c.cpu
+        if (c.memory) ct.resources.limits.memory = c.memory
+        if (c.gpu) ct.resources.limits.gpu = c.gpu
+        if (c.gpuType) ct.resources.limits.gpuType = c.gpuType
+        if (c.env.length) ct.env = c.env.filter(e => e.key).map(e => ({ name: e.key, value: e.value }))
+        return ct
+      })
+    }
+
+    if (container.containers?.length) body.container = container
   }
 
   const extensions: Record<string, any> = {}
   if (f.healthMaxRetries) extensions.healthMaxRetries = f.healthMaxRetries
   if (f.providerOverridesStr) { try { extensions.providerOverrides = JSON.parse(f.providerOverridesStr) } catch { /* ignore */ } }
 
-  const body: Record<string, any> = {}
-  if (container.containers?.length) body.container = container
-  if (f.allocatePublicIp) body.network = { publicIp: { allocate: true } }
+  const net: Record<string, any> = {}
+  if (f.allocatePublicIp) net.publicIp = { allocate: true }
+  if (f.ipAddress) net.ipAddress = f.ipAddress
+  if (Object.keys(net).length) body.network = net
   if (Object.keys(extensions).length) body.extensions = extensions
   const hcs = f.healthChecks.filter(hc => hc.name && hc.target).map(buildHcSpec)
   if (hcs.length) body.healthChecks = hcs
@@ -288,7 +431,9 @@ function openCreate() {
   f.name = ''; f.description = ''; f.account = ''; f.region = ''; f.restartPolicy = ''; f.allocatePublicIp = false
   f.zone = ''
   f.dependsOn = []; f.containers = []; f.healthChecks = []
-  f.healthMaxRetries = 0; f.providerOverridesStr = ''
+  f.healthMaxRetries = 0; f.providerOverridesStr = ''; f.ipAddress = ''
+  f.templateType = 'Container'; f.podName = ''; f.podRegion = ''; f.podCpu = ''; f.podMemory = ''
+  f.services = []
   inherited.value = []; dlg.show = true
 }
 
@@ -306,6 +451,10 @@ async function handleSave() {
     const body: Record<string, any> = { name: f.name, ...(specFromForm() || {}) }
     if (f.description) body.description = f.description
     if (f.dependsOn.length) body.dependsOn = f.dependsOn
+    if (f.templateType === 'ContainerGroup') {
+      body.apiVersion = 'hbi-aad/v2'
+      body.kind = 'ContainerGroup'
+    }
 
     await api.templates.apiTemplatesPost(body as any)
     ElMessage.success(t('template.createSuccess'))

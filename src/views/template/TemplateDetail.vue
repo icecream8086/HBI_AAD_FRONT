@@ -20,9 +20,19 @@
           <el-tag :type="visTag" size="small">{{ visibility }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="Creator">{{ userName(template.creatorId) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('template.apiVersion')">
+          <el-tag size="small">{{ template.apiVersion || 'hbi-aad/v1' }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('template.kind')">
+          <el-tag :type="(template.kind || 'Container') === 'ContainerGroup' ? 'warning' : ''" size="small">
+            {{ template.kind || 'Container' }}
+          </el-tag>
+        </el-descriptions-item>
         <el-descriptions-item :label="$t('table.createdAt')">{{ fmt(template.createdAt) }}</el-descriptions-item>
-        <el-descriptions-item label="Provider"><el-tag>{{ template.container?.account || '-' }}</el-tag></el-descriptions-item>
-        <el-descriptions-item label="Region">{{ template.container?.region || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Platform">
+          <el-tag>{{ template.container?.account || '-' }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="Region">{{ template.podSpec?.region || template.container?.region || '-' }}</el-descriptions-item>
         <el-descriptions-item :label="$t('topology.instanceTitle')">{{ template.container?.instanceId || '-' }}</el-descriptions-item>
         <el-descriptions-item :label="$t('topology.zone')">{{ template.container?.zone || '-' }}</el-descriptions-item>
         <el-descriptions-item :label="$t('table.restartPolicy')">{{ template.container?.restartPolicy || '-' }}</el-descriptions-item>
@@ -67,7 +77,8 @@
                 <h5>{{ $t('template.resources') }}</h5>
                 <span v-if="c.resources.limits.cpu">{{ c.resources.limits.cpu }}{{ $t('sandbox.cores') }} </span>
                 <span v-if="c.resources.limits.memory">{{ c.resources.limits.memory }}Mi</span>
-                <span v-else>-</span>
+                <span v-if="c.resources.limits.gpu" style="margin-left:6px">GPU: {{ c.resources.limits.gpu }}{{ c.resources.limits.gpuType ? '×'+c.resources.limits.gpuType : '' }}</span>
+                <span v-if="!c.resources.limits.cpu && !c.resources.limits.memory && !c.resources.limits.gpu">-</span>
               </div>
             </el-col>
             <el-col :span="12">
@@ -81,6 +92,45 @@
         <el-empty v-if="!resolvedContainers.length" :description="$t('template.noContainers')" :image-size="50" />
       </el-card>
 
+      <!-- PodSpec (v2) -->
+      <el-card class="section" v-if="template.kind === 'ContainerGroup' && template.podSpec">
+        <template #header>{{ $t('template.containerGroup') }}: {{ template.podSpec.name }}</template>
+        <el-descriptions :column="3" border size="small">
+          <el-descriptions-item :label="$t('template.podRegion')">{{ template.podSpec.region || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('template.podCpu')">{{ template.podSpec.resources?.cpu || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('template.podMemory')">{{ template.podSpec.resources?.memory || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        <div v-for="(svcDef, svcName) in template.podSpec.services" :key="svcName" class="cont-detail" style="margin-top:12px">
+          <h4 class="cont-title">{{ svcName }}</h4>
+          <el-descriptions :column="4" border size="small">
+            <el-descriptions-item :label="$t('table.image')" :span="4"><code>{{ svcDef.image }}</code></el-descriptions-item>
+            <el-descriptions-item :label="$t('table.command')" :span="4" v-if="svcDef.command">{{ svcDef.command.join(' ') }}</el-descriptions-item>
+          </el-descriptions>
+          <el-row :gutter="8" style="margin-top:8px">
+            <el-col :span="12">
+              <div v-if="svcDef.ports?.length" class="sub-section">
+                <h5>{{ $t('template.portMapping') }}</h5>
+                <el-tag v-for="(p, pi) in svcDef.ports" :key="pi" size="small" style="margin-right:4px">{{ p.containerPort }}/{{ p.protocol }}</el-tag>
+              </div>
+              <div class="sub-section">
+                <h5>{{ $t('template.serviceResources') }}</h5>
+                <span>{{ svcDef.resources?.cpu || '-' }} CPU, {{ svcDef.resources?.memory || '-' }} Memory</span>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div v-if="svcDef.dependsOn?.length" class="sub-section">
+                <h5>{{ $t('template.serviceDepends') }}</h5>
+                <el-tag v-for="(dep, di) in svcDef.dependsOn" :key="di" size="small" style="margin-right:4px">{{ dep }}</el-tag>
+              </div>
+              <div v-if="svcDef.env?.length" class="sub-section">
+                <h5>{{ $t('table.env') }}</h5>
+                <el-tag v-for="(e, ei) in svcDef.env" :key="ei" size="small" style="margin-right:4px">{{ e.name }}={{ e.value || '-' }}</el-tag>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+      </el-card>
+
       <!-- 网络 -->
       <el-card class="section" v-if="template.network">
         <template #header>{{ $t('template.network') }}</template>
@@ -89,6 +139,7 @@
           <el-descriptions-item :label="$t('template.publicIp')">{{ template.network.publicIp?.allocate ? $t('template.publicIpAllocated') : $t('template.publicIpNotAllocated') }}</el-descriptions-item>
           <el-descriptions-item :label="$t('template.vpcId')">{{ template.network.vpc?.id || '-' }}</el-descriptions-item>
           <el-descriptions-item :label="$t('template.securityGroup')">{{ template.network.vpc?.securityGroupId || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('template.ipAddress')">{{ template.network.ipAddress || '-' }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -113,6 +164,12 @@
       <el-form :model="edit.form" label-width="100px" v-loading="edit.saving">
         <el-form-item :label="$t('template.name')"><el-input v-model="edit.form.name" style="width:300px" /></el-form-item>
         <el-form-item :label="$t('template.description')"><el-input v-model="edit.form.description" type="textarea" :rows="2" /></el-form-item>
+        <el-form-item :label="$t('template.templateType')">
+          <el-radio-group v-model="edit.form.templateType">
+            <el-radio value="Container">{{ $t('template.kindContainer') }}</el-radio>
+            <el-radio value="ContainerGroup">{{ $t('template.kindContainerGroup') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12"><el-form-item :label="$t('template.singleton')">
             <el-select v-model="edit.form.limitType" clearable :placeholder="$t('template.singletonHint')" style="width:100%">
@@ -125,14 +182,10 @@
             <el-input-number v-model="edit.form.limitMax" :min="1" :max="999" style="width:100%" />
           </el-form-item></el-col>
         </el-row>
+        <template v-if="edit.form.templateType === 'Container'">
         <el-row :gutter="12">
-          <el-col :span="8"><el-form-item :label="$t('template.platform')">
-            <el-select v-model="edit.form.account" filterable allow-create default-first-option :placeholder="$t('template.platform')" style="width:100%">
-              <el-option v-for="p in providers" :key="p" :label="p" :value="p" />
-            </el-select>
-          </el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="Region"><el-input v-model="edit.form.region" placeholder="cn-hangzhou" /></el-form-item></el-col>
-          <el-col :span="8">
+          <el-col :span="12"><el-form-item label="Region"><el-input v-model="edit.form.region" placeholder="cn-hangzhou" /></el-form-item></el-col>
+          <el-col :span="12">
             <el-form-item :label="$t('template.restartPolicy')">
               <el-select v-model="edit.form.restartPolicy" clearable>
                 <el-option label="Always" value="Always" /><el-option label="OnFailure" value="OnFailure" /><el-option label="Never" value="Never" />
@@ -148,17 +201,74 @@
           </el-form-item></el-col>
           <el-col :span="12"><el-form-item :label="$t('topology.zone')"><el-input v-model="edit.form.zone" placeholder="cn-hangzhou-a" /></el-form-item></el-col>
         </el-row>
+        </template>
         <el-form-item :label="$t('template.dependsOn')">
           <el-select v-model="edit.form.dependsOn" multiple filterable style="width:100%">
             <el-option v-for="t in allTemplates" :key="t.id" :label="t.name" :value="t.id" />
           </el-select>
         </el-form-item>
 
+        <template v-if="edit.form.templateType === 'ContainerGroup'">
+          <el-divider>{{ $t('template.podSpec') }}</el-divider>
+          <el-row :gutter="12">
+            <el-col :span="8"><el-form-item :label="$t('template.podName')"><el-input v-model="edit.form.podName" :placeholder="$t('template.name')" /></el-form-item></el-col>
+            <el-col :span="8"><el-form-item :label="$t('template.podRegion')"><el-input v-model="edit.form.podRegion" placeholder="cn-hangzhou" /></el-form-item></el-col>
+          </el-row>
+          <el-row :gutter="12">
+            <el-col :span="8"><el-form-item :label="$t('template.podCpu')"><el-input v-model="edit.form.podCpu" placeholder="e.g. 1" /></el-form-item></el-col>
+            <el-col :span="8"><el-form-item :label="$t('template.podMemory')"><el-input v-model="edit.form.podMemory" placeholder="e.g. 2Gi" /></el-form-item></el-col>
+          </el-row>
+          <el-divider>{{ $t('template.services') }}</el-divider>
+          <div v-for="(s, si) in edit.form.services" :key="si" class="cont-card">
+            <el-form-item :label="`${$t('template.serviceName')} ${si+1}`">
+              <el-input v-model="s.name" :placeholder="$t('template.name')" style="width:140px;margin-right:6px" size="small" />
+              <el-input v-model="s.image" :placeholder="$t('template.imagePlaceholder')" style="width:300px;margin-right:6px" size="small" />
+              <el-button type="danger" size="small" @click="edit.form.services.splice(si,1)" circle>−</el-button>
+            </el-form-item>
+            <el-form-item :label="$t('table.command')">
+              <el-input v-model="s.command" placeholder='["sleep","3600"]' style="width:500px" size="small" />
+            </el-form-item>
+            <el-form-item :label="$t('template.port')">
+              <div v-for="(p, pi) in s.ports" :key="pi" style="display:flex;gap:4px;margin-bottom:4px">
+                <el-input v-model="p.containerPort" placeholder="Container Port" style="width:110px" size="small" type="number" />
+                <el-select v-model="p.protocol" :placeholder="$t('table.protocol')" style="width:90px" size="small">
+                  <el-option label="TCP" value="TCP" /><el-option label="UDP" value="UDP" />
+                </el-select>
+                <el-button type="danger" size="small" @click="s.ports.splice(pi,1)" circle>−</el-button>
+              </div>
+              <el-button size="small" @click="s.ports.push({containerPort:80,protocol:'TCP'})">{{ $t('template.addPort') }}</el-button>
+            </el-form-item>
+            <el-form-item :label="$t('template.serviceResources')">
+              <span style="margin-right:6px">{{ $t('template.podCpu') }}</span>
+              <el-input v-model="s.cpu" placeholder="e.g. 0.5" style="width:100px;margin-right:12px" size="small" />
+              <span style="margin-right:6px">{{ $t('template.podMemory') }}</span>
+              <el-input v-model="s.memory" placeholder="e.g. 1Gi" style="width:100px" size="small" />
+            </el-form-item>
+            <el-form-item :label="$t('template.serviceDepends')">
+              <el-select v-model="s.dependsOn" multiple filterable :placeholder="$t('template.dependsPlaceholder')" style="width:100%" size="small">
+                <el-option v-for="other in edit.form.services.filter((_, oi) => oi !== si)" :key="other.name" :label="other.name" :value="other.name" />
+              </el-select>
+            </el-form-item>
+            <el-form-item :label="$t('template.env')">
+              <div v-for="(e, ei) in s.env" :key="ei" style="display:flex;gap:4px;margin-bottom:4px">
+                <el-input v-model="e.key" placeholder="KEY" style="width:150px" size="small" />
+                <el-input v-model="e.value" placeholder="value" style="width:250px" size="small" />
+                <el-button type="danger" size="small" @click="s.env.splice(ei,1)" circle>−</el-button>
+              </div>
+              <el-button size="small" @click="s.env.push({key:'',value:''})">{{ $t('template.addEnvVar') }}</el-button>
+            </el-form-item>
+          </div>
+          <el-form-item><el-button size="small" @click="edit.form.services.push(emptyService())">{{ $t('template.addService') }}</el-button></el-form-item>
+        </template>
+
+        <template v-if="edit.form.templateType === 'Container'">
         <el-divider>{{ $t('template.containers') }}</el-divider>
         <div v-for="(c, ci) in edit.form.containers" :key="ci" class="cont-card">
           <el-form-item :label="`#${ci+1}`">
             <el-input v-model="c.name" :placeholder="$t('template.name')" style="width:140px;margin-right:6px" size="small" />
-            <el-input v-model="c.image" :placeholder="$t('table.image')" style="width:300px;margin-right:6px" size="small" />
+            <el-select v-model="c.image" filterable allow-create clearable :placeholder="$t('template.imagePlaceholder')" style="width:300px;margin-right:6px" size="small">
+              <el-option v-for="img in existingImages" :key="img" :label="img" :value="img" />
+            </el-select>
             <el-button type="danger" size="small" @click="edit.form.containers.splice(ci,1)" circle>−</el-button>
           </el-form-item>
           <el-form-item :label="$t('table.command')">
@@ -178,7 +288,10 @@
             <span style="margin-right:4px">CPU</span>
             <el-input-number v-model="c.cpu" :min="0" :step="0.25" size="small" style="width:90px;margin-right:10px" />
             <span style="margin-right:4px">{{ $t('template.memory') }}</span>
-            <el-input-number v-model="c.memory" :min="0" :step="64" size="small" style="width:90px" />
+            <el-input-number v-model="c.memory" :min="0" :step="64" size="small" style="width:90px;margin-right:10px" />
+            <span style="margin-right:4px">GPU</span>
+            <el-input-number v-model="c.gpu" :min="0" :step="1" size="small" style="width:80px;margin-right:6px" />
+            <el-input v-model="c.gpuType" placeholder="型号 (A100/V100/T4)" size="small" style="width:150px" />
           </el-form-item>
           <el-form-item :label="$t('template.env')">
             <div v-for="(e, ei) in c.env" :key="ei" style="display:flex;gap:4px;margin-bottom:4px">
@@ -189,59 +302,91 @@
             <el-button size="small" @click="c.env.push({key:'',value:''})">{{ $t('template.addEnvVar') }}</el-button>
           </el-form-item>
         </div>
-        <el-divider>{{ $t('template.extraParams') }}</el-divider>
+        </template>
+        <el-divider>{{ $t('template.networkConfig') }}</el-divider>
         <el-row :gutter="12">
-          <el-col :span="8"><el-form-item :label="$t('template.publicIp')"><el-switch v-model="edit.form.allocatePublicIp" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item :label="$t('template.healthRetry')">
-            <el-input-number v-model="edit.form.healthMaxRetries" :min="-1" :step="1" style="width:100%" />
+          <el-col :span="8"><el-form-item :label="$t('template.mode')">
+            <el-select v-model="edit.form.networkMode" clearable :placeholder="$t('template.singletonHint')" style="width:100%">
+              <el-option label="auto" value="auto" />
+              <el-option label="VPC" value="vpc" />
+            </el-select>
           </el-form-item></el-col>
         </el-row>
+        <el-form-item :label="$t('template.securityGroup')">
+          <el-select v-model="edit.form.securityGroupId" filterable clearable placeholder="Select security group ID" style="width:100%">
+            <el-option v-for="sg in sgList" :key="sg.id" :label="`${sg.name} (${sg.id})`" :value="sg.id" />
+          </el-select>
+        </el-form-item>
+        <div class="cont-card" v-if="edit.form.networkMode === 'vpc'">
+          <el-form-item :label="$t('template.subnetIds')" label-width="120px">
+            <el-select v-model="edit.form.subnetIds" filterable allow-create clearable multiple placeholder="Select subnets" style="width:100%">
+              <el-option v-for="sn in subnetList" :key="sn" :label="sn" :value="sn" />
+            </el-select>
+            <el-form-item label="IP 地址" label-width="120px">
+              <el-input v-model="edit.form.ipAddress" placeholder="不设=自动分配" />
+            </el-form-item>
+          </el-form-item>
+        </div>
+        <el-divider>{{ $t('template.s3Config') }}</el-divider>
+        <!-- TODO: S3 bucket / storage config -->
+        <el-divider>{{ $t('template.healthChecks') }}</el-divider>
+        <div class="mode-toggle">
+          <el-button size="small" text @click="toggleHcJsonMode">{{ edit.healthChecksJsonMode ? '表单模式' : 'JSON 模式' }}</el-button>
+        </div>
+        <template v-if="!edit.healthChecksJsonMode">
+          <div v-for="(hc, hi) in edit.form.healthChecks" :key="hi" class="cont-card">
+            <el-row :gutter="8">
+              <el-col :span="6"><el-form-item :label="$t('template.name')" label-width="50px"><el-input v-model="hc.name" size="small" /></el-form-item></el-col>
+              <el-col :span="6"><el-form-item :label="$t('table.target')" label-width="50px">
+                <el-select v-model="hc.target" filterable allow-create size="small" style="width:100%">
+                  <el-option v-for="ct in edit.form.containers" :key="ct.name" :label="'container:'+ct.name" :value="'container:'+ct.name" />
+                </el-select>
+              </el-form-item></el-col>
+              <el-col :span="5"><el-form-item label="Type" label-width="50px">
+                <el-select v-model="hc.type" size="small">
+                  <el-option label="liveness" value="liveness" /><el-option label="readiness" value="readiness" /><el-option label="startup" value="startup" />
+                </el-select>
+              </el-form-item></el-col>
+              <el-col :span="5"><el-form-item :label="$t('table.probe')" label-width="50px">
+                <el-select v-model="hc.probeType" size="small">
+                  <el-option label="exec" value="exec" /><el-option label="httpGet" value="httpGet" /><el-option label="tcpSocket" value="tcpSocket" />
+                </el-select>
+              </el-form-item></el-col>
+              <el-col :span="2"><el-button type="danger" size="small" @click="edit.form.healthChecks.splice(hi,1)" circle>−</el-button></el-col>
+            </el-row>
+            <el-row :gutter="8">
+              <el-col :span="12" v-if="hc.probeType==='exec'">
+                <el-form-item :label="$t('table.command')" label-width="50px">
+                  <el-input v-model="hc.execCommand" placeholder='["/bin/sh","-c","..."]' size="small" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="6" v-if="hc.probeType==='httpGet'">
+                <el-form-item label="Path" label-width="50px"><el-input v-model="hc.httpPath" placeholder="/health" size="small" /></el-form-item>
+              </el-col>
+              <el-col :span="6" v-if="hc.probeType==='httpGet'">
+                <el-form-item label="Port" label-width="50px"><el-input-number v-model="hc.httpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
+              </el-col>
+              <el-col :span="6" v-if="hc.probeType==='tcpSocket'">
+                <el-form-item label="Port" label-width="50px"><el-input-number v-model="hc.tcpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
+              </el-col>
+              <el-col :span="4"><el-form-item :label="$t('table.delay')" label-width="50px"><el-input-number v-model="hc.initialDelaySeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
+              <el-col :span="4"><el-form-item :label="$t('table.interval')" label-width="50px"><el-input-number v-model="hc.periodSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
+              <el-col :span="4"><el-form-item :label="$t('table.timeout')" label-width="50px"><el-input-number v-model="hc.timeoutSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
+            </el-row>
+          </div>
+          <el-button size="small" style="margin-top:8px" @click="edit.form.healthChecks.push(emptyHc())">{{ $t('template.addHealthCheck') }}</el-button>
+        </template>
+        <template v-else>
+          <el-input v-model="edit.healthChecksJsonStr" type="textarea" :rows="8" placeholder='[{"name":"...","target":"container:...","type":"readiness","probe":{"tcpSocket":{"port":80}}}]' />
+        </template>
+        <el-divider>{{ $t('template.extraParams') }}</el-divider>
+        <el-form-item :label="$t('template.healthRetry')">
+          <el-input-number v-model="edit.form.healthMaxRetries" :min="-1" :step="1" style="width:100%" />
+          <span style="margin-left:8px;font-size:12px;color:var(--el-text-color-secondary)">-1=永不检查，0=默认(11次)，N=N次后删除</span>
+        </el-form-item>
         <el-form-item :label="$t('template.vendorPassthrough')">
           <el-input v-model="edit.form.providerOverridesStr" type="textarea" :rows="2" placeholder='{"eipBandwidth":100}' />
         </el-form-item>
-
-        <el-divider>{{ $t('template.healthChecks') }}</el-divider>
-        <div v-for="(hc, hi) in edit.form.healthChecks" :key="hi" class="cont-card">
-          <el-row :gutter="8">
-            <el-col :span="6"><el-form-item :label="$t('template.name')" label-width="50px"><el-input v-model="hc.name" size="small" /></el-form-item></el-col>
-            <el-col :span="6"><el-form-item :label="$t('table.target')" label-width="50px">
-              <el-select v-model="hc.target" filterable allow-create size="small" style="width:100%">
-                <el-option v-for="ct in edit.form.containers" :key="ct.name" :label="'container:'+ct.name" :value="'container:'+ct.name" />
-              </el-select>
-            </el-form-item></el-col>
-            <el-col :span="5"><el-form-item label="Type" label-width="50px">
-              <el-select v-model="hc.type" size="small">
-                <el-option label="liveness" value="liveness" /><el-option label="readiness" value="readiness" /><el-option label="startup" value="startup" />
-              </el-select>
-            </el-form-item></el-col>
-            <el-col :span="5"><el-form-item :label="$t('table.probe')" label-width="50px">
-              <el-select v-model="hc.probeType" size="small">
-                <el-option label="exec" value="exec" /><el-option label="httpGet" value="httpGet" /><el-option label="tcpSocket" value="tcpSocket" />
-              </el-select>
-            </el-form-item></el-col>
-            <el-col :span="2"><el-button type="danger" size="small" @click="edit.form.healthChecks.splice(hi,1)" circle>−</el-button></el-col>
-          </el-row>
-          <el-row :gutter="8">
-            <el-col :span="12" v-if="hc.probeType==='exec'">
-              <el-form-item :label="$t('table.command')" label-width="50px">
-                <el-input v-model="hc.execCommand" placeholder='["/bin/sh","-c","..."]' size="small" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="6" v-if="hc.probeType==='httpGet'">
-              <el-form-item label="Path" label-width="50px"><el-input v-model="hc.httpPath" placeholder="/health" size="small" /></el-form-item>
-            </el-col>
-            <el-col :span="6" v-if="hc.probeType==='httpGet'">
-              <el-form-item label="Port" label-width="50px"><el-input-number v-model="hc.httpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
-            </el-col>
-            <el-col :span="6" v-if="hc.probeType==='tcpSocket'">
-              <el-form-item label="Port" label-width="50px"><el-input-number v-model="hc.tcpPort" :min="1" :max="65535" size="small" style="width:100%" /></el-form-item>
-            </el-col>
-            <el-col :span="4"><el-form-item :label="$t('table.delay')" label-width="50px"><el-input-number v-model="hc.initialDelaySeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
-            <el-col :span="4"><el-form-item :label="$t('table.interval')" label-width="50px"><el-input-number v-model="hc.periodSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
-            <el-col :span="4"><el-form-item :label="$t('table.timeout')" label-width="50px"><el-input-number v-model="hc.timeoutSeconds" :min="0" size="small" style="width:100%" /></el-form-item></el-col>
-          </el-row>
-        </div>
-        <el-button size="small" style="margin-top:8px" @click="edit.form.healthChecks.push(emptyHc())">{{ $t('template.addHealthCheck') }}</el-button>
       </el-form>
       <template #footer>
         <el-button @click="edit.show=false">{{ $t('template.cancel') }}</el-button>
@@ -258,8 +403,10 @@ import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { api } from '../../api'
 import { useResolver } from '../../composables/useResolver'
+import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 
 const route = useRoute()
 const router = useRouter()
@@ -270,14 +417,35 @@ const allTemplates = ref<SandboxTemplate[]>([])
 
 const { load: loadRefs, userName, templateName } = useResolver()
 const instances = ref<ComputeInstance[]>([])
-const providers = ref<string[]>([])
+const existingImages = ref<string[]>([])
+const sgList = ref<SecurityGroup[]>([])
+const subnetList = ref<string[]>([])
 
-const resolvedContainers = computed(() => resolved.value?.container?.containers || template.value?.container?.containers || [])
+const resolvedContainers = computed(() => {
+  if (template.value?.kind === 'ContainerGroup' && template.value?.podSpec?.services) {
+    return Object.entries(template.value.podSpec.services).map(([name, svc]) => ({
+      name,
+      image: svc.image,
+      command: svc.command,
+      ports: svc.ports,
+      resources: { limits: { cpu: svc.resources?.cpu ? Number(svc.resources.cpu) : undefined, memory: svc.resources?.memory ? Number(svc.resources.memory) : undefined } },
+      env: svc.env?.map(e => ({ name: e.name, value: e.value })),
+    } as ContainerDef))
+  }
+  return resolved.value?.container?.containers || template.value?.container?.containers || []
+})
 const visibility = computed(() => template.value?.visibility || 'public')
 const visTag = computed(() => visibility.value === 'public' ? 'success' : 'info')
 
 interface PortForm { containerPort: number; protocol: string }
-interface ContForm { name: string; image: string; command: string; ports: PortForm[]; cpu: number; memory: number; env: { key: string; value: string }[] }
+interface ContForm { name: string; image: string; command: string; ports: PortForm[]; cpu: number; memory: number; gpu: number; gpuType: string; env: { key: string; value: string }[] }
+interface ServiceForm {
+  name: string; image: string; command: string
+  ports: PortForm[]
+  cpu: string; memory: string
+  dependsOn: string[]
+  env: { key: string; value: string }[]
+}
 interface HealthCheckForm {
   name: string; target: string; type: 'liveness' | 'readiness' | 'startup'
   probeType: 'exec' | 'httpGet' | 'tcpSocket'
@@ -286,7 +454,7 @@ interface HealthCheckForm {
 }
 
 function emptyCont(): ContForm {
-  return { name: '', image: '', command: '', ports: [], cpu: 0, memory: 0, env: [] }
+  return { name: '', image: '', command: '', ports: [], cpu: 0, memory: 0, gpu: 0, gpuType: '', env: [] }
 }
 function emptyHc(): HealthCheckForm {
   return { name: '', target: '', type: 'readiness', probeType: 'tcpSocket', execCommand: '', httpPath: '', httpPort: 80, tcpPort: 80, initialDelaySeconds: 0, periodSeconds: 10, timeoutSeconds: 5 }
@@ -310,11 +478,38 @@ function buildHcSpec(hc: HealthCheckForm): Record<string, any> {
   if (hc.probeType === 'tcpSocket') { probe.tcpSocket = { port: hc.tcpPort || 80 } }
   return { name: hc.name, target: hc.target, type: hc.type, probe, initialDelaySeconds: hc.initialDelaySeconds, periodSeconds: hc.periodSeconds, timeoutSeconds: hc.timeoutSeconds }
 }
+function emptyService(): ServiceForm {
+  return { name: '', image: '', command: '', ports: [], cpu: '', memory: '', dependsOn: [], env: [] }
+}
+function serviceToForm(name: string, raw: any): ServiceForm {
+  return {
+    name, image: raw?.image || '', command: raw?.command ? JSON.stringify(raw.command) : '',
+    ports: (raw?.ports || []).map((p: any) => ({ containerPort: p.containerPort ?? 80, protocol: p.protocol || 'TCP' })),
+    cpu: raw?.resources?.cpu || '', memory: raw?.resources?.memory || '',
+    dependsOn: raw?.dependsOn || [],
+    env: (raw?.env || []).map((e: any) => ({ key: e.name || '', value: e.value || '' })),
+  }
+}
+function servicesFromSpec(spec?: PodSpec): ServiceForm[] {
+  if (!spec?.services) return []
+  return Object.entries(spec.services).map(([k, v]) => serviceToForm(k, v))
+}
+function buildServiceSpec(s: ServiceForm): Record<string, any> {
+  const def: Record<string, any> = { image: s.image }
+  if (s.command) { try { def.command = JSON.parse(s.command) } catch { def.command = [s.command] } }
+  if (s.ports.length) def.ports = s.ports.filter(p => p.containerPort)
+  def.resources = {}
+  if (s.cpu) def.resources.cpu = s.cpu
+  if (s.memory) def.resources.memory = s.memory
+  if (s.dependsOn.length) def.dependsOn = s.dependsOn
+  if (s.env.length) def.env = s.env.filter(e => e.key).map(e => ({ name: e.key, value: e.value }))
+  return def
+}
 function contToForm(raw: any): ContForm {
   return {
     name: raw?.name || '', image: raw?.image || '', command: raw?.command ? JSON.stringify(raw.command) : '',
     ports: (raw?.ports || []).map((p: any) => ({ containerPort: p.containerPort ?? 80, protocol: p.protocol || 'TCP' })),
-    cpu: raw?.resources?.limits?.cpu || 0, memory: raw?.resources?.limits?.memory || 0,
+    cpu: raw?.resources?.limits?.cpu || 0, memory: raw?.resources?.limits?.memory || 0, gpu: raw?.resources?.limits?.gpu || 0, gpuType: raw?.resources?.limits?.gpuType || '',
     env: (raw?.env || []).map((e: any) => ({ key: e.name || '', value: e.value || '' })),
   }
 }
@@ -325,22 +520,44 @@ function buildContSpec(c: ContForm): Record<string, any> {
   if (c.image) ct.image = c.image
   if (c.command) { try { ct.command = JSON.parse(c.command) } catch { ct.command = [c.command] } }
   if (c.ports.length) ct.ports = c.ports.filter(p => p.containerPort).map(p => ({ containerPort: p.containerPort, ...(p.protocol ? { protocol: p.protocol } : {}) }))
-  if (c.cpu || c.memory) ct.resources = { limits: {} }
+  if (c.cpu || c.memory || c.gpu) ct.resources = { limits: {} }
   if (c.cpu) ct.resources.limits.cpu = c.cpu
   if (c.memory) ct.resources.limits.memory = c.memory
+  if (c.gpu) ct.resources.limits.gpu = c.gpu
+  if (c.gpuType) ct.resources.limits.gpuType = c.gpuType
   if (c.env.length) ct.env = c.env.filter(e => e.key).map(e => ({ name: e.key, value: e.value }))
   return ct
 }
 
 const edit = reactive({
   show: false, saving: false,
-  form: { name: '', description: '', region: '', restartPolicy: '', allocatePublicIp: false, account: '', instanceId: '', zone: '', limitType: '', limitMax: 1, dependsOn: [] as string[], healthMaxRetries: 0, providerOverridesStr: '', containers: [] as ContForm[], healthChecks: [] as HealthCheckForm[] },
+  healthChecksJsonMode: false, healthChecksJsonStr: '',
+  form: { name: '', description: '', region: '', restartPolicy: '', networkMode: 'auto', vpcInstanceId: '', securityGroupId: '', subnetIds: [] as string[], ipAddress: '', account: '', instanceId: '', zone: '', limitType: '', limitMax: 1, healthMaxRetries: 0, dependsOn: [] as string[], providerOverridesStr: '', templateType: 'Container' as TemplateKind, podName: '', podRegion: '', podCpu: '', podMemory: '', services: [] as ServiceForm[], containers: [] as ContForm[], healthChecks: [] as HealthCheckForm[] },
 })
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 function fmtLimitType(type: string): string {
   const key = `template.limit${type.charAt(0).toUpperCase()}${type.slice(1)}`
   return t(key)
+}
+
+function toggleHcJsonMode() {
+  if (edit.healthChecksJsonMode) {
+    // JSON → form: parse and replace
+    try {
+      const parsed = JSON.parse(edit.healthChecksJsonStr)
+      edit.form.healthChecks = hcsFromSpec(Array.isArray(parsed) ? parsed : [])
+    } catch {
+      ElMessage.warning('Invalid JSON, staying in JSON mode')
+      return
+    }
+    edit.healthChecksJsonMode = false
+  } else {
+    // form → JSON: serialize
+    const specs = edit.form.healthChecks.filter(hc => hc.name && hc.target).map(buildHcSpec)
+    edit.healthChecksJsonStr = specs.length ? JSON.stringify(specs, null, 2) : '[]'
+    edit.healthChecksJsonMode = true
+  }
 }
 
 function openEdit() {
@@ -350,12 +567,39 @@ function openEdit() {
   edit.form.limitType = tpl.instanceLimit?.type || ''; edit.form.limitMax = tpl.instanceLimit?.max ?? 1
   edit.form.account = tpl.container?.account || ''; edit.form.region = tpl.container?.region || ''
   edit.form.instanceId = tpl.container?.instanceId || ''; edit.form.zone = tpl.container?.zone || ''
-  edit.form.restartPolicy = tpl.container?.restartPolicy || ''; edit.form.allocatePublicIp = tpl.network?.publicIp?.allocate ?? false
+  edit.form.restartPolicy = tpl.container?.restartPolicy || ''
+  edit.form.networkMode = tpl.network?.mode || 'auto'
+  edit.form.vpcInstanceId = tpl.network?.vpc?.instanceId || ''
+  edit.form.securityGroupId = tpl.network?.vpc?.securityGroupId || ''
+  edit.form.subnetIds = tpl.network?.vpc?.subnetIds || []
+  edit.form.ipAddress = tpl.network?.ipAddress || ''
   edit.form.dependsOn = tpl.dependsOn ? [...tpl.dependsOn] : []
   const ext = tpl.extensions || {}
   edit.form.healthMaxRetries = ext.healthMaxRetries ?? 0
   edit.form.providerOverridesStr = JSON.stringify(ext.providerOverrides || {}, null, 2)
-  edit.form.healthChecks = hcsFromSpec(tpl.healthChecks)
+  edit.healthChecksJsonStr = JSON.stringify(tpl.healthChecks || [], null, 2)
+  const parsed = hcsFromSpec(tpl.healthChecks)
+  const validCount = parsed.filter(h => h.name || h.target).length
+  const rawCount = (tpl.healthChecks || []).length
+  if (rawCount > 0 && validCount < rawCount) {
+    edit.healthChecksJsonMode = true
+    edit.form.healthChecks = []
+  } else {
+    edit.healthChecksJsonMode = false
+    edit.form.healthChecks = parsed
+  }
+  // v2 fields
+  edit.form.templateType = tpl.kind || 'Container'
+  if (tpl.kind === 'ContainerGroup' && tpl.podSpec) {
+    edit.form.podName = tpl.podSpec.name || ''
+    edit.form.podRegion = tpl.podSpec.region || ''
+    edit.form.podCpu = tpl.podSpec.resources?.cpu || ''
+    edit.form.podMemory = tpl.podSpec.resources?.memory || ''
+    edit.form.services = servicesFromSpec(tpl.podSpec)
+  } else {
+    edit.form.podName = ''; edit.form.podRegion = ''; edit.form.podCpu = ''; edit.form.podMemory = ''
+    edit.form.services = []
+  }
   edit.form.containers = contsFromSpec(tpl.container?.containers)
   if (!edit.form.containers.length) edit.form.containers.push(emptyCont())
   edit.show = true
@@ -379,23 +623,56 @@ async function handleSave() {
     const body: Record<string, any> = { name: edit.form.name }
     if (edit.form.description) body.description = edit.form.description
     if (edit.form.limitType) body.instanceLimit = { type: edit.form.limitType, max: edit.form.limitMax }
-    const containers = edit.form.containers.filter(c => c.image).map(buildContSpec)
-    if (containers.length || edit.form.region || edit.form.restartPolicy || edit.form.instanceId || edit.form.zone) {
-      const container: Record<string, any> = { containers }
-      if (edit.form.region) container.region = edit.form.region
-      if (edit.form.instanceId) container.instanceId = edit.form.instanceId
-      if (edit.form.zone) container.zone = edit.form.zone
-      if (edit.form.account) container.account = edit.form.account
-      if (edit.form.restartPolicy) container.restartPolicy = edit.form.restartPolicy
-      body.container = container
+
+    if (edit.form.templateType === 'ContainerGroup') {
+      body.apiVersion = 'hbi-aad/v2'
+      body.kind = 'ContainerGroup'
+      const podSpec: Record<string, any> = { name: edit.form.podName || edit.form.name }
+      if (edit.form.podRegion) podSpec.region = edit.form.podRegion
+      if (edit.form.podCpu || edit.form.podMemory) {
+        podSpec.resources = {}
+        if (edit.form.podCpu) podSpec.resources.cpu = edit.form.podCpu
+        if (edit.form.podMemory) podSpec.resources.memory = edit.form.podMemory
+      }
+      const svcs = edit.form.services.filter(s => s.image)
+      if (svcs.length) {
+        podSpec.services = {}
+        svcs.forEach(s => { podSpec.services[s.name] = buildServiceSpec(s) })
+      }
+      if (Object.keys(podSpec).length > 1 || podSpec.services) body.podSpec = podSpec
+    } else {
+      const containers = edit.form.containers.filter(c => c.image).map(buildContSpec)
+      if (containers.length || edit.form.region || edit.form.restartPolicy || edit.form.instanceId || edit.form.zone) {
+        const container: Record<string, any> = { containers }
+        if (edit.form.region) container.region = edit.form.region
+        if (edit.form.instanceId) container.instanceId = edit.form.instanceId
+        if (edit.form.zone) container.zone = edit.form.zone
+        if (edit.form.account) container.account = edit.form.account
+        if (edit.form.restartPolicy) container.restartPolicy = edit.form.restartPolicy
+        body.container = container
+      }
     }
-    if (edit.form.allocatePublicIp) body.network = { publicIp: { allocate: true } }
+    const net: Record<string, any> = {}
+    const vpc: Record<string, any> = {}
+    if (edit.form.networkMode) net.mode = edit.form.networkMode
+    if (edit.form.securityGroupId) vpc.securityGroupId = edit.form.securityGroupId
+    if (edit.form.networkMode === 'vpc') {
+      if (edit.form.vpcInstanceId) vpc.instanceId = edit.form.vpcInstanceId
+      if (edit.form.subnetIds.length) vpc.subnetIds = edit.form.subnetIds
+    }
+    if (edit.form.ipAddress) net.ipAddress = edit.form.ipAddress
+    if (Object.keys(vpc).length) net.vpc = vpc
+    if (Object.keys(net).length) body.network = net
     const extensions: Record<string, any> = {}
     if (edit.form.healthMaxRetries) extensions.healthMaxRetries = edit.form.healthMaxRetries
     if (edit.form.providerOverridesStr) { try { extensions.providerOverrides = JSON.parse(edit.form.providerOverridesStr) } catch { /* ignore */ } }
     if (Object.keys(extensions).length) body.extensions = extensions
-    const hcs = edit.form.healthChecks.filter(hc => hc.name && hc.target).map(buildHcSpec)
-    if (hcs.length) body.healthChecks = hcs
+    if (edit.healthChecksJsonMode && edit.healthChecksJsonStr) {
+      try { body.healthChecks = JSON.parse(edit.healthChecksJsonStr) } catch { /* ignore */ }
+    } else {
+      const hcs = edit.form.healthChecks.filter(hc => hc.name && hc.target).map(buildHcSpec)
+      if (hcs.length) body.healthChecks = hcs
+    }
     if (edit.form.dependsOn.length) body.dependsOn = edit.form.dependsOn
     await api.templates.apiTemplatesIdPut(route.params.id as string, body as any)
     ElMessage.success(t('common.saved')); edit.show = false; await load()
@@ -415,11 +692,16 @@ onMounted(async () => {
   await loadRefs()
   await load()
   try { allTemplates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) } catch { /* ignore */ }
-  try {
-    const insts = await api.topology.instances.list()
-    instances.value = insts
-    providers.value = [...new Set(insts.map(i => i.platform))]
-  } catch { /* ignore */ }
+  await Promise.all([
+    refCache.instances.load(),
+    refCache.images.load(),
+    refCache.securityGroups.load(),
+    refCache.subnets.load(),
+  ])
+  instances.value = refCache.instances.data.value
+  existingImages.value = [...new Set(refCache.images.data.value.map(r => r.image).filter(Boolean))]
+  sgList.value = refCache.securityGroups.data.value
+  subnetList.value = [...new Set(refCache.subnets.data.value.map((s: any) => s.name || s.id || s.cidr).filter(Boolean))]
 })
 </script>
 

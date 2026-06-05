@@ -201,16 +201,17 @@ async function fetchGroups() {
 async function handleSaveGroups() {
   savingGroups.value = true
   try {
-    // For each group that changed membership, update it
-    for (const g of allGroups.value) {
+    const changed = allGroups.value.reduce<Promise<void>[]>((acc, g) => {
       const isCurrentlyMember = g.memberIds?.includes(route.params.id as string) ?? false
       const shouldBeMember = selectedGroupIds.value.includes(g.id)
       if (isCurrentlyMember !== shouldBeMember) {
         const members = (g.memberIds || []).filter((id: string) => id !== route.params.id as string)
         if (shouldBeMember) members.push(route.params.id as string)
-        await api.permissions.apiPermissionsUserGroupsIdPut(g.id, { name: g.name, memberIds: members } as any)
+        acc.push(api.permissions.apiPermissionsUserGroupsIdPut(g.id, { name: g.name, memberIds: members } as any))
       }
-    }
+      return acc
+    }, [])
+    await Promise.all(changed)
     ElMessage.success(t('user.groupUpdated'))
     showGroupDialog.value = false
     await fetchGroups()

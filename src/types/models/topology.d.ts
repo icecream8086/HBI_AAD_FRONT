@@ -81,6 +81,7 @@ interface RegionBucket {
   name: string
   bucketType: RegionBucketType
   instanceId: string
+  credentialRef?: string
   status: 'Active' | 'Inactive'
   createdAt: number
   updatedAt: number
@@ -90,16 +91,20 @@ interface CreateBucketInput {
   name: string
   bucketType: RegionBucketType
   instanceId: string
+  credentialRef?: string
 }
 
 interface UpdateBucketInput {
   name?: string
   bucketType?: RegionBucketType
   instanceId?: string
+  credentialRef?: string | null
   status?: 'Active' | 'Inactive'
 }
 
 // ─── Credential ───
+
+type CredentialType = 'aksk' | 'token' | 'password'
 
 interface RegistryCredential {
   server: string
@@ -110,9 +115,13 @@ interface RegistryCredential {
 interface MaskedCredential {
   id: string
   name: string
+  type: CredentialType
   platform: Platform
-  accessKeyId: string
-  accessKeySecret: string   // masked by backend
+  accessKeyId?: string
+  accessKeySecret?: string   // masked by backend
+  token?: string             // masked by backend
+  username?: string
+  password?: string           // masked by backend
   registryCredentials?: RegistryCredential[]
   instanceId?: string
   status: 'active' | 'inactive'
@@ -122,17 +131,25 @@ interface MaskedCredential {
 
 interface CreateCredentialInput {
   name: string
+  type: CredentialType
   platform: Platform
-  accessKeyId: string
-  accessKeySecret: string
+  accessKeyId?: string
+  accessKeySecret?: string
+  token?: string
+  username?: string
+  password?: string
   registryCredentials?: RegistryCredential[]
   instanceId?: string
 }
 
 interface UpdateCredentialInput {
   name?: string
+  type?: CredentialType
   accessKeyId?: string
   accessKeySecret?: string
+  token?: string
+  username?: string
+  password?: string
   registryCredentials?: RegistryCredential[] | null
   instanceId?: string | null
   status?: 'active' | 'inactive'
@@ -141,6 +158,54 @@ interface UpdateCredentialInput {
 interface PlatformRegions {
   platform: Platform
   regions: string[]
+}
+
+// ─── ImageRepository ───
+
+type ImageStatus = 'pending' | 'pulling' | 'ready' | 'error'
+
+interface ImageRepository {
+  id: string
+  name: string
+  instanceId: string
+  image: string
+  credentialRef?: string
+  registryCredential?: RegistryCredential
+  status: ImageStatus
+  message?: string
+  createdAt: number
+  updatedAt: number
+}
+
+interface CreateImageInput {
+  name: string
+  instanceId: string
+  image: string
+  credentialRef?: string
+  registryCredential?: RegistryCredential
+}
+
+// ─── PullTask ───
+
+type PullTaskStatus = 'pulling' | 'completed' | 'failed'
+
+interface PullTask {
+  id: string
+  imageId: string
+  status: PullTaskStatus
+  result?: { id: string; tags: string[] }
+  error?: string
+  createdAt: number
+  updatedAt: number
+}
+
+// ─── BandwidthConfig ───
+
+interface BandwidthConfig {
+  egress?: number
+  ingress?: number
+  burst?: number
+  priority?: number
 }
 
 // ─── SecurityGroup (原 VirtualNetwork, 无 CIDR) ───
@@ -155,6 +220,7 @@ interface SecurityGroup {
   provider: string
   region: string
   visibility: 'public' | 'private'
+  bandwidth?: BandwidthConfig
   status: string
   createdAt: number
   updatedAt: number
@@ -167,6 +233,7 @@ interface CreateSecurityGroupInput {
   rules?: NetworkRule[]
   instanceId: string
   visibility?: 'public' | 'private'
+  bandwidth?: BandwidthConfig
   userGroupIds?: string[]
 }
 
@@ -176,6 +243,7 @@ interface UpdateSecurityGroupInput {
   securityGroupId?: string | null
   rules?: NetworkRule[] | null
   visibility?: 'public' | 'private'
+  bandwidth?: BandwidthConfig
   userGroupIds?: string[] | null
   status?: string
 }
@@ -223,4 +291,5 @@ interface NetworkRule {
   port?: string
   cidr?: string
   action?: 'allow' | 'deny'
+  rateLimit?: number
 }

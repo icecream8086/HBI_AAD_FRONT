@@ -55,8 +55,10 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
+import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -131,7 +133,8 @@ async function handleDelete(id: string) {
 
 onMounted(async () => {
   await fetchData()
-  try { instances.value = await api.topology.instances.list() } catch { /* ignore */ }
+  await refCache.instances.load()
+  instances.value = refCache.instances.data.value
 })
 </script>
 

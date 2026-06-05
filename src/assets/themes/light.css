@@ -1,12 +1,12 @@
 /* 亮色主题 — Element Plus 默认 */
 html.theme-light {
-  --app-bg: #f5f7fa;
+  --app-bg: #f0f2f5;
   --nav-bg: #ffffff;
   --nav-text: #303133;
   --nav-border: #e4e7ed;
-  --sidebar-bg: #304156;
-  --sidebar-text: #bfcbd9;
-  --sidebar-active: #409eff;
+  --sidebar-bg: #1e2a3a;
+  --sidebar-text: #d0d9e6;
+  --sidebar-active: #5a9cff;
   --content-bg: #ffffff;
-  --card-shadow: rgba(0, 0, 0, 0.1);
+  --card-shadow: rgba(0, 0, 0, 0.08);
 }

@@ -14,11 +14,11 @@ html.theme-forest {
   --el-bg-color-page: #e0e8d8;
   --el-bg-color: #edf2e8;
   --el-bg-color-overlay: #f2f5ee;
-  --el-text-color-primary: #1a2e1e;
-  --el-text-color-regular: #3a4e3e;
-  --el-text-color-secondary: #6a7e6a;
-  --el-text-color-placeholder: #8a9e8a;
-  --el-text-color-disabled: #b0c0b0;
+  --el-text-color-primary: #1e3022;
+  --el-text-color-regular: #3a523e;
+  --el-text-color-secondary: #5a725a;
+  --el-text-color-placeholder: #7a927a;
+  --el-text-color-disabled: #a0b4a0;
   --el-border-color-darker: #b4c0aa;
   --el-border-color-dark: #bcc8b3;
   --el-border-color: #c5d0bc;
@@ -32,14 +32,14 @@ html.theme-forest {
   --el-fill-color-lighter: #f0f4ec;
   --el-fill-color-extra-light: #f5f8f2;
   --el-fill-color-blank: #edf2e8;
-  --app-bg: #dce4d0;
-  --nav-bg: #3a5a3e;
-  --nav-text: #e8f0e0;
-  --nav-border: #2a4a2e;
-  --sidebar-bg: #2a4a2e;
-  --sidebar-text: #c8dcc0;
-  --sidebar-active: #7abc6a;
-  --content-bg: #f0f5ea;
+  --app-bg: #d8e2d0;
+  --nav-bg: #2e4a32;
+  --nav-text: #ecf4e8;
+  --nav-border: #1e3822;
+  --sidebar-bg: #223e26;
+  --sidebar-text: #d8ecd0;
+  --sidebar-active: #6aac5a;
+  --content-bg: #ecf3e8;
   --card-shadow: rgba(40,70,40,0.15);
 }
 html.theme-forest .el-card,

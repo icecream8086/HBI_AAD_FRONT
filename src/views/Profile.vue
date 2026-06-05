@@ -69,13 +69,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, watch } from 'vue'
+import { computed, ref, reactive, watch, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { API_BASE, api } from '../api'
 
 const { t, locale } = useI18n()
-const API_BASE = 'http://localhost:3000'
 const store = useStore<State>()
 const user = computed(() => store.state.auth.currentUser)
 const deleting = ref(false)
@@ -90,22 +90,39 @@ const roleTag = computed(() => {
 })
 const avatarBlob = ref('')
 const hasAvatar = computed(() => avatarBlob.value || localStorage.getItem('_has_avatar'))
+let avatarReq = 0
 
 async function loadAvatar() {
   if (!user.value?.id) { avatarBlob.value = ''; return }
-  if (avatarBlob.value) URL.revokeObjectURL(avatarBlob.value)
+  const reqId = ++avatarReq
   try {
     const token = localStorage.getItem('access_token')
     const res = await fetch(`${API_BASE}/api/users/${user.value.id}/avatar`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
-    if (!res.ok) { avatarBlob.value = ''; return }
+    if (!res.ok) { if (reqId === avatarReq) avatarBlob.value = ''; return }
     const blob = await res.blob()
-    avatarBlob.value = URL.createObjectURL(blob)
-  } catch { avatarBlob.value = '' }
+    if (reqId !== avatarReq) return
+    const url = URL.createObjectURL(blob)
+    const prev = avatarBlob.value
+    avatarBlob.value = url
+    if (prev) URL.revokeObjectURL(prev)
+  } catch { if (reqId === avatarReq) avatarBlob.value = '' }
 }
 
 watch([user, avatarVer], loadAvatar, { immediate: true })
+
+onMounted(async () => {
+  if (store.state.auth.token && !store.state.auth.currentUser) {
+    const userId = localStorage.getItem('current_user_id')
+    if (userId) {
+      try {
+        const u = await api.extract<User>(api.users.apiUsersIdGet(userId))
+        store.commit('auth/SET_USER', u)
+      } catch { /* will retry on next interaction */ }
+    }
+  }
+})
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
@@ -119,9 +136,11 @@ function openEdit() {
 const AVATAR_MAX = 1048576
 
 async function handleUpload(options: any) {
+  const uid = user.value?.id
+  if (!uid) { ElMessage.warning(t('profile.notLoggedIn')); return }
   try {
     const token = localStorage.getItem('access_token')
-    const res = await fetch(`${API_BASE}/api/users/${user.value?.id}/avatar`, {
+    const res = await fetch(`${API_BASE}/api/users/${uid}/avatar`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${token}` },
       body: options.file,
@@ -139,10 +158,12 @@ async function handleUpload(options: any) {
 }
 
 async function handleDelete() {
+  const uid = user.value?.id
+  if (!uid) { ElMessage.warning(t('profile.notLoggedIn')); return }
   deleting.value = true
   try {
     const token = localStorage.getItem('access_token')
-    const res = await fetch(`${API_BASE}/api/users/${user.value?.id}/avatar`, {
+    const res = await fetch(`${API_BASE}/api/users/${uid}/avatar`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` },
     })
@@ -155,12 +176,14 @@ async function handleDelete() {
 }
 
 async function handleSave() {
+  const uid = user.value?.id
+  if (!uid) { ElMessage.warning(t('profile.notLoggedIn')); return }
   if (!editForm.name.trim()) { ElMessage.warning(t('profile.nameRequired')); return }
   saving.value = true
   try {
     const body = { name: editForm.name.trim(), role: user.value!.role, privateKeyEd25519: editForm.privateKey || '' }
     const token = localStorage.getItem('access_token')
-    const res = await fetch(`${API_BASE}/api/users/${user.value?.id}`, {
+    const res = await fetch(`${API_BASE}/api/users/${uid}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify(body),

@@ -247,8 +247,10 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
+import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 
 const loading = ref(false); const saving = ref(false)
 const groups = ref<PermissionGroup[]>([]); const page = ref(1); const limit = ref(15); const total = ref(0)
@@ -409,7 +411,12 @@ async function handleSave() {
   finally { saving.value = false }
 }
 async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.groupDeleteConfirm'), t('table.confirm')); await api.permissions.apiPermissionsGroupsIdDelete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
-onMounted(async () => { await fetchData(); try { allUg.value = await api.extractItems<UserGroup>(api.permissions.apiPermissionsUserGroupsGet()) } catch { /* ignore */ } try { allUsers.value = await api.extractArray<User>(api.users.apiUsersGet()) } catch { /* ignore */ } })
+onMounted(async () => {
+  await fetchData()
+  try { allUg.value = await api.extractItems<UserGroup>(api.permissions.apiPermissionsUserGroupsGet()) } catch { /* ignore */ }
+  await refCache.users.load()
+  allUsers.value = refCache.users.data.value as User[]
+})
 </script>
 <style scoped>
 .back { margin-bottom: 8px; }

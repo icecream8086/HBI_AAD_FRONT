@@ -14,11 +14,11 @@ html.theme-dark {
   --el-bg-color-page: #0a0a0a;
   --el-bg-color: #141414;
   --el-bg-color-overlay: #1e1e1e;
-  --el-text-color-primary: #e0e0e0;
-  --el-text-color-regular: #b0b0b0;
-  --el-text-color-secondary: #808080;
-  --el-text-color-placeholder: #606060;
-  --el-text-color-disabled: #404040;
+  --el-text-color-primary: #e8e8e8;
+  --el-text-color-regular: #c0c0c0;
+  --el-text-color-secondary: #949494;
+  --el-text-color-placeholder: #707070;
+  --el-text-color-disabled: #505050;
   --el-border-color-darker: #444;
   --el-border-color-dark: #3a3a3a;
   --el-border-color: #333;
@@ -35,15 +35,15 @@ html.theme-dark {
   --el-mask-color: rgba(0,0,0,0.8);
   --el-box-shadow: 0px 12px 32px 4px rgba(0,0,0,0.4);
   --el-box-shadow-light: 0px 0px 12px rgba(0,0,0,0.5);
-  --app-bg: #0a0a0a;
-  --nav-bg: #141414;
+  --app-bg: #0d0d10;
+  --nav-bg: #16161a;
   --nav-text: #e0e0e0;
-  --nav-border: #2a2a2a;
-  --sidebar-bg: #1a1a2e;
-  --sidebar-text: #bfcbd9;
-  --sidebar-active: #409eff;
-  --content-bg: #141414;
-  --card-shadow: rgba(0,0,0,0.3);
+  --nav-border: #2e2e36;
+  --sidebar-bg: #14141e;
+  --sidebar-text: #c8d0dc;
+  --sidebar-active: #5a9cff;
+  --content-bg: #16161a;
+  --card-shadow: rgba(0,0,0,0.4);
 }
 html.theme-dark .el-card,
 html.theme-dark .el-table,

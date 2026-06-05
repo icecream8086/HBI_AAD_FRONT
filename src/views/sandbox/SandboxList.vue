@@ -67,11 +67,6 @@
             <el-option v-for="t in templates" :key="t.id" :label="t.name" :value="t.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="Provider">
-          <el-select v-model="createForm.provider" :placeholder="$t('sandbox.selectPlatform')" style="width:100%">
-            <el-option v-for="p in platforms" :key="p" :label="p" :value="p" />
-          </el-select>
-        </el-form-item>
         <el-form-item :label="$t('topology.instanceTitle')">
           <el-select v-model="createForm.instanceId" filterable clearable placeholder="Optional" style="width:100%">
             <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
@@ -107,8 +102,10 @@ import { ref, reactive, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { api } from '../../api'
+import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 const loading = ref(false)
 const creating = ref(false)
 const sandboxes = ref<Sandbox[]>([])
@@ -116,7 +113,6 @@ const templates = ref<SandboxTemplate[]>([])
 const instances = ref<ComputeInstance[]>([])
 const nextCursor = ref<string | undefined>(undefined)
 const PAGE_LIMIT = 15
-const platforms = ref<string[]>([])
 const showCreate = ref(false)
 const fileInput = ref<HTMLInputElement>()
 watch(showCreate, (v) => { if (!v) { createForm.templateId = ''; createForm.provider = ''; createForm.instanceId = ''; createForm.containers = [{ name: '', image: '' }] } })
@@ -238,11 +234,8 @@ async function handleCreate() {
 onMounted(async () => {
   await fetchData()
   try { templates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) } catch { /* ignore */ }
-  try {
-    const insts = await api.topology.instances.list()
-    instances.value = insts
-    platforms.value = [...new Set(insts.map(i => i.platform))]
-  } catch { /* ignore */ }
+  await refCache.instances.load()
+  instances.value = refCache.instances.data.value
 })
 </script>
 

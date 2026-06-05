@@ -39,6 +39,21 @@
     </el-card>
     <el-empty v-else-if="!loading" :description="$t('event.cannotFetch')" :image-size="80" />
 
+    <!-- Pending events -->
+    <el-card class="section">
+      <template #header>
+        <span>{{ $t('event.pendingEvents') }}</span>
+        <el-tag v-if="pending.length" size="small" style="margin-left:6px">{{ pending.length }}</el-tag>
+      </template>
+      <div v-if="pending.length" class="pending-list">
+        <div v-for="evt in pending" :key="evt.id" class="pending-item">
+          <code class="pending-id">{{ evt.id.slice(0, 16) }}…</code>
+          <el-tag size="small">{{ evt.type }}</el-tag>
+        </div>
+      </div>
+      <el-empty v-else :description="$t('event.noPending')" :image-size="50" />
+    </el-card>
+
     <!-- Push event -->
     <el-card class="section">
       <template #header>{{ $t('event.pushEvent') }}</template>
@@ -53,26 +68,6 @@
           <el-button type="primary" @click="handleCreate" :loading="creating">{{ $t('event.pushToQueue') }}</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
-
-    <!-- Submitted events (session) -->
-    <el-card class="section">
-      <template #header>{{ $t('event.submittedEvents') }}</template>
-      <el-table v-if="submitted.length" :data="submitted || []">
-        <el-table-column label="ID" width="200" show-overflow-tooltip>
-          <template #default="{ row }"><code>{{ row.id }}</code></template>
-        </el-table-column>
-        <el-table-column :label="$t('event.eventType')" min-width="200">
-          <template #default="{ row }">{{ row.type }}</template>
-        </el-table-column>
-        <el-table-column :label="$t('event.status')" width="120">
-          <template #default="{ row }"><el-tag :type="row.status==='queued'?'warning':'success'" size="small">{{ row.status === 'queued' ? $t('event.queued') : $t('event.processedLabel') }}</el-tag></template>
-        </el-table-column>
-        <el-table-column :label="$t('event.submitTime')" width="170">
-          <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-        </el-table-column>
-      </el-table>
-      <el-empty v-else :description="$t('event.noEvents')" :image-size="60" />
     </el-card>
   </div>
 </template>
@@ -89,7 +84,7 @@ const loading = ref(false)
 const busy = ref(false)
 const creating = ref(false)
 const status = ref<EventLoopStatus | null>(null)
-const submitted = ref<{ id: string; type: string; payload?: string; status: string; createdAt: number }[]>([])
+const pending = ref<{ type: string; id: string }[]>([])
 const cfgForm = reactive({ intervalMs: 5000, batchSize: 0, maxQueueSize: 0 })
 const evtForm = reactive({ type: 'test.ping', payload: '' })
 
@@ -98,13 +93,13 @@ function fmtDur(ms: number) {
   const s = Math.floor(ms / 1000); const m = Math.floor(s / 60); const h = Math.floor(m / 60)
   return t('event.uptimeFormat', { h, m: m % 60, s: s % 60 })
 }
-function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 async function fetchStatus() {
   loading.value = true
   try {
-    const s = await api.events.getStatus()
+    const [s, p] = await Promise.all([api.events.getStatus(), api.events.pending()])
     status.value = s
+    pending.value = p ?? []
     cfgForm.intervalMs = s.config.intervalMs
     cfgForm.batchSize = s.config.batchSize
     cfgForm.maxQueueSize = s.config.maxQueueSize
@@ -143,7 +138,6 @@ async function handleCreate() {
     let payload: unknown = undefined
     try { if (evtForm.payload) payload = JSON.parse(evtForm.payload) } catch { payload = evtForm.payload }
     const res = await api.events.create(evtForm.type, payload)
-    submitted.value.unshift({ id: res.id, type: evtForm.type, payload: evtForm.payload, status: 'queued', createdAt: Date.now() })
     ElMessage.success(t('event.pushSuccess', { id: res.id }))
     await fetchStatus()
   } catch { ElMessage.error(t('event.pushFailed')) }
@@ -158,4 +152,7 @@ onMounted(fetchStatus)
 .config-form { margin-top: 8px; padding: 16px; background: var(--el-bg-color-page); border-radius: 4px; }
 .section { margin-top: 16px; }
 code { font-size: 12px; background: var(--el-bg-color-page); padding: 2px 4px; border-radius: 2px; }
+.pending-list { display: flex; flex-direction: column; gap: 6px; }
+.pending-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--el-bg-color-page); border-radius: 4px; }
+.pending-id { font-size: 11px; color: var(--el-text-color-secondary); }
 </style>

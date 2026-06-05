@@ -33,5 +33,5 @@ const items = computed(() => [
 .nav-card { cursor: pointer; margin-bottom: 16px; }
 .nav-card-content { text-align: center; padding: 16px; }
 .nav-card-title { font-size: 18px; font-weight: bold; }
-.nav-card-desc { font-size: 12px; color: var(--color-text-secondary); margin-top: 8px; }
+.nav-card-desc { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 8px; }
 </style>

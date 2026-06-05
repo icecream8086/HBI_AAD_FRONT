@@ -1,0 +1,101 @@
+/* Frutiger Aero — Windows 7 Aero Glass 风格 */
+html.theme-frutiger {
+  --el-color-primary: #0099cc;
+  --el-color-primary-light-3: #33b3dd;
+  --el-color-primary-light-5: #66ccee;
+  --el-color-primary-light-7: #99ddff;
+  --el-color-primary-light-8: #bbe8ff;
+  --el-color-primary-light-9: #ddf4ff;
+  --el-color-primary-dark-2: #0077a3;
+  --el-color-success: #3ab795;
+  --el-color-warning: #f0a030;
+  --el-color-danger: #e86060;
+  --el-color-info: #7a9aaa;
+  --el-bg-color-page: #e4eef5;
+  --el-bg-color: #f0f6fa;
+  --el-bg-color-overlay: #f8fbfd;
+  --el-text-color-primary: #1a2a38;
+  --el-text-color-regular: #3a5a6a;
+  --el-text-color-secondary: #6a8a9a;
+  --el-text-color-placeholder: #8aaaba;
+  --el-text-color-disabled: #b0c8d0;
+  --el-border-color-darker: #b0c8d4;
+  --el-border-color-dark: #bcd2dc;
+  --el-border-color: #c8dae4;
+  --el-border-color-light: #d4e4ec;
+  --el-border-color-lighter: #e0ecf2;
+  --el-border-color-extra-light: #ecf2f8;
+  --el-fill-color-darker: #c4d8e0;
+  --el-fill-color-dark: #d0e0e8;
+  --el-fill-color: #dce8f0;
+  --el-fill-color-light: #e8f0f5;
+  --el-fill-color-lighter: #eef4f8;
+  --el-fill-color-extra-light: #f4f8fa;
+  --el-fill-color-blank: #f0f6fa;
+  --el-mask-color: rgba(0,80,120,0.12);
+  --el-box-shadow: 0px 4px 20px rgba(0,80,120,0.10), 0px 1px 4px rgba(0,80,120,0.06);
+  --el-box-shadow-light: 0px 2px 12px rgba(0,80,120,0.06);
+  --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
+  --app-bg: linear-gradient(135deg, #d0e4f0 0%, #c8dce8 30%, #d4e4ee 60%, #dce8f0 100%);
+  --nav-bg: rgba(0,136,187,0.55);
+  --nav-text: #ffffff;
+  --nav-border: rgba(255,255,255,0.15);
+  --sidebar-bg: rgba(240,247,250,0.70);
+  --sidebar-text: #1a4a62;
+  --sidebar-active: #0099cc;
+  --content-bg: rgba(240,246,250,0.85);
+  --card-shadow: 0px 4px 16px rgba(0,120,160,0.08), 0px 1px 4px rgba(0,120,160,0.04);
+}
+html.theme-frutiger .el-card {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.40);
+  box-shadow: 0px 4px 16px rgba(0,80,120,0.08);
+}
+html.theme-frutiger .el-table {
+  background: transparent;
+}
+html.theme-frutiger .el-card,
+html.theme-frutiger .el-table,
+html.theme-frutiger .el-table__header-wrapper,
+html.theme-frutiger .el-table__body-wrapper,
+html.theme-frutiger .el-table__inner-wrapper {
+  --el-card-bg-color: transparent;
+  --el-fill-color-blank: transparent;
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: rgba(255,255,255,0.50);
+  --el-table-current-row-bg-color: rgba(0,153,204,0.04);
+  --el-table-row-hover-bg-color: rgba(0,153,204,0.06);
+  --el-table-border-color: rgba(0,120,160,0.10);
+  --el-table-header-text-color: var(--el-text-color-primary);
+  --el-table-text-color: var(--el-text-color-primary);
+}
+/* Nav + Sidebar 毛玻璃 */
+html.theme-frutiger .header {
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid rgba(255,255,255,0.20) !important;
+}
+html.theme-frutiger .sidebar {
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border-right: 1px solid rgba(255,255,255,0.25) !important;
+}
+html.theme-frutiger .sidebar-header {
+  border-bottom: 1px solid rgba(255,255,255,0.20) !important;
+}
+html.theme-frutiger .el-dialog {
+  background: rgba(248,251,253,0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.35);
+}
+html.theme-frutiger .el-dropdown-menu {
+  background: rgba(248,251,253,0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.30);
+}

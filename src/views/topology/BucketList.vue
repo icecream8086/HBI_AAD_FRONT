@@ -14,6 +14,7 @@
       <el-table-column prop="bucketType" :label="$t('topology.bucketType')" width="120">
         <template #default="{ row }"><el-tag size="small">{{ row.bucketType }}</el-tag></template>
       </el-table-column>
+      <el-table-column prop="credentialRef" :label="$t('topology.credentialRef')" width="130" />
       <el-table-column prop="status" :label="$t('topology.status')" width="80">
         <template #default="{ row }">
           <el-tag :type="row.status==='Active'?'success':'info'" size="small">{{ row.status }}</el-tag>
@@ -51,6 +52,11 @@
             <el-option label="minio" value="minio" />
           </el-select>
         </el-form-item>
+        <el-form-item :label="$t('topology.credentialRef')">
+          <el-select v-model="form.credentialRef" filterable clearable placeholder="Optional — inherit from instance" style="width:100%">
+            <el-option v-for="c in creds" :key="c.name" :label="`${c.name} (${c.platform})`" :value="c.name" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
@@ -65,16 +71,19 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
+import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 
 const loading = ref(false)
 const saving = ref(false)
 const buckets = ref<RegionBucket[]>([])
 const instances = ref<ComputeInstance[]>([])
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
+const creds = ref<MaskedCredential[]>([])
 const form = reactive({
-  name: '', bucketType: '' as RegionBucketType | '', instanceId: '',
+  name: '', bucketType: '' as RegionBucketType | '', instanceId: '', credentialRef: '',
 })
 
 const instMap = computed(() => {
@@ -93,13 +102,14 @@ function fmtInstance(id: string) {
 
 function openCreate() {
   dialog.isEdit = false; dialog.editId = ''
-  form.name = ''; form.bucketType = ''; form.instanceId = ''
+  form.name = ''; form.bucketType = ''; form.instanceId = ''; form.credentialRef = ''
   dialog.show = true
 }
 
 function openEdit(row: RegionBucket) {
   dialog.isEdit = true; dialog.editId = row.id
   form.name = row.name; form.bucketType = row.bucketType; form.instanceId = row.instanceId
+  form.credentialRef = row.credentialRef || ''
   dialog.show = true
 }
 
@@ -116,14 +126,19 @@ async function handleSave() {
   saving.value = true
   try {
     if (dialog.isEdit) {
-      await api.topology.buckets.update(dialog.editId, { name: form.name, instanceId: form.instanceId })
+      const upd: Record<string, any> = { name: form.name, instanceId: form.instanceId }
+      if (form.credentialRef) upd.credentialRef = form.credentialRef
+      else upd.credentialRef = null
+      await api.topology.buckets.update(dialog.editId, upd)
       ElMessage.success(t('topology.updateSuccess'))
     } else {
-      await api.topology.buckets.create({
+      const body: Record<string, any> = {
         name: form.name,
         bucketType: form.bucketType as RegionBucketType,
         instanceId: form.instanceId,
-      } as CreateBucketInput)
+      }
+      if (form.credentialRef) body.credentialRef = form.credentialRef
+      await api.topology.buckets.create(body as CreateBucketInput)
       ElMessage.success(t('topology.createSuccess'))
     }
     dialog.show = false; await fetchData()
@@ -141,7 +156,9 @@ async function handleDelete(id: string) {
 
 onMounted(async () => {
   await fetchData()
-  try { instances.value = await api.topology.instances.list() } catch { /* ignore */ }
+  await Promise.all([refCache.instances.load(), refCache.credentials.load()])
+  instances.value = refCache.instances.data.value
+  creds.value = refCache.credentials.data.value as MaskedCredential[]
 })
 </script>
 

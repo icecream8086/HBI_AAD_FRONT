@@ -1,4 +1,27 @@
 type TemplateVisibility = 'public' | 'private'
+type ApiVersion = 'hbi-aad/v1' | 'hbi-aad/v2'
+type TemplateKind = 'Container' | 'ContainerGroup'
+
+interface PodResources {
+  cpu: string
+  memory: string
+}
+
+interface ServiceDef {
+  image: string
+  command?: string[]
+  ports?: { containerPort: number; protocol: string }[]
+  resources: PodResources
+  dependsOn?: string[]
+  env?: { name: string; value?: string }[]
+}
+
+interface PodSpec {
+  name: string
+  region: string
+  resources: PodResources
+  services: Record<string, ServiceDef>
+}
 
 interface SandboxTemplate {
   id: string
@@ -10,6 +33,9 @@ interface SandboxTemplate {
   creatorId?: string
   visibility?: TemplateVisibility
   userGroupIds?: string[]
+  apiVersion?: ApiVersion
+  kind?: TemplateKind
+  podSpec?: PodSpec
   singleton?: boolean
   instanceLimit?: { type: 'fixed' | 'perUser' | 'perSystem'; max: number }
   resourceBinding?: { domain?: string; port?: number }
@@ -38,7 +64,7 @@ interface ContainerDef {
   ports?: { containerPort: number; protocol?: string }[]
   resources?: {
     requests?: { cpu?: number; memory?: number }
-    limits?: { cpu?: number; memory?: number; gpu?: number }
+    limits?: { cpu?: number; memory?: number; gpu?: number; gpuType?: string }
   }
 }
 
@@ -58,6 +84,7 @@ interface TemplateNetworkSpec {
   mode?: 'public' | 'private' | 'vpc'
   publicIp?: { allocate?: boolean; bandwidth?: number }
   vpc?: { id?: string; instanceId?: string; subnetIds?: string[]; securityGroupId?: string }
+  ipAddress?: string
 }
 
 interface TemplateExtensions {
@@ -84,6 +111,9 @@ interface TemplateStorage {
 interface CreateTemplateRequest {
   name: string
   description?: string
+  apiVersion?: ApiVersion
+  kind?: TemplateKind
+  podSpec?: PodSpec
   container?: ContainerSpec
   healthChecks?: HealthCheckDef[]
   network?: TemplateNetworkSpec

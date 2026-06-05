@@ -14,8 +14,10 @@
       <el-table-column prop="region" :label="$t('topology.region')" width="130" />
       <el-table-column prop="zone" :label="$t('topology.zone')" width="110" />
       <el-table-column prop="endpoint" :label="$t('topology.endpoint')" min-width="200" show-overflow-tooltip />
-      <el-table-column :label="$t('topology.labels')" min-width="140" show-overflow-tooltip>
-        <template #default="{ row }">{{ fmtLabels(row.labels) }}</template>
+      <el-table-column :label="$t('topology.labels')" min-width="200" show-overflow-tooltip>
+        <template #default="{ row }">
+          <el-tag v-for="(v, k) in row.labels" :key="k" size="small" style="margin:1px">{{ k }}={{ v }}</el-tag>
+        </template>
       </el-table-column>
       <el-table-column :label="$t('topology.capabilities')" width="100">
         <template #default="{ row }">
@@ -70,8 +72,14 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('topology.labels')">
-          <el-input v-model="form.labelsStr" type="textarea" :rows="3" placeholder='{"instanceTypes":"ecs.g6.large,ecs.g7.large","networkDomain":"vlan-100"}' />
-          <div class="hint">instanceTypes / networkDomain / faultDomain 等扩展信息放在 labels 中</div>
+          <div v-for="(pair, i) in labelsEntries" :key="i" class="label-row">
+            <el-input v-model="pair.key" placeholder="Key" size="small" style="width:160px" />
+            <span style="margin:0 4px">=</span>
+            <el-input v-model="pair.value" placeholder="Value" size="small" style="width:200px" />
+            <el-button type="danger" text size="small" @click="removeLabel(i)" :disabled="labelsEntries.length<=1">✕</el-button>
+          </div>
+          <el-button text size="small" @click="addLabel" class="add-label-btn">+ Add label</el-button>
+          <div class="hint">扩展信息，如 networkDomain / instanceTypes / faultDomain</div>
         </el-form-item>
         <el-form-item :label="$t('topology.capabilities')">
           <el-checkbox v-model="form.capContainer">Container</el-checkbox>
@@ -88,12 +96,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
+import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -104,19 +114,26 @@ const loadingRegions = ref(false)
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 const form = reactive({
   name: '', platform: '' as Platform | '', region: '', zone: '', endpoint: '',
-  credentialRef: '', labelsStr: '',
+  credentialRef: '',
   capContainer: true, capImage: true, capNetwork: false,
 })
+const labelsEntries = reactive<{ key: string; value: string }[]>([])
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
-function fmtLabels(labels?: Record<string, string>): string {
-  if (!labels) return '-'
-  return Object.entries(labels).map(([k, v]) => `${k}=${v}`).join('; ')
-}
+
+function addLabel(key = '', value = '') { labelsEntries.push({ key, value }) }
+function removeLabel(i: number) { labelsEntries.splice(i, 1) }
+
 function buildLabels(): Record<string, string> | undefined {
-  if (!form.labelsStr) return undefined
-  try { return JSON.parse(form.labelsStr) } catch { return undefined }
+  const entries = labelsEntries.filter(e => e.key.trim())
+  return entries.length ? Object.fromEntries(entries.map(e => [e.key.trim(), e.value])) : undefined
 }
+
+watch(() => form.platform, (p) => {
+  if (p === 'podman' && !labelsEntries.some(e => e.key === 'networkDomain')) {
+    addLabel('networkDomain', 'podman-default')
+  }
+})
 
 function buildCapabilities() {
   const caps: InstanceCapabilities = {}
@@ -138,11 +155,17 @@ async function onPlatformChange() {
   finally { loadingRegions.value = false }
 }
 
+function resetLabels() {
+  labelsEntries.length = 0
+  addLabel()
+}
+
 function openCreate() {
   dialog.isEdit = false; dialog.editId = ''
   form.name = ''; form.platform = ''; form.region = ''; form.zone = ''; form.endpoint = ''
-  form.credentialRef = ''; form.labelsStr = ''
+  form.credentialRef = ''
   form.capContainer = true; form.capImage = true; form.capNetwork = false
+  resetLabels()
   dialog.show = true
 }
 
@@ -150,10 +173,15 @@ function openEdit(row: ComputeInstance) {
   dialog.isEdit = true; dialog.editId = row.id
   form.name = row.name; form.platform = row.platform; form.region = row.region; form.zone = row.zone
   form.endpoint = row.endpoint; form.credentialRef = row.credentialRef || ''
-  form.labelsStr = row.labels ? JSON.stringify(row.labels, null, 2) : ''
   form.capContainer = row.capabilities?.container ?? true
   form.capImage = row.capabilities?.image ?? true
   form.capNetwork = row.capabilities?.network ?? false
+  labelsEntries.length = 0
+  if (row.labels) {
+    Object.entries(row.labels).forEach(([k, v]) => addLabel(k, v))
+  } else {
+    addLabel()
+  }
   dialog.show = true
 }
 
@@ -199,7 +227,8 @@ async function handleDelete(id: string) {
 
 onMounted(async () => {
   await fetchData()
-  try { creds.value = await api.topology.credentials.list() } catch { /* ignore */ }
+  await refCache.credentials.load()
+  creds.value = refCache.credentials.data.value as MaskedCredential[]
 })
 </script>
 
@@ -207,4 +236,6 @@ onMounted(async () => {
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; }
+.label-row { display: flex; align-items: center; margin-bottom: 6px; gap: 0; }
+.add-label-btn { margin-top: 2px; }
 </style>

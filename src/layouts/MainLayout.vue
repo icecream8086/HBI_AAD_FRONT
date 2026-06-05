@@ -19,10 +19,14 @@
           <el-icon><Odometer /></el-icon>
           <template #title>{{ $t('menu.dashboard') }}</template>
         </el-menu-item>
-        <el-menu-item index="/sandboxes">
-          <el-icon><Monitor /></el-icon>
-          <template #title>{{ $t('menu.sandboxes') }}</template>
-        </el-menu-item>
+        <el-sub-menu index="sandbox-group">
+          <template #title>
+            <el-icon><Monitor /></el-icon>
+            <span>{{ $t('menu.sandboxes') }}</span>
+          </template>
+          <el-menu-item index="/sandboxes">{{ $t('menu.sandboxList') }}</el-menu-item>
+          <el-menu-item index="/sandboxes/pods">{{ $t('menu.sandboxPods') }}</el-menu-item>
+        </el-sub-menu>
         <el-menu-item index="/templates">
           <el-icon><Document /></el-icon>
           <template #title>{{ $t('menu.templates') }}</template>
@@ -173,7 +177,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
 import { useLocale, LANG_OPTIONS } from '../composables/useLocale'
-import { api } from '../api'
+import { API_BASE, api } from '../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -184,17 +188,22 @@ const { t } = useI18n()
 
 const user = computed(() => store.state.auth.currentUser)
 const isCollapsed = computed(() => store.state.app.sidebarCollapsed)
-const API_BASE = 'http://localhost:3000'
 const avatarBlob = ref('')
+let avatarReq = 0
 async function loadAvatar() {
   if (!user.value?.id) { avatarBlob.value = ''; return }
-  if (avatarBlob.value) URL.revokeObjectURL(avatarBlob.value)
+  const reqId = ++avatarReq
   try {
     const token = localStorage.getItem('access_token')
     const res = await fetch(`${API_BASE}/api/users/${user.value.id}/avatar`, { headers: { 'Authorization': `Bearer ${token}` } })
-    if (!res.ok) { avatarBlob.value = ''; return }
-    avatarBlob.value = URL.createObjectURL(await res.blob())
-  } catch { avatarBlob.value = '' }
+    if (!res.ok) { if (reqId === avatarReq) avatarBlob.value = ''; return }
+    const blob = await res.blob()
+    if (reqId !== avatarReq) return
+    const url = URL.createObjectURL(blob)
+    const prev = avatarBlob.value
+    avatarBlob.value = url
+    if (prev) URL.revokeObjectURL(prev)
+  } catch { if (reqId === avatarReq) avatarBlob.value = '' }
 }
 watch([user], loadAvatar, { immediate: true })
 
@@ -294,7 +303,7 @@ onMounted(async () => {
 <style scoped>
 .main-layout { height: 100vh; }
 .sidebar {
-  background-color: var(--sidebar-bg, var(--el-bg-color));
+  background: var(--sidebar-bg, var(--el-bg-color));
   border-right: 1px solid var(--nav-border, var(--el-border-color-light));
   overflow-y: auto;
   transition: width 0.3s;
@@ -323,14 +332,14 @@ onMounted(async () => {
 .header-left { display: flex; align-items: center; gap: 12px; }
 .header-right { display: flex; align-items: center; gap: 16px; }
 .collapse-btn { cursor: pointer; }
-.user-trigger { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.user-trigger { cursor: pointer; display: flex; align-items: center; gap: 4px; color: var(--nav-text, var(--el-text-color-primary)); }
 .lang-switch { cursor: pointer; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px; user-select: none; }
 .lang-switch:hover { background: var(--el-fill-color-light); }
 .header :deep(.el-breadcrumb__inner) { color: var(--nav-text, var(--el-text-color-regular)) !important; }
 .header :deep(.el-breadcrumb__separator) { color: var(--nav-text, var(--el-text-color-placeholder)) !important; }
 .username { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .main-content {
-  background-color: var(--app-bg, var(--el-bg-color-page));
+  background: var(--app-bg, var(--el-bg-color-page));
   overflow-y: auto;
 }
 .sudo-btn { margin-right: 4px; }

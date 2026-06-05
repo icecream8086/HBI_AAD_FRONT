@@ -3,80 +3,81 @@
     <div class="page-head">
       <h2>{{ $t('image.title') }}</h2>
       <div class="page-actions">
-        <el-select v-model="platform" :placeholder="$t('image.allPlatforms')" clearable style="width:150px;margin-right:8px" @change="page=1;fetchData()">
-          <el-option v-for="p in platforms" :key="p.name" :label="p.name" :value="p.name" />
-        </el-select>
         <el-button type="primary" @click="showPull = true">{{ $t('image.pullImage') }}</el-button>
       </div>
     </div>
-    <el-table :data="images || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column :label="$t('image.imageCol')" min-width="300" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.tags?.[0] || row.id }}</template>
+    <el-table :data="repos" v-loading="loading" stripe :empty-text="$t('table.empty')">
+      <el-table-column prop="name" :label="$t('table.name')" min-width="140" />
+      <el-table-column prop="image" :label="$t('image.imageCol')" min-width="240" show-overflow-tooltip />
+      <el-table-column :label="$t('topology.instanceTitle')" min-width="140">
+        <template #default="{ row }">{{ instanceName(row.instanceId) }}</template>
       </el-table-column>
-      <el-table-column :label="$t('image.otherTags')" min-width="200" show-overflow-tooltip>
+      <el-table-column :label="$t('table.status')" width="100">
         <template #default="{ row }">
-          <el-tag v-for="t in row.tags?.slice(1)" :key="t" size="small" style="margin-right:4px">{{ t }}</el-tag>
-          <span v-if="!row.tags?.length">-</span>
+          <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.size')" width="100">
-        <template #default="{ row }">{{ fmtSize(row.size) }}</template>
+      <el-table-column :label="$t('table.createdAt')" width="150">
+        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column :label="$t('table.arch')" width="80">
-        <template #default="{ row }">{{ row.architecture || '-' }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="170">
-        <template #default="{ row }">{{ row.created ? new Date(row.created).toLocaleString() : '-' }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column :label="$t('table.actions')" width="240" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" @click="inspect(row.id)">{{ $t('table.detail') }}</el-button>
+          <el-button size="small" @click="handlePull(row)" :loading="pullingId === row.id" :disabled="row.status==='pulling'" v-if="!taskMap[row.id]">{{ $t('image.pull') }}</el-button>
+          <el-button size="small" @click="checkTask(row)" v-if="taskMap[row.id]" :loading="checkingId === row.id">{{ $t('image.checkStatus') }}</el-button>
+          <el-button size="small" @click="inspect(row)">{{ $t('table.detail') }}</el-button>
           <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination
-      v-if="total > pageSize"
-      v-model:current-page="page"
-      v-model:page-size="pageSize"
-      :total="total"
-      :page-sizes="[10, 15, 30, 50]"
-      layout="total, sizes, prev, pager, next"
-      @size-change="fetchData"
-      @current-change="fetchData"
-    />
 
-    <!-- Pull dialog -->
-    <el-dialog v-model="showPull" :title="$t('image.pullImage')" width="500px">
-      <el-form @submit.prevent="handlePull">
-        <el-form-item :label="$t('image.imageCol')">
-          <el-input v-model="pullImage" :placeholder="$t('image.pullPlaceholder')" @keyup.enter="handlePull" />
+    <!-- Create / Pull dialog -->
+    <el-dialog v-model="showPull" :title="$t('image.pullImage')" width="520px" destroy-on-close>
+      <el-form @submit.prevent="handleCreate">
+        <el-form-item :label="$t('table.name')">
+          <el-input v-model="formRepoName" placeholder="my-nginx" />
         </el-form-item>
-        <el-form-item :label="$t('topology.instanceTitle')">
-          <el-select v-model="pullClusterId" filterable clearable placeholder="Optional" style="width:100%">
-            <el-option v-for="inst in pullInstances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+        <el-form-item :label="$t('topology.instanceTitle')" required>
+          <el-select v-model="formInstanceId" filterable style="width:100%">
+            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
           </el-select>
         </el-form-item>
-        <p class="hint">{{ $t('image.pullHint') }}</p>
+        <el-form-item :label="$t('image.imageCol')" required>
+          <el-input v-model="formImage" :placeholder="$t('image.pullPlaceholder')" @keyup.enter="handleCreate" />
+        </el-form-item>
+        <el-form-item :label="$t('topology.credentialRef')">
+          <el-select v-model="formCredentialRef" filterable clearable placeholder="Optional — 选择已有凭证" style="width:100%">
+            <el-option v-for="c in pullCreds" :key="c.name" :label="`${c.name} (${c.platform})`" :value="c.name" />
+          </el-select>
+          <div class="hint inline-cred-toggle" @click="showInlineCred = !showInlineCred">{{ showInlineCred ? '−' : '+' }} {{ $t('image.inlineCred') }}</div>
+          <template v-if="showInlineCred">
+            <el-input v-model="formRegistryServer" placeholder="registry.mycompany.com" size="small" style="width:100%;margin-bottom:4px;margin-top:4px" />
+            <el-row :gutter="8">
+              <el-col :span="12"><el-input v-model="formRegistryUser" placeholder="Username" size="small" style="width:100%" /></el-col>
+              <el-col :span="12"><el-input v-model="formRegistryPass" placeholder="Password" size="small" type="password" style="width:100%" /></el-col>
+            </el-row>
+          </template>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showPull=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="pulling" @click="handlePull">{{ $t('image.pull') }}</el-button>
+        <el-button type="primary" :loading="creating" @click="handleCreate">{{ $t('image.pull') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- Inspect dialog -->
     <el-dialog v-model="showDetail" :title="$t('image.imageDetail')" width="550px">
       <el-descriptions v-if="detail" :column="1" border>
+        <el-descriptions-item :label="$t('table.name')">{{ detail.name }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('image.imageCol')"><code>{{ detail.image }}</code></el-descriptions-item>
+        <el-descriptions-item :label="$t('topology.credentialRef')" v-if="detail.credentialRef">{{ detail.credentialRef }}</el-descriptions-item>
         <el-descriptions-item label="ID"><code>{{ detail.id }}</code></el-descriptions-item>
-        <el-descriptions-item :label="$t('image.tags')">
-          <el-tag v-for="t in detail.tags" :key="t" size="small" style="margin-right:4px">{{ t }}</el-tag>
+        <el-descriptions-item :label="$t('topology.instanceTitle')">{{ instanceName(detail.instanceId) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('table.status')">
+          <el-tag :type="statusType(detail.status)" size="small">{{ detail.status }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('table.size')">{{ fmtSize(detail.size) }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('table.arch')">{{ detail.architecture || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('image.os')">{{ detail.os || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('image.layers')">{{ detail.layers ?? '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('table.createdAt')">{{ detail.created ? new Date(detail.created).toLocaleString() : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Message" v-if="detail.message">{{ detail.message }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('table.createdAt')">{{ fmt(detail.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('table.updatedAt')">{{ fmt(detail.updatedAt) }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </div>
@@ -87,77 +88,135 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../api'
+import { useReferenceCache } from '../composables/useReferenceCache'
 
 const { t } = useI18n()
+const refCache = useReferenceCache()
 
 const loading = ref(false)
-const pulling = ref(false)
-const images = ref<ImageInfo[]>([])
-const platforms = ref<{ name: string; containerAvailable: boolean }[]>([])
-const page = ref(1)
-const pageSize = ref(15)
-const total = ref(0)
-const platform = ref('')
+const creating = ref(false)
+const repos = ref<ImageRepository[]>([])
+const instances = ref<ComputeInstance[]>([])
+const pullingId = ref('')
+const taskMap = ref<Record<string, string>>({})
+const checkingId = ref('')
 const showPull = ref(false)
-const pullImage = ref('')
-const pullClusterId = ref('')
-const pullInstances = ref<ComputeInstance[]>([])
 const showDetail = ref(false)
-const detail = ref<ImageInfo | null>(null)
+const detail = ref<ImageRepository | null>(null)
+const formRepoName = ref('')
+const formInstanceId = ref('')
+const formImage = ref('')
+const formCredentialRef = ref('')
+const formRegistryServer = ref('')
+const formRegistryUser = ref('')
+const formRegistryPass = ref('')
+const showInlineCred = ref(false)
 
-function fmtSize(bytes?: number) {
-  if (!bytes) return '-'
-  const units = ['B', 'KB', 'MB', 'GB']; let i = 0; let s = bytes
-  while (s >= 1024 && i < units.length - 1) { s /= 1024; i++ }
-  return `${s.toFixed(1)} ${units[i]}`
+const instanceMap = ref<Record<string, string>>({})
+const pullCreds = ref<MaskedCredential[]>([])
+
+function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
+function instanceName(id: string) { return instanceMap.value[id] || id.slice(0, 8) }
+
+function statusType(s: string): 'primary' | 'warning' | 'success' | 'danger' {
+  if (s === 'pending') return 'primary'
+  if (s === 'pulling') return 'warning'
+  if (s === 'ready') return 'success'
+  return 'danger'
 }
 
 async function fetchData() {
   loading.value = true
   try {
-    const opts: any = { params: { page: page.value, limit: pageSize.value } }
-    if (platform.value) opts.params.platform = platform.value
-    const pageRes = await api.extractPage<ImageInfo>(api.images.apiImagesGet(opts))
-    images.value = pageRes.items
-    total.value = pageRes.total
+    repos.value = await api.topology.images.list()
   } catch { ElMessage.error(t('image.fetchFailed')) }
   finally { loading.value = false }
 }
 
-async function inspect(id: string) {
+async function handleCreate() {
+  if (!formInstanceId.value) { ElMessage.warning(t('topology.instanceTitle') + ' is required'); return }
+  if (!formImage.value) { ElMessage.warning(t('image.imageRequired')); return }
+  const name = formRepoName.value.trim() || formImage.value.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'image-repo'
+  creating.value = true
   try {
-    detail.value = await api.extract<ImageInfo>(api.images.apiImagesIdGet(id))
-    showDetail.value = true
-  } catch { ElMessage.error(t('image.fetchDetailFailed')) }
-}
-
-async function handlePull() {
-  if (!pullImage.value) { ElMessage.warning(t('image.imageRequired')); return }
-  pulling.value = true
-  try {
-    await api.images.pull({ image: pullImage.value, instanceId: pullClusterId.value || undefined })
+    const body: CreateImageInput = {
+      name,
+      instanceId: formInstanceId.value,
+      image: formImage.value.trim(),
+    }
+    if (formCredentialRef.value) {
+      body.credentialRef = formCredentialRef.value
+    } else if (formRegistryServer.value || formRegistryUser.value) {
+      body.registryCredential = {
+        server: formRegistryServer.value,
+        userName: formRegistryUser.value,
+        password: formRegistryPass.value,
+      }
+    }
+    const repo = await api.topology.images.create(body)
+    const { taskId } = await api.topology.images.pull(repo.id)
     ElMessage.success(t('image.pullSuccess'))
-    showPull.value = false; pullImage.value = ''; pullClusterId.value = ''
+    showPull.value = false
+    formRepoName.value = ''; formInstanceId.value = ''; formImage.value = ''
+    formCredentialRef.value = ''; showInlineCred.value = false
+    formRegistryServer.value = ''; formRegistryUser.value = ''; formRegistryPass.value = ''
+    taskMap.value[repo.id] = taskId
+    taskMap.value = { ...taskMap.value }
     await fetchData()
   } catch { ElMessage.error(t('image.pullFailed')) }
-  finally { pulling.value = false }
+  finally { creating.value = false }
+}
+
+async function handlePull(repo: ImageRepository) {
+  pullingId.value = repo.id
+  try {
+    const { taskId } = await api.topology.images.pull(repo.id)
+    taskMap.value[repo.id] = taskId
+    taskMap.value = { ...taskMap.value }
+  } catch { ElMessage.error(t('image.pullFailed')) }
+  finally { pullingId.value = '' }
+}
+
+async function checkTask(repo: ImageRepository) {
+  const taskId = taskMap.value[repo.id]
+  if (!taskId) return
+  checkingId.value = repo.id
+  try {
+    const task = await api.topology.pullTasks.get(taskId)
+    if (task.status === 'completed') {
+      delete taskMap.value[repo.id]
+      taskMap.value = { ...taskMap.value }
+      ElMessage.success(t('image.pullSuccess'))
+      await fetchData()
+    } else if (task.status === 'failed') {
+      delete taskMap.value[repo.id]
+      taskMap.value = { ...taskMap.value }
+      ElMessage.error(task.error || t('image.pullFailed'))
+      await fetchData()
+    }
+    // task.status === 'pulling' → 保留按钮, 用户下次再查
+  } catch { ElMessage.error(t('image.fetchDetailFailed')) }
+  finally { checkingId.value = '' }
 }
 
 async function handleDelete(id: string) {
   try {
     await ElMessageBox.confirm(t('image.deleteConfirm'), t('table.confirm'))
-    await api.images.apiImagesDelete(id)
+    await api.topology.images.delete(id)
     ElMessage.success(t('image.deleteSuccess')); await fetchData()
   } catch { /* ignore */ }
 }
 
+function inspect(repo: ImageRepository) {
+  detail.value = repo
+  showDetail.value = true
+}
+
 onMounted(async () => {
-  try {
-    const insts = await api.topology.instances.list()
-    pullInstances.value = insts
-    const names = [...new Set(insts.map(i => i.platform))]
-    platforms.value = names.map(n => ({ name: n, containerAvailable: true }))
-  } catch { /* ignore */ }
+  await Promise.all([refCache.instances.load(), refCache.credentials.load()])
+  instances.value = refCache.instances.data.value
+  instanceMap.value = Object.fromEntries(refCache.instances.data.value.map(i => [i.id, i.name]))
+  pullCreds.value = refCache.credentials.data.value as MaskedCredential[]
   await fetchData()
 })
 </script>
@@ -165,6 +224,8 @@ onMounted(async () => {
 <style scoped>
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .page-actions { display: flex; align-items: center; }
-.hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: -12px; }
+.hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; }
+.inline-cred-toggle { cursor: pointer; user-select: none; }
+.inline-cred-toggle:hover { color: var(--el-color-primary); }
 code { font-size: 12px; background: var(--el-bg-color-page); padding: 2px 6px; border-radius: 3px; }
 </style>

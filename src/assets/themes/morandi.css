@@ -14,11 +14,11 @@ html.theme-morandi {
   --el-bg-color-page: #e8e4e0;
   --el-bg-color: #f2efed;
   --el-bg-color-overlay: #f5f2f0;
-  --el-text-color-primary: #5c5350;
-  --el-text-color-regular: #6b6260;
-  --el-text-color-secondary: #8a8280;
-  --el-text-color-placeholder: #a09890;
-  --el-text-color-disabled: #c0b8b0;
+  --el-text-color-primary: #4a4340;
+  --el-text-color-regular: #5e5654;
+  --el-text-color-secondary: #7a726e;
+  --el-text-color-placeholder: #9a928e;
+  --el-text-color-disabled: #bab2ae;
   --el-border-color-darker: #c5bfb8;
   --el-border-color-dark: #cec8c0;
   --el-border-color: #d6d0ca;
@@ -32,14 +32,14 @@ html.theme-morandi {
   --el-fill-color-lighter: #f5f0ec;
   --el-fill-color-extra-light: #f8f5f2;
   --el-fill-color-blank: #f2efed;
-  --app-bg: #e8e4e0;
-  --nav-bg: #d5cdc5;
-  --nav-text: #5c5350;
-  --nav-border: #c5bbb0;
-  --sidebar-bg: #8a7e78;
-  --sidebar-text: #f0ebe7;
-  --sidebar-active: #d5cdc5;
-  --content-bg: #f5f2f0;
+  --app-bg: #e4e0dc;
+  --nav-bg: #d0c8c0;
+  --nav-text: #4a4340;
+  --nav-border: #beb4ac;
+  --sidebar-bg: #7a706a;
+  --sidebar-text: #e8e2de;
+  --sidebar-active: #c5bbb5;
+  --content-bg: #f2efed;
   --card-shadow: rgba(90,80,70,0.12);
 }
 html.theme-morandi .el-card,

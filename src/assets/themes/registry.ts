@@ -12,6 +12,7 @@ export const THEMES: ThemeDef[] = [
   { id: 'ocean',    name: '海洋',   icon: 'Cloudy' },
   { id: 'sakura',   name: '樱花',   icon: 'ColdDrink' },
   { id: 'gnu',      name: 'GNU',     icon: 'Cpu' },
+  { id: 'frutiger', name: 'Frutiger', icon: 'Cherry' },
 ]
 
 export const DEFAULT_THEME = 'light'

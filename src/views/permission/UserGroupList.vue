@@ -60,7 +60,7 @@ import { useResolver } from '../../composables/useResolver'
 import { api } from '../../api'
 
 const { t } = useI18n()
-const { load: loadRefs, userName, groupName, permGroupName } = useResolver()
+const { load: loadRefs, userName, groupName, permGroupName, users: refUsers, permGroups } = useResolver()
 const loading = ref(false); const saving = ref(false)
 const items = ref<UserGroup[]>([]); const users = ref<User[]>([]); const page = ref(1); const limit = ref(15); const total = ref(0)
 const allPermGroups = ref<PermissionGroup[]>([])
@@ -101,8 +101,8 @@ async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('pe
 onMounted(async () => {
   await loadRefs()
   await fetchData()
-  try { users.value = await api.extractArray<User>(api.users.apiUsersGet()) } catch {/* ignore */}
-  try { allPermGroups.value = await api.extractItems<PermissionGroup>(api.permissions.apiPermissionsGroupsGet()) } catch {/* ignore */}
+  users.value = refUsers.value
+  allPermGroups.value = permGroups.value
 })
 </script>
 

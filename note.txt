@@ -1,0 +1,166 @@
+TS 代码分析工具与优化方案 — 前端适用性评估
+=============================================
+
+项目概况：Vue 3 + TypeScript SPA，约 9500 行源码，27 个页面，
+0 个复用组件，后端是独立服务 (localhost:3000)。
+
+一、静态分析工具 — ✅ 全部适用于前端
+------------------------------------
+
+| 工具 | 前端价值 |
+|---|---|
+| dependency-cruiser | 分析 Vue 组件 / SDK 模块依赖关系，生成 SVG 依赖图 |
+| Madge | 快速循环依赖检测 |
+| TypeScript Compiler API / ts-morph | 分析组件间调用关系 |
+| Knip | 检测未使用的导出、文件、依赖，对前端特别有用 |
+
+二、运行时分析工具 — ❌ 不适用（Node.js 后端专用）
+------------------------------------------------
+
+应替换为前端专用工具：
+  - Chrome DevTools Performance tab — 录制运行时性能
+  - Lighthouse — 加载性能评分
+  - Vue DevTools — 组件渲染性能、re-render 追踪
+
+三、调用图 + 容斥计数 — ⚠️ 前端价值有限
+----------------------------------------
+
+前端瓶颈通常不在函数调用路径上，因为：
+  - 组件树是事件驱动的，不像后端有固定请求 pipeline
+  - 前端性能大头在：不必要的 re-render、包体积、API 请求瀑布
+
+四、CPU 热点预估（原 3.3 节）— ❌ 完全不适用
+---------------------------------------------
+
+原文档列出的 app.ts（authz 中间件）、permission/service.ts、
+event-bus/loop.ts、file-kv.ts 在该前端仓库中不存在，属于后端代码。
+
+五、前端版优化建议 — 已执行
+----------------------------
+
+已完成的实验和分析：
+
+  1. Knip 扫一遍 — ✅ 已执行
+     未使用文件: src/api/generated/index.ts（已删除）
+     未使用 devDeps: 5 个（prettier, sass 等，可清理）
+     未使用导出: 33 个（自动生成 SDK 的辅助类，无害）
+     未使用类型: 8 个（自动生成，无害）
+
+  2. Madge 循环依赖检测 — ✅ 已执行
+     结果: 无循环依赖，结构良好
+
+  3. dependency-cruiser 依赖图 — ✅ 已执行
+     生成 deps.svg（112KB），可浏览器打开查看
+
+  4. API 重复请求分析 — ✅ 已执行
+     发现: instances.list() 被 9 个页面重复请求；
+            users.apiUsersGet() 在同页面内重复请求；
+            UserDetail 的 handleSaveGroups N+1 循环
+
+已应用的优化：
+
+  1. N+1 修复 — UserDetail.vue
+     串行 for 循环 PUT → Promise.all 并行
+
+  2. 新增 useReferenceCache 共享缓存 composable
+     src/composables/useReferenceCache.ts
+     缓存 instances / credentials / images / users / securityGroups / subnets
+     模块级单例，页面间跳转不重复请求
+
+  3. 去掉重复请求的视图（共 10 个）：
+     SubnetList / SecurityGroupList / CredentialList / BucketList /
+     InstanceList / ImageList / SandboxList / TemplateDetail /
+     UserGroupList / PermGroupList
+
+  4. 清理
+     删除 src/api/generated/index.ts
+
+  测试: 39 个单元测试全部通过，0 TypeScript 报错
+
+六、视觉优化 — 已执行
+----------------------
+
+  发现的 CSS bug：
+    Dashboard.vue:119 — var(--color-text-secondary) → var(--el-text-color-secondary)
+    Dashboard.vue:125 — var(--color-text-secondary) → var(--el-text-color-secondary)
+    PermissionList.vue:36 — var(--color-text-secondary) → var(--el-text-color-secondary)
+    这三个变量不存在，导致文本颜色异常。已修复。
+
+  设计哲学：
+    design-philosophy.md — "Systematic Precision"
+    为基础设施管理界面定义的设计美学：精确、冷静、信息层级清晰
+
+  视觉概念画板：
+    systematic-precision.png — 1200×1600 控制面板概念图
+    包含：网格背景 / 拓扑图 / 数据面板 / 架构图 / 数据表
+    可作为前端 UI 视觉方向的参考
+
+  新增 8 号主题 Frutiger Aero：
+    src/assets/themes/frutiger.css
+    风格: 玻璃质感 / 渐变导航栏 / 高对比度青蓝主色
+    特征: 导航渐变 (#0088bb → #00aacc → #22bba8)
+          圆角卡片 (border-radius: 8px)
+          青蓝语义色系 + 蓝绿背景层
+          侧栏白底蓝字，导航白字
+
+  7 组颜色主题优化：
+
+    Light:
+      - 背景 #f5f7fa → #f0f2f5 (更柔和)
+      - 侧栏 #304156 → #1e2a3a (更深，提高对比度)
+      - 侧栏文字 #bfcbd9 → #d0d9e6 (更亮)
+      - 侧栏激活色 #409eff → #5a9cff (更醒目)
+
+    Dark:
+      - 文字主色 #e0e0e0 → #e8e8e8 (更亮)
+      - 文字次要 #808080 → #949494 (提高可读性)
+      - 页面背景 #0a0a0a → #0d0d10 (微调)
+      - 导航边框 #2a2a2a → #2e2e36
+      - 侧栏背景 #1a1a2e → #14141e
+
+    Morandi:
+      - 文字主色 #5c5350 → #4a4340 (加深)
+      - 文字次要 #8a8280 → #7a726e
+      - 侧栏背景 #8a7e78 → #7a706a
+      - 侧栏文字 #f0ebe7 → #e8e2de
+      - 导航背景 #d5cdc5 → #d0c8c0
+
+    Forest:
+      - 文字主色 #1a2e1e → #142818 (加深)
+      - 导航背景 #3a5a3e → #2e4a32 (更深沉)
+      - 导航边框 #2a4a2e → #1e3822 (更清晰)
+      - 侧栏背景 #2a4a2e → #223e26
+      - 侧栏激活色 #7abc6a → #6aac5a
+
+    Ocean:
+      - 文字主色 #1a2e3e → #122432
+      - 导航背景 #2a5a7e → #1e4e72
+      - 导航边框 #1a4a6e → #123e5e
+      - 侧栏背景 #1a4a6e → #163e5e
+      - 侧栏激活色 #6ab0e0 → #5ea8dc
+
+    Sakura:
+      - 文字主色 #3a2a30 → #2e2026 (加深)
+      - 导航背景 #c48aa8 → #b07a98 (更沉稳)
+      - 导航边框 #b07a98 → #9a6a88
+      - 侧栏背景 #b07a98 → #9a6a88
+      - 侧栏激活色 #e8b0c8 → #d4a8c0
+
+    GNU:
+      - 文字主色 #ccffcc → #d0ffd0 (更亮)
+      - 文字次要 #6a8a6a → #78a078
+      - 边框系列整体调亮绿
+      - 填充系列整体调绿 (原来全灰)
+      - 页面背景 #0a0a0a → #060608
+      - 导航/内容背景差异化
+
+    Build 验证: ✅ 通过
+
+七、下一步可选
+--------------
+
+  - Chrome DevTools Performance 录运行时性能
+  - Vue DevTools 查看组件 re-render
+  - Network tab 验证缓存是否生效
+  - 从视图里提取公共组件（列表/表单/详情）到 src/components/
+  - 将 "Systematic Precision" 设计语言落地到实际 CSS（字体、间距、配色微调）
