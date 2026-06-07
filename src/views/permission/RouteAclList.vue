@@ -2,6 +2,16 @@
   <div>
     <el-button text @click="$router.push('/permissions')" class="back">{{ $t('permission.back') }}</el-button>
     <div class="page-head"><h2>{{ $t('permission.aclTitle') }}</h2><el-button type="primary" size="small" @click="openCreate">{{ $t('permission.createAcl') }}</el-button></div>
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('permission.path')">
+          <el-input v-model="filter.pathPrefix" placeholder="/api/" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
     <el-table :data="acls || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="method" :label="$t('permission.method')" width="80"><template #default="{ row }"><el-tag size="small">{{ row.method }}</el-tag></template></el-table-column>
       <el-table-column prop="pathPrefix" :label="$t('permission.path')" min-width="200" show-overflow-tooltip />
@@ -38,6 +48,7 @@ const { t } = useI18n()
 const { load: loadRefs, userName, groupName } = useResolver()
 const loading = ref(false); const saving = ref(false)
 const acls = ref<RouteAcl[]>([]); const page = ref(1); const limit = ref(15); const total = ref(0)
+const filter = reactive({ pathPrefix: '' })
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 const form = reactive({ method: 'GET', pathPrefix: '', matchType: 'prefix' as 'prefix'|'exact', effect: 'allow' as 'allow'|'deny', userId: '', priority: 500 })
 
@@ -46,10 +57,11 @@ function openEdit(row: RouteAcl) { dialog.isEdit=true; dialog.editId=row.id; for
 
 async function fetchData() {
   loading.value = true
-  try { const r = await api.extractPage<RouteAcl>(api.permissions.apiPermissionsRouteAclsGet({ params: { page: page.value, limit: limit.value } })); acls.value = r.items; total.value = r.total }
+  try { const params: Record<string, any> = { page: page.value, limit: limit.value }; if (filter.pathPrefix) params.pathPrefix = filter.pathPrefix; const r = await api.extractPage<RouteAcl>(api.permissions.apiPermissionsRouteAclsGet({ params })); acls.value = r.items; total.value = r.total }
   catch { ElMessage.error(t('permission.aclFetchFailed')) }
   finally { loading.value = false }
 }
+function resetFilter() { filter.pathPrefix = ''; fetchData() }
 async function handleSave() {
   if (!form.pathPrefix) { ElMessage.warning(t('permission.pathRequired')); return }
   saving.value = true
@@ -68,4 +80,6 @@ onMounted(async () => { await loadRefs(); await fetchData() })
 <style scoped>
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 </style>

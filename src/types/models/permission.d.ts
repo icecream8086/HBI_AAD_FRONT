@@ -27,6 +27,7 @@ interface UserGroup {
   id: string
   name: string
   memberIds: string[]
+  adminIds: string[]
   dependsOn: string[]
   createdAt: number
   updatedAt: number

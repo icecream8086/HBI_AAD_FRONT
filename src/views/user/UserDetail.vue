@@ -207,7 +207,7 @@ async function handleSaveGroups() {
       if (isCurrentlyMember !== shouldBeMember) {
         const members = (g.memberIds || []).filter((id: string) => id !== route.params.id as string)
         if (shouldBeMember) members.push(route.params.id as string)
-        acc.push(api.permissions.apiPermissionsUserGroupsIdPut(g.id, { name: g.name, memberIds: members } as any))
+        acc.push(api.perm.updateUserGroup(g.id, { name: g.name, memberIds: members }))
       }
       return acc
     }, [])

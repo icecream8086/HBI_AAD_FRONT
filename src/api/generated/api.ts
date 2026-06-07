@@ -23,6 +23,15 @@ import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
+export interface ApiContainerSecretsIdPutRequest {
+    'name'?: string;
+    'value'?: string;
+}
+export interface ApiContainerSecretsPostRequest {
+    'name': string;
+    'type': string;
+    'value'?: string;
+}
 export interface ApiImagesPullPostRequest {
     'image': string;
 }
@@ -118,6 +127,18 @@ export interface ApiTemplatesPostRequestSpecContainersInner {
 export interface ApiTemplatesPostRequestSpecInstanceLimit {
     'type': string;
     'max': number;
+}
+export interface ApiTopologyBucketsIdPoliciesPostRequest {
+    'name': string;
+    'effect': string;
+    'actions': Array<string>;
+    'pathPrefix'?: string;
+}
+export interface ApiTopologyPoliciesIdPutRequest {
+    'name'?: string;
+    'effect'?: string;
+    'actions'?: Array<string>;
+    'pathPrefix'?: string;
 }
 export interface ApiUsersIdLoginPolicyPutRequest {
     'enabled': boolean;
@@ -298,6 +319,953 @@ export class AuditApi extends BaseAPI {
      */
     public apiAuditLogsStatsGet(options?: RawAxiosRequestConfig) {
         return AuditApiFp(this.configuration).apiAuditLogsStatsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * BucketPoliciesApi - axios parameter creator
+ */
+export const BucketPoliciesApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 所有人（只读）
+         * @summary 列出存储桶的所有 S3 策略
+         * @param {string} id Bucket ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyBucketsIdPoliciesGet: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiTopologyBucketsIdPoliciesGet', 'id', id)
+            const localVarPath = `/api/topology/buckets/{id}/policies`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * admin only（root/Operator/wheel）
+         * @summary 创建 S3 策略
+         * @param {string} id Bucket ID
+         * @param {ApiTopologyBucketsIdPoliciesPostRequest} apiTopologyBucketsIdPoliciesPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyBucketsIdPoliciesPost: async (id: string, apiTopologyBucketsIdPoliciesPostRequest: ApiTopologyBucketsIdPoliciesPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiTopologyBucketsIdPoliciesPost', 'id', id)
+            // verify required parameter 'apiTopologyBucketsIdPoliciesPostRequest' is not null or undefined
+            assertParamExists('apiTopologyBucketsIdPoliciesPost', 'apiTopologyBucketsIdPoliciesPostRequest', apiTopologyBucketsIdPoliciesPostRequest)
+            const localVarPath = `/api/topology/buckets/{id}/policies`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiTopologyBucketsIdPoliciesPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * admin only
+         * @summary 删除权限策略
+         * @param {string} id Policy ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyPoliciesIdDelete: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiTopologyPoliciesIdDelete', 'id', id)
+            const localVarPath = `/api/topology/policies/{id}`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 所有人
+         * @summary 获取 S3 策略详情
+         * @param {string} id Policy ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyPoliciesIdGet: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiTopologyPoliciesIdGet', 'id', id)
+            const localVarPath = `/api/topology/policies/{id}`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * admin only
+         * @summary 更新 S3 策略
+         * @param {string} id Policy ID
+         * @param {ApiTopologyPoliciesIdPutRequest} apiTopologyPoliciesIdPutRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyPoliciesIdPut: async (id: string, apiTopologyPoliciesIdPutRequest: ApiTopologyPoliciesIdPutRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiTopologyPoliciesIdPut', 'id', id)
+            // verify required parameter 'apiTopologyPoliciesIdPutRequest' is not null or undefined
+            assertParamExists('apiTopologyPoliciesIdPut', 'apiTopologyPoliciesIdPutRequest', apiTopologyPoliciesIdPutRequest)
+            const localVarPath = `/api/topology/policies/{id}`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiTopologyPoliciesIdPutRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * BucketPoliciesApi - functional programming interface
+ */
+export const BucketPoliciesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = BucketPoliciesApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 所有人（只读）
+         * @summary 列出存储桶的所有 S3 策略
+         * @param {string} id Bucket ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTopologyBucketsIdPoliciesGet(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTopologyBucketsIdPoliciesGet(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BucketPoliciesApi.apiTopologyBucketsIdPoliciesGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * admin only（root/Operator/wheel）
+         * @summary 创建 S3 策略
+         * @param {string} id Bucket ID
+         * @param {ApiTopologyBucketsIdPoliciesPostRequest} apiTopologyBucketsIdPoliciesPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTopologyBucketsIdPoliciesPost(id: string, apiTopologyBucketsIdPoliciesPostRequest: ApiTopologyBucketsIdPoliciesPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTopologyBucketsIdPoliciesPost(id, apiTopologyBucketsIdPoliciesPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BucketPoliciesApi.apiTopologyBucketsIdPoliciesPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * admin only
+         * @summary 删除权限策略
+         * @param {string} id Policy ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTopologyPoliciesIdDelete(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTopologyPoliciesIdDelete(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BucketPoliciesApi.apiTopologyPoliciesIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 所有人
+         * @summary 获取 S3 策略详情
+         * @param {string} id Policy ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTopologyPoliciesIdGet(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTopologyPoliciesIdGet(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BucketPoliciesApi.apiTopologyPoliciesIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * admin only
+         * @summary 更新 S3 策略
+         * @param {string} id Policy ID
+         * @param {ApiTopologyPoliciesIdPutRequest} apiTopologyPoliciesIdPutRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTopologyPoliciesIdPut(id: string, apiTopologyPoliciesIdPutRequest: ApiTopologyPoliciesIdPutRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTopologyPoliciesIdPut(id, apiTopologyPoliciesIdPutRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['BucketPoliciesApi.apiTopologyPoliciesIdPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * BucketPoliciesApi - factory interface
+ */
+export const BucketPoliciesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = BucketPoliciesApiFp(configuration)
+    return {
+        /**
+         * 所有人（只读）
+         * @summary 列出存储桶的所有 S3 策略
+         * @param {string} id Bucket ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyBucketsIdPoliciesGet(id: string, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiTopologyBucketsIdPoliciesGet(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * admin only（root/Operator/wheel）
+         * @summary 创建 S3 策略
+         * @param {string} id Bucket ID
+         * @param {ApiTopologyBucketsIdPoliciesPostRequest} apiTopologyBucketsIdPoliciesPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyBucketsIdPoliciesPost(id: string, apiTopologyBucketsIdPoliciesPostRequest: ApiTopologyBucketsIdPoliciesPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiTopologyBucketsIdPoliciesPost(id, apiTopologyBucketsIdPoliciesPostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * admin only
+         * @summary 删除权限策略
+         * @param {string} id Policy ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyPoliciesIdDelete(id: string, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiTopologyPoliciesIdDelete(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 所有人
+         * @summary 获取 S3 策略详情
+         * @param {string} id Policy ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyPoliciesIdGet(id: string, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiTopologyPoliciesIdGet(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * admin only
+         * @summary 更新 S3 策略
+         * @param {string} id Policy ID
+         * @param {ApiTopologyPoliciesIdPutRequest} apiTopologyPoliciesIdPutRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTopologyPoliciesIdPut(id: string, apiTopologyPoliciesIdPutRequest: ApiTopologyPoliciesIdPutRequest, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiTopologyPoliciesIdPut(id, apiTopologyPoliciesIdPutRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * BucketPoliciesApi - object-oriented interface
+ */
+export class BucketPoliciesApi extends BaseAPI {
+    /**
+     * 所有人（只读）
+     * @summary 列出存储桶的所有 S3 策略
+     * @param {string} id Bucket ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiTopologyBucketsIdPoliciesGet(id: string, options?: RawAxiosRequestConfig) {
+        return BucketPoliciesApiFp(this.configuration).apiTopologyBucketsIdPoliciesGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * admin only（root/Operator/wheel）
+     * @summary 创建 S3 策略
+     * @param {string} id Bucket ID
+     * @param {ApiTopologyBucketsIdPoliciesPostRequest} apiTopologyBucketsIdPoliciesPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiTopologyBucketsIdPoliciesPost(id: string, apiTopologyBucketsIdPoliciesPostRequest: ApiTopologyBucketsIdPoliciesPostRequest, options?: RawAxiosRequestConfig) {
+        return BucketPoliciesApiFp(this.configuration).apiTopologyBucketsIdPoliciesPost(id, apiTopologyBucketsIdPoliciesPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * admin only
+     * @summary 删除权限策略
+     * @param {string} id Policy ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiTopologyPoliciesIdDelete(id: string, options?: RawAxiosRequestConfig) {
+        return BucketPoliciesApiFp(this.configuration).apiTopologyPoliciesIdDelete(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 所有人
+     * @summary 获取 S3 策略详情
+     * @param {string} id Policy ID
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiTopologyPoliciesIdGet(id: string, options?: RawAxiosRequestConfig) {
+        return BucketPoliciesApiFp(this.configuration).apiTopologyPoliciesIdGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * admin only
+     * @summary 更新 S3 策略
+     * @param {string} id Policy ID
+     * @param {ApiTopologyPoliciesIdPutRequest} apiTopologyPoliciesIdPutRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiTopologyPoliciesIdPut(id: string, apiTopologyPoliciesIdPutRequest: ApiTopologyPoliciesIdPutRequest, options?: RawAxiosRequestConfig) {
+        return BucketPoliciesApiFp(this.configuration).apiTopologyPoliciesIdPut(id, apiTopologyPoliciesIdPutRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * ContainerSecretsApi - axios parameter creator
+ */
+export const ContainerSecretsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 列表（value 显示 [REDACTED]）
+         * @summary 列出所有 ContainerSecret
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/container-secrets`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 删除（同步清理 blob）
+         * @summary 删除 ContainerSecret
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdDelete: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiContainerSecretsIdDelete', 'id', id)
+            const localVarPath = `/api/container-secrets/{id}`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 下载 upload 类型的文件内容
+         * @summary 下载 ContainerSecret 文件
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdDownloadGet: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiContainerSecretsIdDownloadGet', 'id', id)
+            const localVarPath = `/api/container-secrets/{id}/download`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 详情
+         * @summary 获取 ContainerSecret 详情
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdGet: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiContainerSecretsIdGet', 'id', id)
+            const localVarPath = `/api/container-secrets/{id}`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 更新
+         * @summary 更新 ContainerSecret
+         * @param {string} id id
+         * @param {ApiContainerSecretsIdPutRequest} apiContainerSecretsIdPutRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdPut: async (id: string, apiContainerSecretsIdPutRequest: ApiContainerSecretsIdPutRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiContainerSecretsIdPut', 'id', id)
+            // verify required parameter 'apiContainerSecretsIdPutRequest' is not null or undefined
+            assertParamExists('apiContainerSecretsIdPut', 'apiContainerSecretsIdPutRequest', apiContainerSecretsIdPutRequest)
+            const localVarPath = `/api/container-secrets/{id}`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiContainerSecretsIdPutRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * upload 类型上传文件（multipart, field: file）
+         * @summary 上传 ContainerSecret 文件
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdUploadPost: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiContainerSecretsIdUploadPost', 'id', id)
+            const localVarPath = `/api/container-secrets/{id}/upload`
+                .replace('{id}', encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 创建 ContainerSecret（body: {name, type, value?}）
+         * @summary 创建 ContainerSecret
+         * @param {ApiContainerSecretsPostRequest} apiContainerSecretsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsPost: async (apiContainerSecretsPostRequest: ApiContainerSecretsPostRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'apiContainerSecretsPostRequest' is not null or undefined
+            assertParamExists('apiContainerSecretsPost', 'apiContainerSecretsPostRequest', apiContainerSecretsPostRequest)
+            const localVarPath = `/api/container-secrets`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(apiContainerSecretsPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * ContainerSecretsApi - functional programming interface
+ */
+export const ContainerSecretsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ContainerSecretsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 列表（value 显示 [REDACTED]）
+         * @summary 列出所有 ContainerSecret
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiContainerSecretsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiContainerSecretsGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContainerSecretsApi.apiContainerSecretsGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 删除（同步清理 blob）
+         * @summary 删除 ContainerSecret
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiContainerSecretsIdDelete(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiContainerSecretsIdDelete(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContainerSecretsApi.apiContainerSecretsIdDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 下载 upload 类型的文件内容
+         * @summary 下载 ContainerSecret 文件
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiContainerSecretsIdDownloadGet(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiContainerSecretsIdDownloadGet(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContainerSecretsApi.apiContainerSecretsIdDownloadGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 详情
+         * @summary 获取 ContainerSecret 详情
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiContainerSecretsIdGet(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiContainerSecretsIdGet(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContainerSecretsApi.apiContainerSecretsIdGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 更新
+         * @summary 更新 ContainerSecret
+         * @param {string} id id
+         * @param {ApiContainerSecretsIdPutRequest} apiContainerSecretsIdPutRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiContainerSecretsIdPut(id: string, apiContainerSecretsIdPutRequest: ApiContainerSecretsIdPutRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiContainerSecretsIdPut(id, apiContainerSecretsIdPutRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContainerSecretsApi.apiContainerSecretsIdPut']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * upload 类型上传文件（multipart, field: file）
+         * @summary 上传 ContainerSecret 文件
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiContainerSecretsIdUploadPost(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiContainerSecretsIdUploadPost(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContainerSecretsApi.apiContainerSecretsIdUploadPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 创建 ContainerSecret（body: {name, type, value?}）
+         * @summary 创建 ContainerSecret
+         * @param {ApiContainerSecretsPostRequest} apiContainerSecretsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiContainerSecretsPost(apiContainerSecretsPostRequest: ApiContainerSecretsPostRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<object>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiContainerSecretsPost(apiContainerSecretsPostRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContainerSecretsApi.apiContainerSecretsPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * ContainerSecretsApi - factory interface
+ */
+export const ContainerSecretsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = ContainerSecretsApiFp(configuration)
+    return {
+        /**
+         * 列表（value 显示 [REDACTED]）
+         * @summary 列出所有 ContainerSecret
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsGet(options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiContainerSecretsGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 删除（同步清理 blob）
+         * @summary 删除 ContainerSecret
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdDelete(id: string, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiContainerSecretsIdDelete(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 下载 upload 类型的文件内容
+         * @summary 下载 ContainerSecret 文件
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdDownloadGet(id: string, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.apiContainerSecretsIdDownloadGet(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 详情
+         * @summary 获取 ContainerSecret 详情
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdGet(id: string, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiContainerSecretsIdGet(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 更新
+         * @summary 更新 ContainerSecret
+         * @param {string} id id
+         * @param {ApiContainerSecretsIdPutRequest} apiContainerSecretsIdPutRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdPut(id: string, apiContainerSecretsIdPutRequest: ApiContainerSecretsIdPutRequest, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiContainerSecretsIdPut(id, apiContainerSecretsIdPutRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * upload 类型上传文件（multipart, field: file）
+         * @summary 上传 ContainerSecret 文件
+         * @param {string} id id
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsIdUploadPost(id: string, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiContainerSecretsIdUploadPost(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 创建 ContainerSecret（body: {name, type, value?}）
+         * @summary 创建 ContainerSecret
+         * @param {ApiContainerSecretsPostRequest} apiContainerSecretsPostRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiContainerSecretsPost(apiContainerSecretsPostRequest: ApiContainerSecretsPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<object> {
+            return localVarFp.apiContainerSecretsPost(apiContainerSecretsPostRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * ContainerSecretsApi - object-oriented interface
+ */
+export class ContainerSecretsApi extends BaseAPI {
+    /**
+     * 列表（value 显示 [REDACTED]）
+     * @summary 列出所有 ContainerSecret
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiContainerSecretsGet(options?: RawAxiosRequestConfig) {
+        return ContainerSecretsApiFp(this.configuration).apiContainerSecretsGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 删除（同步清理 blob）
+     * @summary 删除 ContainerSecret
+     * @param {string} id id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiContainerSecretsIdDelete(id: string, options?: RawAxiosRequestConfig) {
+        return ContainerSecretsApiFp(this.configuration).apiContainerSecretsIdDelete(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 下载 upload 类型的文件内容
+     * @summary 下载 ContainerSecret 文件
+     * @param {string} id id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiContainerSecretsIdDownloadGet(id: string, options?: RawAxiosRequestConfig) {
+        return ContainerSecretsApiFp(this.configuration).apiContainerSecretsIdDownloadGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 详情
+     * @summary 获取 ContainerSecret 详情
+     * @param {string} id id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiContainerSecretsIdGet(id: string, options?: RawAxiosRequestConfig) {
+        return ContainerSecretsApiFp(this.configuration).apiContainerSecretsIdGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 更新
+     * @summary 更新 ContainerSecret
+     * @param {string} id id
+     * @param {ApiContainerSecretsIdPutRequest} apiContainerSecretsIdPutRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiContainerSecretsIdPut(id: string, apiContainerSecretsIdPutRequest: ApiContainerSecretsIdPutRequest, options?: RawAxiosRequestConfig) {
+        return ContainerSecretsApiFp(this.configuration).apiContainerSecretsIdPut(id, apiContainerSecretsIdPutRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * upload 类型上传文件（multipart, field: file）
+     * @summary 上传 ContainerSecret 文件
+     * @param {string} id id
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiContainerSecretsIdUploadPost(id: string, options?: RawAxiosRequestConfig) {
+        return ContainerSecretsApiFp(this.configuration).apiContainerSecretsIdUploadPost(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 创建 ContainerSecret（body: {name, type, value?}）
+     * @summary 创建 ContainerSecret
+     * @param {ApiContainerSecretsPostRequest} apiContainerSecretsPostRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public apiContainerSecretsPost(apiContainerSecretsPostRequest: ApiContainerSecretsPostRequest, options?: RawAxiosRequestConfig) {
+        return ContainerSecretsApiFp(this.configuration).apiContainerSecretsPost(apiContainerSecretsPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

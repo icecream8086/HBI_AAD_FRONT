@@ -285,6 +285,81 @@ interface UpdateSubnetInput {
   status?: string
 }
 
+// ─── Volume ───
+
+type VolumeType = 'NFSVolume' | 'HostPathVolume' | 'EmptyDirVolume' | 'DiskVolume' | 'SecretVolume'
+
+interface NFSConfig {
+  server: string
+  path: string
+  readOnly?: boolean
+}
+
+interface DiskConfig {
+  diskId: string
+  fsType: string
+  sizeGiB?: number
+  readOnly?: boolean
+  deleteWithInstance?: boolean
+}
+
+interface ConfigMapItem {
+  key: string
+  path: string
+  mode?: number
+}
+
+interface SecretConfig {
+  name: string
+  items?: ConfigMapItem[]
+}
+
+interface Volume {
+  id: string
+  name: string
+  description?: string
+  instanceId: string
+  type: VolumeType
+  credentialRef?: string
+  nfs?: NFSConfig
+  disk?: DiskConfig
+  secret?: SecretConfig
+  status: string
+  createdAt: number
+  updatedAt: number
+}
+
+interface CreateVolumeInput {
+  name: string
+  description?: string
+  instanceId: string
+  type: VolumeType
+  credentialRef?: string
+  nfs?: NFSConfig
+  disk?: DiskConfig
+  secret?: SecretConfig
+}
+
+interface UpdateVolumeInput {
+  name?: string
+  description?: string | null
+  nfs?: NFSConfig
+  disk?: DiskConfig
+  secret?: SecretConfig
+}
+
+// ─── S3 Bucket Policy ───
+interface S3Policy {
+  id: string
+  name: string
+  effect: 'Allow' | 'Deny'
+  actions: string[]
+  pathPrefix?: string
+  bucketId: string
+  createdAt: number
+  updatedAt: number
+}
+
 interface NetworkRule {
   direction: 'ingress' | 'egress'
   protocol?: string

@@ -99,11 +99,18 @@ interface TemplateExtensions {
 
 interface TemplateStorage {
   name: string
-  type: 'oss' | 'nfs' | 'hostPath' | 'emptyDir'
+  type: 'oss' | 'nfs' | 'hostPath' | 'emptyDir' | 'disk' | 'configMap' | 'secret'
   mountPath: string
+  instanceId?: string
+  credentialRef?: string
+  volumeId?: string
+  bucketId?: string
   oss?: { bucket: string; path: string; readOnly?: boolean }
   nfs?: { server: string; path: string; readOnly?: boolean }
   hostPath?: { path: string }
+  disk?: { diskId: string; fsType?: string; sizeGiB?: number; readOnly?: boolean; deleteWithInstance?: boolean }
+  configMap?: { name: string; env: { key: string; value: string }[] }
+  secret?: { name: string; items?: { key: string; path: string; mode?: number }[] }
   size?: number
   providerOverrides?: Record<string, unknown>
 }

@@ -5,6 +5,17 @@
       <el-button type="primary" @click="openCreate">{{ $t('template.create') }}</el-button>
     </div>
 
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('table.name')">
+          <el-input v-model="filter.name" :placeholder="$t('table.name')" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <el-table :data="templates || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="name" :label="$t('template.name')" min-width="150" />
       <el-table-column :label="$t('template.kind')" width="150">
@@ -48,6 +59,24 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- Apply dialog -->
+    <el-dialog v-model="applyDlg.show" :title="$t('template.apply')" width="420px" destroy-on-close>
+      <el-form :model="applyDlg.form" label-width="100px">
+        <el-form-item :label="$t('template.name')">
+          <el-input v-model="applyDlg.form.name" />
+        </el-form-item>
+        <el-form-item :label="$t('topology.instanceTitle')">
+          <el-select v-model="applyDlg.form.instanceId" filterable clearable placeholder="Optional" style="width:100%">
+            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="applyDlg.show = false">{{ $t('table.cancel') }}</el-button>
+        <el-button type="primary" :loading="applyDlg.saving" @click="handleApplyConfirm">{{ $t('template.apply') }}</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="dlg.show" :title="$t('template.createTitle')" width="860px" :close-on-click-modal="false">
       <el-form :model="f" label-width="100px" v-loading="dlg.saving">
@@ -274,10 +303,12 @@ const loading = ref(false)
 const templates = ref<SandboxTemplate[]>([])
 const instances = ref<ComputeInstance[]>([])
 const providers = ref<string[]>([])
+const filter = reactive({ name: '' })
 const { load: loadRefs, templateName } = useResolver()
 const inherited = ref<{ name: string; image: string }[]>([])
 
 const dlg = reactive({ show: false, saving: false })
+const applyDlg = reactive({ show: false, saving: false, templateId: '', form: { name: '', instanceId: '' } })
 const f = reactive({
   name: '', description: '', account: '', region: '', restartPolicy: '', allocatePublicIp: false,
   instanceId: '', zone: '',
@@ -439,9 +470,16 @@ function openCreate() {
 
 async function fetchData() {
   loading.value = true
-  try { templates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) }
-  catch { ElMessage.error(t('template.fetchFailed')) }
+  try {
+    const params: Record<string, any> = {}
+    if (filter.name) params.name = filter.name
+    templates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet({ params }))
+  } catch { ElMessage.error(t('template.fetchFailed')) }
   finally { loading.value = false }
+}
+
+function resetFilter() {
+  filter.name = ''; fetchData()
 }
 
 async function handleSave() {
@@ -463,11 +501,23 @@ async function handleSave() {
   finally { dlg.saving = false }
 }
 
-async function handleApply(row: SandboxTemplate) {
+function handleApply(row: SandboxTemplate) {
+  applyDlg.templateId = row.id
+  applyDlg.form.name = 'sandbox-' + Date.now()
+  applyDlg.form.instanceId = ''
+  applyDlg.show = true
+}
+
+async function handleApplyConfirm() {
+  applyDlg.saving = true
   try {
-    await api.templates.apiTemplatesIdApplyPost(row.id, { name: row.name } as any)
+    const body: Record<string, any> = { name: applyDlg.form.name }
+    if (applyDlg.form.instanceId) body.instanceId = applyDlg.form.instanceId
+    await api.templates.apiTemplatesIdApplyPost(applyDlg.templateId, body as any)
     ElMessage.success(t('template.applySandboxSuccess'))
+    applyDlg.show = false
   } catch { ElMessage.error(t('template.applyFailed')) }
+  finally { applyDlg.saving = false }
 }
 
 async function handleDelete(id: string) {
@@ -481,7 +531,8 @@ async function handleDelete(id: string) {
 onMounted(async () => {
   await loadRefs(); await fetchData()
   try {
-    const insts = await api.topology.instances.list()
+    const instsRes = await api.topology.instances.list()
+    const insts = (instsRes as any).items ?? instsRes ?? []
     instances.value = insts
     providers.value = [...new Set(insts.map(i => i.platform))]
   } catch { /* ignore */ }
@@ -490,6 +541,8 @@ onMounted(async () => {
 
 <style scoped>
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 .cont-card { border: 1px solid var(--el-border-color); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
 .inherited-box { margin: -8px 0 8px 100px; padding: 8px 12px; background: var(--el-bg-color-page); border-radius: 4px; }
 .inherited-title { font-size: 12px; color: var(--el-text-color-secondary); margin-bottom: 6px; }

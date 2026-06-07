@@ -27,6 +27,7 @@
         <el-button v-if="status.paused" @click="cmd('resume')" :loading="busy">{{ $t('event.resume') }}</el-button>
         <el-button v-if="status.running" type="warning" @click="cmd('stop')" :loading="busy">{{ $t('event.stop') }}</el-button>
         <el-button @click="fetchStatus">{{ $t('event.refresh') }}</el-button>
+        <el-button size="small" type="info" plain @click="handleTick" :loading="ticking">[dev] 处理积压事件</el-button>
       </div>
 
       <el-divider>{{ $t('event.loopParams') }}</el-divider>
@@ -83,6 +84,7 @@ const { t } = useI18n()
 const loading = ref(false)
 const busy = ref(false)
 const creating = ref(false)
+const ticking = ref(false)
 const status = ref<EventLoopStatus | null>(null)
 const pending = ref<{ type: string; id: string }[]>([])
 const cfgForm = reactive({ intervalMs: 5000, batchSize: 0, maxQueueSize: 0 })
@@ -119,6 +121,17 @@ async function cmd(action: string) {
     await fetchStatus()
   } catch { ElMessage.error(t('event.actionFailed')) }
   finally { busy.value = false }
+}
+
+async function handleTick() {
+  ticking.value = true
+  try {
+    const res = await api.dev.triggerTick()
+    const data = (res as any).data?.data || (res as any).data
+    ElMessage.success(`[dev] Tick done — queue: ${data.queueSize}, processed: ${data.processedCount}`)
+    await fetchStatus()
+  } catch { ElMessage.error('[dev] Tick failed') }
+  finally { ticking.value = false }
 }
 
 async function handleConfigure() {

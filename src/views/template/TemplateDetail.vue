@@ -146,7 +146,21 @@
       <!-- Extensions -->
       <el-card class="section" v-if="template.extensions">
         <template #header>{{ $t('template.extensions') }}</template>
-        <pre class="json-block">{{ JSON.stringify(template.extensions, null, 2) }}</pre>
+        <div v-if="template.extensions.storage?.length" class="storage-list">
+          <div v-for="(st, si) in template.extensions.storage" :key="si" class="storage-card">
+            <div class="storage-hdr">
+              <strong>{{ st.name }}</strong>
+              <el-tag size="small">{{ st.type }}</el-tag>
+              <span class="storage-mount">→ {{ st.mountPath }}</span>
+            </div>
+            <div class="storage-body">
+              <span v-if="st.volumeId">Volume: <code>{{ st.volumeId }}</code></span>
+              <span v-if="st.bucketId">Bucket: <code>{{ st.bucketId }}</code></span>
+              <span v-if="st.instanceId">Instance: <code>{{ st.instanceId }}</code></span>
+            </div>
+          </div>
+        </div>
+        <pre v-else class="json-block">{{ JSON.stringify(template.extensions, null, 2) }}</pre>
       </el-card>
       <!-- Health Checks -->
       <el-card class="section" v-if="template.healthChecks?.length">
@@ -328,7 +342,36 @@
           </el-form-item>
         </div>
         <el-divider>{{ $t('template.s3Config') }}</el-divider>
-        <!-- TODO: S3 bucket / storage config -->
+        <div v-for="(st, si) in edit.form.storage" :key="si" class="cont-card">
+          <el-form-item :label="`${$t('table.volume')} ${si+1}`">
+            <el-input v-model="st.name" :placeholder="$t('table.name')" size="small" style="width:120px;margin-right:4px" />
+            <el-input v-model="st.mountPath" placeholder="/path" size="small" style="width:140px;margin-right:4px" />
+            <el-select v-model="st.type" size="small" style="width:120px;margin-right:4px" @change="onTypeChange(st)">
+              <el-option label="数据卷" value="volume" />
+              <el-option label="S3/存储桶" value="bucket" />
+            </el-select>
+            <el-button type="danger" size="small" @click="edit.form.storage.splice(si,1)">✕</el-button>
+          </el-form-item>
+          <el-row :gutter="8" v-if="st.type === 'volume'">
+            <el-col :span="24">
+              <el-form-item :label="$t('topology.volumeTitle')" label-width="80px">
+                <el-select v-model="st.volumeId" filterable clearable :placeholder="$t('table.selectPlaceholder')" size="small" style="width:100%" @change="onVolumeChange(st)">
+                  <el-option v-for="v in volumes" :key="v.id" :label="`${v.name} (${v.type})`" :value="v.id" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="8" v-if="st.type === 'bucket'">
+            <el-col :span="24">
+              <el-form-item :label="$t('topology.bucketTitle')" label-width="80px">
+                <el-select v-model="st.bucketId" filterable clearable :placeholder="$t('table.selectPlaceholder')" size="small" style="width:100%" @change="onBucketChange(st)">
+                  <el-option v-for="b in buckets" :key="b.id" :label="`${b.name} (${b.bucketType})`" :value="b.id" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+        <el-button size="small" @click="addStorageItem">+ {{ $t('table.volume') }}</el-button>
         <el-divider>{{ $t('template.healthChecks') }}</el-divider>
         <div class="mode-toggle">
           <el-button size="small" text @click="toggleHcJsonMode">{{ edit.healthChecksJsonMode ? '表单模式' : 'JSON 模式' }}</el-button>
@@ -417,6 +460,8 @@ const allTemplates = ref<SandboxTemplate[]>([])
 
 const { load: loadRefs, userName, templateName } = useResolver()
 const instances = ref<ComputeInstance[]>([])
+const volumes = ref<Volume[]>([])
+const buckets = ref<RegionBucket[]>([])
 const existingImages = ref<string[]>([])
 const sgList = ref<SecurityGroup[]>([])
 const subnetList = ref<string[]>([])
@@ -478,6 +523,18 @@ function buildHcSpec(hc: HealthCheckForm): Record<string, any> {
   if (hc.probeType === 'tcpSocket') { probe.tcpSocket = { port: hc.tcpPort || 80 } }
   return { name: hc.name, target: hc.target, type: hc.type, probe, initialDelaySeconds: hc.initialDelaySeconds, periodSeconds: hc.periodSeconds, timeoutSeconds: hc.timeoutSeconds }
 }
+function addStorageItem() { edit.form.storage.push(emptyStorage()) }
+function onTypeChange(st: StorageForm) {
+  st.volumeId = ''; st.bucketId = ''; st.instanceId = ''
+}
+function onVolumeChange(st: StorageForm) {
+  const v = volumes.value.find(x => x.id === st.volumeId)
+  if (v?.instanceId) st.instanceId = v.instanceId
+}
+function onBucketChange(st: StorageForm) {
+  const b = buckets.value.find(x => x.id === st.bucketId)
+  if (b?.instanceId) st.instanceId = b.instanceId
+}
 function emptyService(): ServiceForm {
   return { name: '', image: '', command: '', ports: [], cpu: '', memory: '', dependsOn: [], env: [] }
 }
@@ -529,10 +586,17 @@ function buildContSpec(c: ContForm): Record<string, any> {
   return ct
 }
 
+interface StorageForm {
+  name: string; type: string; mountPath: string; volumeId: string; bucketId: string; instanceId: string
+}
+function emptyStorage(): StorageForm {
+  return { name: '', type: 'volume', mountPath: '/data', volumeId: '', bucketId: '', instanceId: '' }
+}
+
 const edit = reactive({
   show: false, saving: false,
   healthChecksJsonMode: false, healthChecksJsonStr: '',
-  form: { name: '', description: '', region: '', restartPolicy: '', networkMode: 'auto', vpcInstanceId: '', securityGroupId: '', subnetIds: [] as string[], ipAddress: '', account: '', instanceId: '', zone: '', limitType: '', limitMax: 1, healthMaxRetries: 0, dependsOn: [] as string[], providerOverridesStr: '', templateType: 'Container' as TemplateKind, podName: '', podRegion: '', podCpu: '', podMemory: '', services: [] as ServiceForm[], containers: [] as ContForm[], healthChecks: [] as HealthCheckForm[] },
+  form: { name: '', description: '', region: '', restartPolicy: '', networkMode: 'auto', vpcInstanceId: '', securityGroupId: '', subnetIds: [] as string[], ipAddress: '', account: '', instanceId: '', zone: '', limitType: '', limitMax: 1, healthMaxRetries: 0, dependsOn: [] as string[], providerOverridesStr: '', templateType: 'Container' as TemplateKind, podName: '', podRegion: '', podCpu: '', podMemory: '', services: [] as ServiceForm[], containers: [] as ContForm[], healthChecks: [] as HealthCheckForm[], storage: [] as StorageForm[] },
 })
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
@@ -568,13 +632,19 @@ function openEdit() {
   edit.form.account = tpl.container?.account || ''; edit.form.region = tpl.container?.region || ''
   edit.form.instanceId = tpl.container?.instanceId || ''; edit.form.zone = tpl.container?.zone || ''
   edit.form.restartPolicy = tpl.container?.restartPolicy || ''
+  const ext = tpl.extensions || {}
+  edit.form.storage = (ext.storage || []).map((s: TemplateStorage) => ({
+    name: s.name || '',
+    type: s.volumeId ? 'volume' : s.bucketId ? 'bucket' : 'volume',
+    mountPath: s.mountPath || '',
+    volumeId: s.volumeId || '', bucketId: s.bucketId || '', instanceId: s.instanceId || '',
+  }))
   edit.form.networkMode = tpl.network?.mode || 'auto'
   edit.form.vpcInstanceId = tpl.network?.vpc?.instanceId || ''
   edit.form.securityGroupId = tpl.network?.vpc?.securityGroupId || ''
   edit.form.subnetIds = tpl.network?.vpc?.subnetIds || []
   edit.form.ipAddress = tpl.network?.ipAddress || ''
   edit.form.dependsOn = tpl.dependsOn ? [...tpl.dependsOn] : []
-  const ext = tpl.extensions || {}
   edit.form.healthMaxRetries = ext.healthMaxRetries ?? 0
   edit.form.providerOverridesStr = JSON.stringify(ext.providerOverrides || {}, null, 2)
   edit.healthChecksJsonStr = JSON.stringify(tpl.healthChecks || [], null, 2)
@@ -666,6 +736,14 @@ async function handleSave() {
     const extensions: Record<string, any> = {}
     if (edit.form.healthMaxRetries) extensions.healthMaxRetries = edit.form.healthMaxRetries
     if (edit.form.providerOverridesStr) { try { extensions.providerOverrides = JSON.parse(edit.form.providerOverridesStr) } catch { /* ignore */ } }
+    const storage = edit.form.storage.filter(s => s.name && s.mountPath)
+    if (storage.length) extensions.storage = storage.map(s => {
+      const item: Record<string, any> = { name: s.name, mountPath: s.mountPath, type: s.type === 'volume' ? 'nfs' : 'oss' }
+      if (s.volumeId) item.volumeId = s.volumeId
+      if (s.bucketId) item.bucketId = s.bucketId
+      if (s.instanceId) item.instanceId = s.instanceId
+      return item
+    })
     if (Object.keys(extensions).length) body.extensions = extensions
     if (edit.healthChecksJsonMode && edit.healthChecksJsonStr) {
       try { body.healthChecks = JSON.parse(edit.healthChecksJsonStr) } catch { /* ignore */ }
@@ -692,15 +770,15 @@ onMounted(async () => {
   await loadRefs()
   await load()
   try { allTemplates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) } catch { /* ignore */ }
-  await Promise.all([
-    refCache.instances.load(),
-    refCache.images.load(),
-    refCache.securityGroups.load(),
-    refCache.subnets.load(),
-  ])
+  await refCache.instances.load()
   instances.value = refCache.instances.data.value
+  try { volumes.value = await api.topology.volumes.list().then(r => (r as any).items ?? r ?? []) } catch { /* ignore */ }
+  try { buckets.value = await api.topology.buckets.list() } catch { /* ignore */ }
+  await refCache.images.load()
   existingImages.value = [...new Set(refCache.images.data.value.map(r => r.image).filter(Boolean))]
+  await refCache.securityGroups.load()
   sgList.value = refCache.securityGroups.data.value
+  await refCache.subnets.load()
   subnetList.value = [...new Set(refCache.subnets.data.value.map((s: any) => s.name || s.id || s.cidr).filter(Boolean))]
 })
 </script>
@@ -709,6 +787,12 @@ onMounted(async () => {
 .back { margin-bottom: 8px; padding: 0; }
 .page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 .desc { color: var(--el-text-color-secondary); font-size: 13px; margin-top: 4px; }
+.storage-list { display: flex; flex-direction: column; gap: 8px; }
+.storage-card { border: 1px solid var(--el-border-color); border-radius: 6px; padding: 8px 12px; }
+.storage-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.storage-mount { font-size: 12px; color: var(--el-text-color-secondary); }
+.storage-body { font-size: 12px; color: var(--el-text-color-secondary); display: flex; gap: 12px; }
+.storage-body code { font-size: 11px; }
 .actions { display: flex; gap: 8px; flex-shrink: 0; }
 .section { margin-top: 16px; }
 code { font-size: 12px; background: var(--el-bg-color-page); padding: 2px 6px; border-radius: 3px; }

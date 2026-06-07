@@ -6,6 +6,31 @@
         <el-button type="primary" @click="showPull = true">{{ $t('image.pullImage') }}</el-button>
       </div>
     </div>
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('topology.instanceTitle')">
+          <el-select v-model="filter.instanceId" clearable :placeholder="$t('table.selectPlaceholder')" style="width:160px" filterable @change="fetchData">
+            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform})`" :value="inst.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('topology.platform')">
+          <el-select v-model="filter.platform" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
+            <el-option v-for="p in platforms" :key="p" :label="p" :value="p" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('table.status')">
+          <el-select v-model="filter.status" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
+            <el-option label="pending" value="pending" />
+            <el-option label="pulling" value="pulling" />
+            <el-option label="ready" value="ready" />
+            <el-option label="error" value="error" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
     <el-table :data="repos" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="name" :label="$t('table.name')" min-width="140" />
       <el-table-column prop="image" :label="$t('image.imageCol')" min-width="240" show-overflow-tooltip />
@@ -84,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../api'
@@ -112,6 +137,10 @@ const formRegistryUser = ref('')
 const formRegistryPass = ref('')
 const showInlineCred = ref(false)
 
+// Filters
+const filter = reactive({ instanceId: '', platform: '', status: '' })
+const platforms = ['alibaba', 'aws', 'podman', 'stub']
+
 const instanceMap = ref<Record<string, string>>({})
 const pullCreds = ref<MaskedCredential[]>([])
 
@@ -128,9 +157,18 @@ function statusType(s: string): 'primary' | 'warning' | 'success' | 'danger' {
 async function fetchData() {
   loading.value = true
   try {
-    repos.value = await api.topology.images.list()
+    const params: Record<string, string> = {}
+    if (filter.instanceId) params.instanceId = filter.instanceId
+    if (filter.platform) params.platform = filter.platform
+    if (filter.status) params.status = filter.status
+    repos.value = await api.topology.images.list(params)
   } catch { ElMessage.error(t('image.fetchFailed')) }
   finally { loading.value = false }
+}
+
+function resetFilter() {
+  filter.instanceId = ''; filter.platform = ''; filter.status = ''
+  fetchData()
 }
 
 async function handleCreate() {
@@ -223,6 +261,8 @@ onMounted(async () => {
 
 <style scoped>
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 .page-actions { display: flex; align-items: center; }
 .hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; }
 .inline-cred-toggle { cursor: pointer; user-select: none; }

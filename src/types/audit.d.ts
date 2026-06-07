@@ -5,6 +5,7 @@ interface AuditLog {
   facility: string
   message: string
   actorId?: string
+  requestId?: string
   metadata?: Record<string, unknown>
 }
 

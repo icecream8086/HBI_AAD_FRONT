@@ -5,6 +5,16 @@
       <h2>{{ $t('permission.policyList') }}</h2>
       <el-button type="primary" size="small" @click="openCreate">{{ $t('permission.createPolicy') }}</el-button>
     </div>
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('table.name')">
+          <el-input v-model="filter.name" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
     <el-table :data="policies || []" v-loading="loading" stripe :empty-text="$t('table.empty')" @sort-change="onSort">
       <el-table-column prop="name" :label="$t('permission.name')" min-width="150" sortable="custom" />
       <el-table-column prop="effect" :label="$t('permission.effect')" width="80">
@@ -121,6 +131,7 @@ const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 const policies = ref<StoredPolicy[]>([])
+const filter = reactive({ name: '' })
 const page = ref(1)
 const limit = ref(15)
 const total = ref(0)
@@ -242,11 +253,14 @@ function openEdit(row: StoredPolicy) {
 }
 
 function onSort(_: any) { fetchData() }
+function resetFilter() { filter.name = ''; fetchData() }
 
 async function fetchData() {
   loading.value = true
   try {
-    const res = await api.extractPage<StoredPolicy>(api.permissions.apiPermissionsPoliciesGet({ params: { page: page.value, limit: limit.value } }))
+    const params: Record<string, any> = { page: page.value, limit: limit.value }
+    if (filter.name) params.name = filter.name
+    const res = await api.extractPage<StoredPolicy>(api.permissions.apiPermissionsPoliciesGet({ params }))
     policies.value = res.items; total.value = res.total
   } catch { ElMessage.error(t('permission.fetchFailed')) }
   finally { loading.value = false }
@@ -301,6 +315,8 @@ onMounted(fetchData)
 <style scoped>
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 
 .mode-bar { display: flex; justify-content: center; margin-bottom: 16px; }
 

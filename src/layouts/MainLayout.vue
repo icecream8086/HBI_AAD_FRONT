@@ -60,6 +60,7 @@
           <el-menu-item index="/topology/instances">{{ $t('menu.instances') }}</el-menu-item>
           <el-menu-item index="/topology/credentials">{{ $t('menu.credentials') }}</el-menu-item>
           <el-menu-item index="/topology/buckets">{{ $t('menu.buckets') }}</el-menu-item>
+          <el-menu-item index="/topology/volumes">{{ $t('menu.volumes') }}</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="network">
@@ -140,6 +141,33 @@
             {{ $t('common.sudo') }}
           </el-button>
 
+          <!-- Invite button -->
+          <el-button size="small" @click="showInviteDlg = true" class="invite-btn">
+            <el-icon><UserFilled /></el-icon>
+            {{ $t('permission.invite') }}
+          </el-button>
+
+          <!-- API quick reference -->
+          <el-popover trigger="click" :width="380">
+            <template #reference>
+              <el-button size="small" circle class="api-doc-btn">
+                <el-icon :size="16"><Document /></el-icon>
+              </el-button>
+            </template>
+            <div style="font-size:13px;line-height:1.6">
+              <div style="margin-bottom:8px"><strong>Auth</strong><br><code style="font-size:12px;background:var(--el-fill-color-light);padding:1px 4px;border-radius:3px">Authorization: Bearer sess_xxx</code><br><span style="font-size:12px;color:var(--el-text-color-secondary)">2h 过期，401 自动跳转登录</span></div>
+              <div style="margin-bottom:8px"><strong>分页</strong><br><code style="font-size:12px;background:var(--el-fill-color-light);padding:1px 4px;border-radius:3px">?page=&limit=&name=&type=&status=</code></div>
+              <div style="margin-bottom:8px"><strong>角色</strong><br><el-tag size="small" type="danger">wheel</el-tag> 最高权限 <el-tag size="small" type="warning">root</el-tag> 管理 <el-tag size="small">Operator</el-tag> <el-tag size="small" type="info">Viewer</el-tag></div>
+              <div style="margin-bottom:8px"><strong>审计</strong><br><span style="font-size:12px;color:var(--el-text-color-secondary)">生产环境 GET /api/audit/logs 不工作，走 wrangler tail / Logpush</span></div>
+              <div style="margin-bottom:4px"><strong>Volume</strong><br><span style="font-size:12px;color:var(--el-text-color-secondary)">必须绑定到计算实例（instanceId）</span></div>
+              <el-divider style="margin:6px 0" />
+              <div style="font-size:12px;color:var(--el-text-color-secondary)">
+                <a href="/api/openapi.json" target="_blank">OpenAPI JSON</a>
+                <span style="margin:0 6px">|</span>154 路由 · 82 路径
+              </div>
+            </div>
+          </el-popover>
+
           <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-trigger">
               <el-avatar :size="28" :src="avatarBlob" style="margin-right:6px">
@@ -166,11 +194,31 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <!-- Invite dialog -->
+    <el-dialog v-model="showInviteDlg" :title="$t('permission.inviteMember')" width="450px">
+      <el-form label-width="80px">
+        <el-form-item :label="$t('permission.userGroups')">
+          <el-select v-model="inviteForm.groupId" filterable :placeholder="$t('permission.groupSelectPlaceholder')" style="width:100%">
+            <el-option v-for="g in inviteGroups" :key="g.id" :label="g.name" :value="g.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('permission.members')">
+          <el-select v-model="inviteForm.userId" filterable :placeholder="$t('permission.userSelectPlaceholder')" style="width:100%">
+            <el-option v-for="u in inviteUsers" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showInviteDlg = false">{{ $t('table.cancel') }}</el-button>
+        <el-button type="primary" :loading="inviteSaving" @click="handleHeaderInvite">{{ $t('permission.invite') }}</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -272,6 +320,38 @@ function fmtDuration(ms: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}`
 }
 
+// ─── Invite ───
+const showInviteDlg = ref(false)
+const inviteSaving = ref(false)
+const inviteForm = reactive({ groupId: '', userId: '' })
+const inviteGroups = ref<UserGroup[]>([])
+const inviteUsers = ref<User[]>([])
+
+async function loadInviteRefs() {
+  try {
+    const [groups, users] = await Promise.all([
+      api.extractItems<UserGroup>(api.permissions.apiPermissionsUserGroupsGet()),
+      api.extractArray<User>(api.users.apiUsersGet()),
+    ])
+    inviteGroups.value = groups
+    inviteUsers.value = users
+  } catch { /* ignore */ }
+}
+
+async function handleHeaderInvite() {
+  if (!inviteForm.groupId) { ElMessage.warning(t('permission.groupSelectPlaceholder')); return }
+  if (!inviteForm.userId) { ElMessage.warning(t('permission.selectUserFirst')); return }
+  inviteSaving.value = true
+  try {
+    await api.perm.invite({ groupId: inviteForm.groupId, inviteeId: inviteForm.userId })
+    ElMessage.success(t('permission.inviteSuccess'))
+    showInviteDlg.value = false
+    inviteForm.groupId = ''
+    inviteForm.userId = ''
+  } catch { ElMessage.error(t('permission.actionFailed')) }
+  finally { inviteSaving.value = false }
+}
+
 onUnmounted(() => { if (sudoTimer) clearInterval(sudoTimer) })
 
 function handleCommand(cmd: string) {
@@ -297,6 +377,7 @@ onMounted(async () => {
       }
     } catch { /* ignore */ }
   }
+  loadInviteRefs()
 })
 </script>
 
@@ -344,4 +425,7 @@ onMounted(async () => {
 }
 .sudo-btn { margin-right: 4px; }
 .sudo-btn .el-icon { margin-right: 3px; }
+.invite-btn { margin-right: 4px; }
+.invite-btn .el-icon { margin-right: 3px; }
+.api-doc-btn { margin-right: 4px; }
 </style>

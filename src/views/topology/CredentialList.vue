@@ -6,6 +6,19 @@
       <el-button type="primary" size="small" @click="openCreate">{{ $t('topology.createCredential') }}</el-button>
     </div>
 
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('topology.platform')">
+          <el-select v-model="filter.platform" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
+            <el-option label="alibaba" value="alibaba" /><el-option label="aws" value="aws" /><el-option label="podman" value="podman" /><el-option label="stub" value="stub" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <el-table :data="creds" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="name" :label="$t('topology.credentialName')" min-width="140" />
       <el-table-column :label="$t('topology.credentialType')" width="100">
@@ -112,6 +125,9 @@ const saving = ref(false)
 const creds = ref<MaskedCredential[]>([])
 const instances = ref<ComputeInstance[]>([])
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
+
+// Filters
+const filter = reactive({ platform: '' })
 const form = reactive({
   name: '', type: 'aksk' as CredentialType, platform: '' as Platform | '',
   accessKeyId: '', accessKeySecret: '', token: '', username: '', password: '', instanceId: '',
@@ -165,9 +181,17 @@ function openEdit(row: MaskedCredential) {
 
 async function fetchData() {
   loading.value = true
-  try { creds.value = await api.topology.credentials.list() }
-  catch { ElMessage.error(t('topology.fetchFailed')) }
+  try {
+    const params: Record<string, string> = {}
+    if (filter.platform) params.platform = filter.platform
+    creds.value = await api.topology.credentials.list(params)
+  } catch { ElMessage.error(t('topology.fetchFailed')) }
   finally { loading.value = false }
+}
+
+function resetFilter() {
+  filter.platform = ''
+  fetchData()
 }
 
 function validate(): boolean {
@@ -239,4 +263,6 @@ onMounted(async () => {
 <style scoped>
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 </style>

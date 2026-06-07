@@ -108,6 +108,38 @@
           <el-table-column :label="$t('sandbox.count')" width="70"><template #default="{ row }">{{ row.count ?? 1 }}</template></el-table-column>
         </el-table>
       </el-card>
+
+      <!-- Logs -->
+      <el-card class="section">
+        <template #header>
+          <span>{{ $t('sandbox.logs') }}</span>
+          <span v-if="ws" class="log-count">{{ logLines.length }} lines</span>
+          <el-tag v-if="wsStatus === 'connected'" type="success" size="small" effect="plain" style="margin-left:6px">{{ $t('sandbox.logConnected') }}</el-tag>
+          <el-tag v-else-if="wsStatus === 'closed' || wsStatus === 'error'" type="info" size="small" effect="plain" style="margin-left:6px">
+            {{ wsStatus === 'error' ? $t('sandbox.logError') : $t('sandbox.logDisconnected') }}
+            <el-button size="small" text type="primary" @click="openLogs" style="margin-left:4px;font-size:12px">{{ $t('sandbox.logReconnect') }}</el-button>
+          </el-tag>
+          <div class="log-actions">
+            <span v-if="ws" class="log-toolbar">
+              <el-checkbox v-model="logFollow" size="small" style="margin-right:8px">{{ $t('sandbox.logFollow') }}</el-checkbox>
+              <el-select v-model="logTail" size="small" style="width:80px;margin-right:8px" @change="openLogs" :disabled="!ws">
+                <el-option :value="200" label="200" />
+                <el-option :value="500" label="500" />
+                <el-option :value="1000" label="1000" />
+              </el-select>
+              <el-button size="small" text @click="logLines=[]">{{ $t('sandbox.logClear') }}</el-button>
+            </span>
+            <el-button size="small" style="margin-left:4px" @click="toggleLogs">{{ ws ? $t('sandbox.logClose') : $t('sandbox.logOpen') }}</el-button>
+          </div>
+        </template>
+        <div v-if="ws" class="log-viewer" ref="logRef" @scroll="onLogScroll">
+          <div v-for="(line, i) in logLines" :key="i" class="log-line" :class="line.cls">{{ line.text }}</div>
+          <div v-if="!logLines.length" class="log-placeholder">{{ $t('sandbox.logWaiting') }}</div>
+        </div>
+        <div v-else class="log-viewer log-placeholder" style="min-height:80px">
+          {{ $t('sandbox.logHint') }}
+        </div>
+      </el-card>
     </div>
 
     <el-empty v-else-if="!loading" :description="$t('sandbox.notFound')" />
@@ -115,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -127,6 +159,84 @@ const { t } = useI18n()
 const loading = ref(false)
 const starting = ref(false)
 const sandbox = ref<Sandbox | null>(null)
+
+// Log viewer
+const ws = ref<WebSocket | null>(null)
+const wsStatus = ref<'idle' | 'connected' | 'closed' | 'error'>('idle')
+const logLines = ref<{ text: string; cls: string }[]>([])
+const logRef = ref<HTMLElement | null>(null)
+const logFollow = ref(true)
+const logTail = ref(200)
+const logSince = ref<number>(0)
+const API_BASE = 'http://localhost:3000'
+
+function getToken(): string { return localStorage.getItem('access_token') || '' }
+
+function toggleLogs() {
+  if (ws.value) { closeLogs(); return }
+  openLogs()
+}
+
+function openLogs() {
+  if (!sandbox.value?.id) return
+  closeLogs()
+  const token = getToken()
+  const params = [`token=${token}`, `tail=${logTail.value}`]
+  if (logSince.value) params.push(`since=${logSince.value}`)
+  const url = `${API_BASE.replace(/^http/, 'ws')}/api/sandboxes/${sandbox.value.id}/logs?${params.join('&')}`
+  const socket = new WebSocket(url)
+  socket.onopen = () => { wsStatus.value = 'connected' }
+  socket.onmessage = (e) => {
+    if (typeof e.data === 'string' && e.data.startsWith('{')) {
+      try {
+        const evt = JSON.parse(e.data)
+        if (evt.event === 'container_stopped') {
+          logLines.value.push({ text: `⚠ ${t('sandbox.logStopped')}`, cls: 'log-warn' })
+          ElMessage.info(t('sandbox.logStopped'))
+        } else if (evt.event === 'container_deleted') {
+          logLines.value.push({ text: `✕ ${t('sandbox.logDeleted')}`, cls: 'log-error' })
+          ElMessage.warning(t('sandbox.logDeleted'))
+          socket.close()
+        } else if (evt.event === 'error') {
+          logLines.value.push({ text: `✕ ${evt.message || t('sandbox.logError')}`, cls: 'log-error' })
+        }
+      } catch { /* ignore */ }
+    } else {
+      // Strip DO/KV framing bytes from raw log lines
+      const raw = typeof e.data === 'string' ? e.data : ''
+      // eslint-disable-next-line no-control-regex
+      logLines.value.push({ text: raw.replace(/^\x01Z/, ''), cls: '' })
+    }
+    if (logFollow.value) nextTick(() => { if (logRef.value) logRef.value.scrollTop = logRef.value.scrollHeight })
+  }
+  socket.onclose = () => { wsStatus.value = 'closed'; ws.value = null }
+  socket.onerror = () => { wsStatus.value = 'error' }
+  ws.value = socket
+}
+
+function closeLogs() {
+  if (ws.value) { ws.value.close(); ws.value = null }
+  wsStatus.value = 'idle'
+  logLines.value = []
+  logFollow.value = true
+  logSince.value = 0
+}
+
+function onLogScroll() {
+  if (!logRef.value) return
+  const el = logRef.value
+  logFollow.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 20
+}
+
+onUnmounted(closeLogs)
+
+let lastClick = 0
+function throttle(): boolean {
+  const now = Date.now()
+  if (now - lastClick < 1000) { ElMessage.warning(t('common.tooFast')); return true }
+  lastClick = now
+  return false
+}
 
 function ctStatus(c: any): string {
   // state?.state is the real container state; fall back to '-' when absent (e.g. stopped)
@@ -166,28 +276,22 @@ async function load() {
 onMounted(load)
 
 async function handleStart() {
+  if (throttle()) return
   starting.value = true
   try {
     await axios.post(`/api/sandboxes/${route.params.id}/start`)
     ElMessage.success(t('sandbox.startSuccess'))
-    for (let i = 0; i < 12; i++) {
-      await load()
-      if (sandbox.value?.status !== 'Stopped') return
-      await new Promise(r => setTimeout(r, 1000))
-    }
+    await load()
   } catch { ElMessage.error(t('sandbox.actionFailed')) }
   finally { starting.value = false }
 }
 
 async function handleStop() {
+  if (throttle()) return
   try {
     await api.sandboxes.apiSandboxesIdStopPost(route.params.id as string)
     ElMessage.success(t('sandbox.stopSuccess'))
-    for (let i = 0; i < 12; i++) {
-      await load()
-      if (sandbox.value?.status !== 'Running') return
-      await new Promise(r => setTimeout(r, 1000))
-    }
+    await load()
   } catch { ElMessage.error(t('sandbox.actionFailed')) }
 }
 async function handleDelete() {
@@ -198,14 +302,11 @@ async function handleDelete() {
   } catch { /* ignore */ }
 }
 async function handleSync() {
+  if (throttle()) return
   try {
     await api.sandboxes.apiSandboxesIdSyncPost(route.params.id as string)
     ElMessage.success(t('sandbox.syncSuccess'))
-    for (let i = 0; i < 12; i++) {
-      await load()
-      if (sandbox.value?.status !== 'Running') return
-      await new Promise(r => setTimeout(r, 1000))
-    }
+    await load()
   } catch { ElMessage.error(t('sandbox.syncFailed')) }
 }
 async function fetchHealth() {
@@ -227,4 +328,12 @@ async function fetchHealth() {
 .cont-box h4 { margin: 0 0 8px 0; }
 .sub { margin-top: 6px; font-size: 13px; }
 code { font-size: 12px; background: var(--el-bg-color-page); padding: 2px 6px; border-radius: 3px; }
+.log-viewer { background: #0d1117; color: #e6edf3; font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.6; padding: 12px; border-radius: 6px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.log-viewer.log-placeholder { background: transparent; color: var(--el-text-color-secondary); font-family: var(--el-font-family); font-size: 13px; display: flex; align-items: center; justify-content: center; min-height: 80px; }
+.log-line { padding: 0 4px; }
+.log-warn { color: #d29922; }
+.log-error { color: #f85149; }
+.log-count { font-size: 12px; color: var(--el-text-color-secondary); margin-left: 6px; }
+.log-actions { display: inline-flex; align-items: center; gap: 4px; float: right; }
+.log-toolbar { display: inline-flex; align-items: center; gap: 2px; }
 </style>

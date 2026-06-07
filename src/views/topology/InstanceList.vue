@@ -6,6 +6,31 @@
       <el-button type="primary" size="small" @click="openCreate">{{ $t('topology.createInstance') }}</el-button>
     </div>
 
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('topology.platform')">
+          <el-select v-model="filter.platform" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
+            <el-option v-for="p in platforms" :key="p" :label="p" :value="p" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('topology.region')">
+          <el-select v-model="filter.region" clearable :placeholder="$t('table.selectPlaceholder')" style="width:140px" @change="fetchData">
+            <el-option v-for="r in regionOptions" :key="r" :label="r" :value="r" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('topology.status')">
+          <el-select v-model="filter.status" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
+            <el-option label="online" value="online" />
+            <el-option label="offline" value="offline" />
+            <el-option label="error" value="error" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <el-table :data="instances" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="name" :label="$t('topology.instanceName')" min-width="120" />
       <el-table-column prop="platform" :label="$t('topology.platform')" width="80">
@@ -41,6 +66,18 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+      v-if="total > limit"
+      v-model:current-page="page"
+      :page-size="limit"
+      :total="total"
+      layout="total, prev, pager, next"
+      background
+      small
+      style="margin-top:16px;justify-content:center"
+      @current-change="fetchData"
+    />
 
     <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('topology.editInstance') : $t('topology.createInstance')" width="620px" destroy-on-close>
       <el-form :model="form" label-width="120px">
@@ -96,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
@@ -112,6 +149,18 @@ const regions = ref<string[]>([])
 const creds = ref<MaskedCredential[]>([])
 const loadingRegions = ref(false)
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
+
+// Filters + pagination
+const filter = reactive({ platform: '', region: '', status: '' })
+const page = ref(1)
+const limit = 50
+const total = ref(0)
+
+const platforms = ['alibaba', 'aws', 'podman', 'stub']
+const regionOptions = computed(() => {
+  const all = instances.value.map(i => i.region)
+  return [...new Set(all)].sort()
+})
 const form = reactive({
   name: '', platform: '' as Platform | '', region: '', zone: '', endpoint: '',
   credentialRef: '',
@@ -187,9 +236,21 @@ function openEdit(row: ComputeInstance) {
 
 async function fetchData() {
   loading.value = true
-  try { instances.value = await api.topology.instances.list() }
-  catch { ElMessage.error(t('topology.fetchFailed')) }
+  try {
+    const params: Record<string, any> = { page: page.value, limit }
+    if (filter.platform) params.platform = filter.platform
+    if (filter.region) params.region = filter.region
+    if (filter.status) params.status = filter.status
+    const res = await api.topology.instances.list(params)
+    instances.value = (res as any).items ?? []
+    total.value = (res as any).total ?? instances.value.length
+  } catch { ElMessage.error(t('topology.fetchFailed')) }
   finally { loading.value = false }
+}
+
+function resetFilter() {
+  filter.platform = ''; filter.region = ''; filter.status = ''
+  page.value = 1; fetchData()
 }
 
 async function handleSave() {
@@ -238,4 +299,6 @@ onMounted(async () => {
 .hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; }
 .label-row { display: flex; align-items: center; margin-bottom: 6px; gap: 0; }
 .add-label-btn { margin-top: 2px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 </style>

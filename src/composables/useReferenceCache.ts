@@ -49,8 +49,8 @@ export function useReferenceCache() {
   return {
     instances: {
       data: instancesCache.data,
-      load: () => loadOnce(instancesCache, () => api.topology.instances.list().then(r => r ?? [])),
-      refresh: () => refresh(instancesCache, () => api.topology.instances.list().then(r => r ?? [])),
+      load: () => loadOnce(instancesCache, () => api.topology.instances.list().then(r => (r as { items: ComputeInstance[] }).items ?? (r as unknown as ComputeInstance[]) ?? [])),
+      refresh: () => refresh(instancesCache, () => api.topology.instances.list().then(r => (r as { items: ComputeInstance[] }).items ?? (r as unknown as ComputeInstance[]) ?? [])),
     },
     credentials: {
       data: credentialsCache.data,

@@ -6,6 +6,24 @@
       <el-button type="primary" size="small" @click="openCreate">{{ $t('topology.createBucket') }}</el-button>
     </div>
 
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('topology.platform')">
+          <el-select v-model="filter.platform" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
+            <el-option label="aws" value="aws" /><el-option label="alibaba" value="alibaba" /><el-option label="cloudflare" value="cloudflare-r2" /><el-option label="minio" value="minio" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('topology.region')">
+          <el-select v-model="filter.region" clearable :placeholder="$t('table.selectPlaceholder')" style="width:140px" @change="fetchData">
+            <el-option v-for="r in regionOptions" :key="r" :label="r" :value="r" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <el-table :data="buckets" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="name" :label="$t('topology.bucketName')" min-width="140" />
       <el-table-column :label="$t('topology.instanceTitle')" min-width="160">
@@ -23,8 +41,9 @@
       <el-table-column :label="$t('table.createdAt')" width="160">
         <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column :label="$t('table.actions')" width="240" fixed="right">
         <template #default="{ row }">
+          <el-button size="small" @click="openPolicies(row)">{{ $t('topology.policies') }}</el-button>
           <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
           <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
         </template>
@@ -63,6 +82,68 @@
         <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
       </template>
     </el-dialog>
+
+    <!-- S3 Policies dialog -->
+    <el-dialog v-model="policyDlg.show" :title="$t('topology.policies') + ': ' + policyDlg.bucketName" width="700px" destroy-on-close>
+      <el-table :data="policyDlg.policies" v-loading="policyDlg.loading" stripe :empty-text="$t('table.empty')" size="small">
+        <el-table-column prop="name" :label="$t('table.name')" min-width="120" />
+        <el-table-column prop="effect" :label="$t('permission.effect')" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.effect==='Allow'?'success':'danger'" size="small">{{ row.effect }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('permission.actions')" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.actions?.join(', ') }}</template>
+        </el-table-column>
+        <el-table-column prop="pathPrefix" :label="$t('topology.pathPrefix')" width="140" show-overflow-tooltip />
+        <el-table-column :label="$t('table.actions')" width="130">
+          <template #default="{ row }">
+            <el-button size="small" @click="openPolicyEdit(row)">{{ $t('table.edit') }}</el-button>
+            <el-button size="small" type="danger" @click="handlePolicyDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div style="margin-top:12px;text-align:right">
+        <el-button type="primary" size="small" @click="openPolicyCreate" :loading="policyDlg.saving">{{ $t('topology.createPolicy') }}</el-button>
+      </div>
+
+      <!-- Create/Edit sub-dialog -->
+      <el-dialog v-model="policyFormDlg.show" :title="policyFormDlg.isEdit ? $t('table.edit') : $t('topology.createPolicy')" width="480px" append-to-body>
+        <el-form :model="policyForm" label-width="100px">
+          <el-form-item :label="$t('table.name')"><el-input v-model="policyForm.name" /></el-form-item>
+          <el-form-item :label="$t('permission.effect')">
+            <el-radio-group v-model="policyForm.effect">
+              <el-radio value="Allow">Allow</el-radio>
+              <el-radio value="Deny">Deny</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item :label="$t('permission.actions')">
+            <el-select v-model="policyForm.permLevel" style="width:100%" @change="onPermLevelChange">
+              <el-option label="只读 (GetObject + HeadObject + ListBucket)" value="readonly" />
+              <el-option label="读写 (Get + Put + Delete + Head + List)" value="readwrite" />
+              <el-option label="仅上传 (PutObject)" value="upload" />
+              <el-option label="仅下载 (GetObject)" value="download" />
+              <el-option label="自定义" value="custom" />
+              <el-option label="手动 (逗号分隔)" value="manual" />
+            </el-select>
+            <div v-if="policyForm.permLevel === 'custom'" class="action-checkboxes">
+              <el-checkbox v-for="a in S3_ACTIONS" :key="a.value" v-model="policyForm.selectedActions" :value="a.value" :label="a.label" size="small" />
+            </div>
+            <el-input v-else-if="policyForm.permLevel === 'manual'" v-model="policyForm.actionsText" type="textarea" :rows="2" placeholder="s3:GetObject, s3:PutObject, …" style="margin-top:6px" />
+            <div v-else-if="resolvedActions.length" class="action-preview">
+              <el-tag v-for="a in resolvedActions" :key="a" size="small" style="margin-right:4px;margin-top:4px">{{ a }}</el-tag>
+            </div>
+          </el-form-item>
+          <el-form-item :label="$t('topology.pathPrefix')">
+            <el-input v-model="policyForm.pathPrefix" placeholder="static/" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="policyFormDlg.show=false">{{ $t('table.cancel') }}</el-button>
+          <el-button type="primary" :loading="policyFormDlg.saving" @click="handlePolicySave">{{ $t('table.save') }}</el-button>
+        </template>
+      </el-dialog>
+    </el-dialog>
   </div>
 </template>
 
@@ -82,6 +163,13 @@ const buckets = ref<RegionBucket[]>([])
 const instances = ref<ComputeInstance[]>([])
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 const creds = ref<MaskedCredential[]>([])
+
+// Filters
+const filter = reactive({ platform: '', region: '' })
+const regionOptions = computed(() => {
+  const all = instances.value.map(i => i.region)
+  return [...new Set(all)].sort()
+})
 const form = reactive({
   name: '', bucketType: '' as RegionBucketType | '', instanceId: '', credentialRef: '',
 })
@@ -115,9 +203,18 @@ function openEdit(row: RegionBucket) {
 
 async function fetchData() {
   loading.value = true
-  try { buckets.value = await api.topology.buckets.list() }
-  catch { ElMessage.error(t('topology.fetchFailed')) }
+  try {
+    const params: Record<string, string> = {}
+    if (filter.platform) params.platform = filter.platform
+    if (filter.region) params.region = filter.region
+    buckets.value = await api.topology.buckets.list(params)
+  } catch { ElMessage.error(t('topology.fetchFailed')) }
   finally { loading.value = false }
+}
+
+function resetFilter() {
+  filter.platform = ''; filter.region = ''
+  fetchData()
 }
 
 async function handleSave() {
@@ -154,6 +251,135 @@ async function handleDelete(id: string) {
   } catch { /* ignore */ }
 }
 
+// ─── S3 Policies ───
+const S3_ACTIONS = [
+  { value: 's3:GetObject', label: 'GetObject (下载)' },
+  { value: 's3:PutObject', label: 'PutObject (上传)' },
+  { value: 's3:DeleteObject', label: 'DeleteObject (删除)' },
+  { value: 's3:HeadObject', label: 'HeadObject (元数据)' },
+  { value: 's3:ListBucket', label: 'ListBucket (列出)' },
+]
+
+/** Action preset → action list */
+const PERM_LEVEL_ACTIONS: Record<string, string[]> = {
+  readonly: ['s3:GetObject', 's3:HeadObject', 's3:ListBucket'],
+  readwrite: ['s3:GetObject', 's3:PutObject', 's3:DeleteObject', 's3:HeadObject', 's3:ListBucket'],
+  upload: ['s3:PutObject'],
+  download: ['s3:GetObject'],
+}
+
+const policyDlg = reactive({ show: false, loading: false, saving: false, bucketId: '', bucketName: '', policies: [] as S3Policy[] })
+const policyFormDlg = reactive({ show: false, isEdit: false, editId: '', saving: false })
+const policyForm = reactive({
+  name: '', effect: 'Allow' as 'Allow' | 'Deny',
+  permLevel: 'readonly' as string, actionsText: '', selectedActions: [] as string[], pathPrefix: '',
+})
+
+/** Derive actions array from the form's current mode */
+const resolvedActions = computed(() => {
+  if (policyForm.permLevel === 'custom') return policyForm.selectedActions
+  if (policyForm.permLevel === 'manual') {
+    return policyForm.actionsText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+  }
+  return PERM_LEVEL_ACTIONS[policyForm.permLevel] || []
+})
+
+function onPermLevelChange(val: string) {
+  if (val !== 'custom') {
+    policyForm.selectedActions = []
+  }
+}
+
+function openPolicies(row: RegionBucket) {
+  policyDlg.bucketId = row.id
+  policyDlg.bucketName = row.name
+  policyDlg.show = true
+  fetchPolicies()
+}
+
+async function fetchPolicies() {
+  if (!policyDlg.bucketId) return
+  policyDlg.loading = true
+  try { policyDlg.policies = await api.topology.buckets.policies.list(policyDlg.bucketId) }
+  catch { ElMessage.error(t('topology.fetchFailed')) }
+  finally { policyDlg.loading = false }
+}
+
+function resolveActionsFromForm(): string[] {
+  if (policyForm.permLevel === 'custom') return policyForm.selectedActions
+  if (policyForm.permLevel === 'manual') {
+    return policyForm.actionsText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+  }
+  return PERM_LEVEL_ACTIONS[policyForm.permLevel] || []
+}
+
+function openPolicyCreate() {
+  policyFormDlg.isEdit = false; policyFormDlg.editId = ''
+  policyForm.name = ''; policyForm.effect = 'Allow'
+  policyForm.permLevel = 'readonly'; policyForm.selectedActions = []; policyForm.actionsText = ''; policyForm.pathPrefix = ''
+  policyFormDlg.show = true
+}
+
+function openPolicyEdit(row: S3Policy) {
+  policyFormDlg.isEdit = true; policyFormDlg.editId = row.id
+  policyForm.name = row.name; policyForm.effect = row.effect
+  policyForm.pathPrefix = row.pathPrefix || ''
+
+  // Try to match existing actions to a preset level
+  const actions = row.actions || []
+  const sorted = [...actions].sort()
+  let matched = false
+  for (const [level, acts] of Object.entries(PERM_LEVEL_ACTIONS)) {
+    if (JSON.stringify([...acts].sort()) === JSON.stringify(sorted)) {
+      policyForm.permLevel = level; policyForm.selectedActions = []; policyForm.actionsText = ''; matched = true; break
+    }
+  }
+  if (!matched) {
+    // If all actions are in the standard list, use custom mode with checkboxes
+    const allStandard = actions.every(a => S3_ACTIONS.some(s => s.value === a))
+    if (allStandard && actions.length > 0) {
+      policyForm.permLevel = 'custom'
+      policyForm.selectedActions = [...actions]
+      policyForm.actionsText = ''
+    } else {
+      // Non-standard actions (like "*") → manual mode
+      policyForm.permLevel = 'manual'
+      policyForm.selectedActions = []
+      policyForm.actionsText = actions.join(', ')
+    }
+  }
+  policyFormDlg.show = true
+}
+
+async function handlePolicySave() {
+  if (!policyForm.name) { ElMessage.warning(t('topology.nameRequired')); return }
+  const actions = resolveActionsFromForm()
+  if (!actions.length) { ElMessage.warning(t('permission.actions') + ' required'); return }
+  policyFormDlg.saving = true
+  try {
+    const body = { name: policyForm.name, effect: policyForm.effect, actions, pathPrefix: policyForm.pathPrefix || undefined }
+    if (policyFormDlg.isEdit) {
+      await api.topology.bucketPolicies.update(policyFormDlg.editId, body)
+      ElMessage.success(t('topology.updateSuccess'))
+    } else {
+      await api.topology.buckets.policies.create(policyDlg.bucketId, body as any)
+      ElMessage.success(t('topology.createSuccess'))
+    }
+    policyFormDlg.show = false
+    await fetchPolicies()
+  } catch { ElMessage.error(t('topology.actionFailed')) }
+  finally { policyFormDlg.saving = false }
+}
+
+async function handlePolicyDelete(id: string) {
+  try {
+    await ElMessageBox.confirm(t('topology.bucketDeleteConfirm'), t('table.confirm'))
+    await api.topology.bucketPolicies.delete(id)
+    ElMessage.success(t('topology.deleteSuccess'))
+    await fetchPolicies()
+  } catch { /* ignore */ }
+}
+
 onMounted(async () => {
   await fetchData()
   await Promise.all([refCache.instances.load(), refCache.credentials.load()])
@@ -165,5 +391,9 @@ onMounted(async () => {
 <style scoped>
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 .inherit-hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; }
+.action-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.action-preview { display: flex; flex-wrap: wrap; margin-top: 4px; }
 </style>

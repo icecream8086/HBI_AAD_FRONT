@@ -16,6 +16,16 @@
         {{ $t('permission.createGroup') }}
       </el-button>
     </div>
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('table.name')">
+          <el-input v-model="filter.name" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
     <el-table
       v-loading="loading" stripe
       :data="groups || []"
@@ -254,6 +264,7 @@ const refCache = useReferenceCache()
 
 const loading = ref(false); const saving = ref(false)
 const groups = ref<PermissionGroup[]>([]); const page = ref(1); const limit = ref(15); const total = ref(0)
+const filter = reactive({ name: '' })
 const allUg = ref<UserGroup[]>([]); const allUsers = ref<User[]>([])
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 
@@ -369,10 +380,11 @@ function openEdit(row: PermissionGroup) {
 
 async function fetchData() {
   loading.value = true
-  try { const r = await api.extractPage<PermissionGroup>(api.permissions.apiPermissionsGroupsGet({params:{page:page.value,limit:limit.value}})); groups.value = r.items; total.value = r.total }
+  try { const params: Record<string, any> = {page:page.value,limit:limit.value}; if (filter.name) params.name = filter.name; const r = await api.extractPage<PermissionGroup>(api.permissions.apiPermissionsGroupsGet({params})); groups.value = r.items; total.value = r.total }
   catch { ElMessage.error(t('permission.groupFetchFailed')) }
   finally { loading.value = false }
 }
+function resetFilter() { filter.name = ''; fetchData() }
 
 async function handleSave() {
   if (!form.name) { ElMessage.warning(t('permission.groupNameRequired')); return }
@@ -421,6 +433,8 @@ onMounted(async () => {
 <style scoped>
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 
 .rule-mode-bar { display: flex; justify-content: center; margin-bottom: 12px; }
 .rule-row { display: flex; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px; }

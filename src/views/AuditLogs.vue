@@ -21,25 +21,36 @@
         <el-form-item :label="$t('audit.search')">
           <el-input v-model="f.search" :placeholder="$t('audit.searchPlaceholder')" style="width:200px" clearable />
         </el-form-item>
+        <el-form-item :label="$t('audit.requestId')">
+          <el-input v-model="f.requestId" placeholder="req_xxx" style="width:150px" clearable />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchData">{{ $t('audit.query') }}</el-button>
-          <el-button @click="f={levelMin:'',facility:'',search:''};fetchData()">{{ $t('audit.reset') }}</el-button>
+          <el-button @click="resetFilter">{{ $t('audit.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="logs || []" v-loading="loading" stripe :empty-text="$t('audit.empty')">
-      <el-table-column :label="$t('audit.time')" width="180">
+    <el-table :data="logs || []" v-loading="loading" stripe :empty-text="$t('audit.empty')" @row-click="openDetail">
+      <el-table-column :label="$t('audit.time')" width="170">
         <template #default="{ row }">{{ fmt(row.timestamp) }}</template>
       </el-table-column>
-      <el-table-column prop="level" :label="$t('audit.level')" width="100">
+      <el-table-column :label="$t('audit.level')" width="80">
         <template #default="{ row }">
           <el-tag :type="levelType(row.level)" size="small">{{ levelName(row.level) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="facility" :label="$t('audit.facility')" width="130" />
-      <el-table-column prop="actorId" label="Actor" width="100" show-overflow-tooltip />
-      <el-table-column prop="message" :label="$t('audit.message')" min-width="280" show-overflow-tooltip />
+      <el-table-column prop="facility" :label="$t('audit.facility')" width="120" />
+      <el-table-column :label="$t('audit.actor')" width="110" show-overflow-tooltip>
+        <template #default="{ row }">{{ userName(row.actorId) }}</template>
+      </el-table-column>
+      <el-table-column prop="message" :label="$t('audit.message')" min-width="260" show-overflow-tooltip />
+      <el-table-column :label="$t('audit.requestId')" width="110">
+        <template #default="{ row }">
+          <code v-if="row.requestId" style="font-size:11px">{{ shortId(row.requestId) }}</code>
+          <span v-else class="no-reqid">-</span>
+        </template>
+      </el-table-column>
     </el-table>
     <el-pagination
       v-if="total > pageSize"
@@ -51,6 +62,38 @@
       @size-change="fetchData"
       @current-change="fetchData"
     />
+
+    <!-- Detail dialog -->
+    <el-dialog v-model="detail.show" :title="$t('audit.detailTitle')" width="700px">
+      <template v-if="detail.item">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item :label="$t('audit.id')" :span="2">
+            <code style="font-size:12px">{{ detail.item.id }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('audit.time')">{{ fmt(detail.item.timestamp) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('audit.level')">
+            <el-tag :type="levelType(detail.item.level)" size="small">{{ levelName(detail.item.level) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('audit.facility')">{{ detail.item.facility }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('audit.requestId')">
+            <code v-if="detail.item.requestId">{{ detail.item.requestId }}</code>
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('audit.actor')">{{ userName(detail.item.actorId) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('audit.actorIdRaw')" v-if="detail.item.actorId">
+            <code>{{ detail.item.actorId }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('audit.message')" :span="2">
+            <pre class="msg-pre">{{ detail.item.message }}</pre>
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-collapse v-if="detail.item.metadata && Object.keys(detail.item.metadata).length" style="margin-top:12px">
+          <el-collapse-item :title="$t('audit.metadata')">
+            <pre class="json-pre">{{ JSON.stringify(detail.item.metadata, null, 2) }}</pre>
+          </el-collapse-item>
+        </el-collapse>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -67,14 +110,44 @@ const logs = ref<AuditLog[]>([])
 const page = ref(1)
 const pageSize = ref(15)
 const total = ref(0)
-const f = reactive({ levelMin: '' as number | string, facility: '', search: '' })
+const f = reactive({ levelMin: '' as number | string, facility: '', search: '', requestId: '' })
 
 const LEVEL_NAMES: Record<number, string> = { 0:'EMERG',1:'ALERT',2:'CRIT',3:'ERR',4:'WARNING',5:'NOTICE',6:'INFO',7:'DEBUG' }
 const LEVEL_TAGS: Record<number, string> = { 0:'danger',1:'danger',2:'danger',3:'danger',4:'warning',5:'warning',6:'info',7:'info' }
 function levelName(lv: number) { return LEVEL_NAMES[lv] ?? `LEVEL_${lv}` }
 function levelType(lv: number) { return LEVEL_TAGS[lv] ?? 'info' }
 
+// User name resolution
+const userMap = ref<Record<string, string>>({})
+async function loadUsers() {
+  try {
+    const users = await api.extractArray<User>(api.users.apiUsersGet())
+    userMap.value = Object.fromEntries(users.map(u => [u.id, u.name || u.email]))
+  } catch { /* ignore */ }
+}
+function userName(id?: string | null): string {
+  if (!id) return '-'
+  return userMap.value[id] || id.slice(0, 12)
+}
+
+function shortId(id: string) { return id.length > 12 ? id.slice(0, 12) + '…' : id }
+
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
+
+// Detail dialog
+const detail = reactive({ show: false, item: null as AuditLog | null })
+function openDetail(row: AuditLog) {
+  detail.item = row
+  detail.show = true
+}
+
+function resetFilter() {
+  f.levelMin = ''
+  f.facility = ''
+  f.search = ''
+  f.requestId = ''
+  fetchData()
+}
 
 async function fetchData() {
   loading.value = true
@@ -83,6 +156,7 @@ async function fetchData() {
     if (f.levelMin !== '') params.levelMin = f.levelMin
     if (f.facility) params.facility = f.facility
     if (f.search) params.search = f.search
+    if (f.requestId) params.requestId = f.requestId
     const res = await api.extract<{ lines: AuditLog[]; total: number }>(api.audit.apiAuditLogsGet({ params }))
     logs.value = (res.lines || []).map((l: any) => typeof l === 'string' ? JSON.parse(l) : l)
     total.value = res.total ?? logs.value.length
@@ -90,9 +164,24 @@ async function fetchData() {
   finally { loading.value = false }
 }
 
-onMounted(fetchData)
+onMounted(async () => {
+  await loadUsers()
+  await fetchData()
+})
 </script>
 
 <style scoped>
 .filters { margin-bottom: 16px; }
+.no-reqid { color: var(--el-text-color-placeholder); }
+.msg-pre {
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px; line-height: 1.5; background: var(--el-fill-color-light);
+  padding: 8px; border-radius: 4px; max-height: 200px; overflow-y: auto;
+}
+.json-pre {
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px; line-height: 1.5;
+}
 </style>

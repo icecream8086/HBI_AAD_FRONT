@@ -45,6 +45,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'topology/instances', name: 'InstanceList', component: () => import('../views/topology/InstanceList.vue'), meta: { title: 'route.instanceList' } },
       { path: 'topology/credentials', name: 'CredentialList', component: () => import('../views/topology/CredentialList.vue'), meta: { title: 'route.credentialList' } },
       { path: 'topology/buckets', name: 'BucketList', component: () => import('../views/topology/BucketList.vue'), meta: { title: 'route.bucketList' } },
+      { path: 'topology/volumes', name: 'VolumeList', component: () => import('../views/topology/VolumeList.vue'), meta: { title: 'route.volumeList' } },
 
       // Security Groups
       { path: 'networks', name: 'SecurityGroups', component: () => import('../views/network/SecurityGroupList.vue'), meta: { title: 'route.securityGroupList' } },

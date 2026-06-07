@@ -1,7 +1,7 @@
 import globalAxios, { type AxiosPromise } from 'axios'
 import { Configuration } from './generated/configuration'
 import {
-  AuditApi, InfoApi, PermissionsApi,
+  AuditApi, ContainerSecretsApi, InfoApi, PermissionsApi,
   PlatformsApi, SandboxesApi, SystemGroupsApi, TemplatesApi, UsersApi,
 } from './generated/api'
 
@@ -59,6 +59,7 @@ function extract<T>(promise: AxiosPromise<object>): Promise<T> {
 export const api = {
   // ─── Generated API classes (CORS → 后端直连) ───
   audit: new AuditApi(config, undefined, axios),
+  containerSecrets: new ContainerSecretsApi(config, undefined, axios),
   info: new InfoApi(config, undefined, axios),
   permissions: new PermissionsApi(config, undefined, axios),
   platforms: new PlatformsApi(config, undefined, axios),
@@ -120,8 +121,8 @@ export const api = {
     },
     // Instances (core topology node — replaces old clusters)
     instances: {
-      list(params?: { region?: string; platform?: string; status?: string }) {
-        return axios.get<ApiResponse<{ items: ComputeInstance[] }>>('/api/topology/instances', { params }).then(r => r.data.data.items)
+      list(params?: { region?: string; platform?: string; status?: string; page?: number; limit?: number }) {
+        return axios.get<ApiResponse<{ items: ComputeInstance[] }>>('/api/topology/instances', { params }).then(r => r.data.data)
       },
       get(id: string) {
         return axios.get<ApiResponse<ComputeInstance>>(`/api/topology/instances/${id}`).then(r => r.data.data)
@@ -173,6 +174,45 @@ export const api = {
       },
       delete(id: string) {
         return axios.delete(`/api/topology/buckets/${id}`)
+      },
+      // S3 bucket policies
+      policies: {
+        list(bucketId: string) {
+          return axios.get<ApiResponse<{ items: S3Policy[] }>>(`/api/topology/buckets/${bucketId}/policies`).then(r => r.data.data.items)
+        },
+        create(bucketId: string, body: { name: string; effect: string; actions: string[]; pathPrefix?: string }) {
+          return axios.post<ApiResponse<S3Policy>>(`/api/topology/buckets/${bucketId}/policies`, body).then(r => r.data.data)
+        },
+      },
+    },
+    // S3 policies CRUD by ID
+    bucketPolicies: {
+      get(id: string) {
+        return axios.get<ApiResponse<S3Policy>>(`/api/topology/policies/${id}`).then(r => r.data.data)
+      },
+      update(id: string, body: { name?: string; effect?: string; actions?: string[]; pathPrefix?: string }) {
+        return axios.put<ApiResponse<S3Policy>>(`/api/topology/policies/${id}`, body).then(r => r.data.data)
+      },
+      delete(id: string) {
+        return axios.delete(`/api/topology/policies/${id}`)
+      },
+    },
+    // Volumes
+    volumes: {
+      list(params?: { page?: number; limit?: number }) {
+        return axios.get<ApiResponse<{ items: Volume[] }>>('/api/volumes', { params }).then(r => r.data.data)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<Volume>>(`/api/volumes/${id}`).then(r => r.data.data)
+      },
+      create(body: CreateVolumeInput) {
+        return axios.post<ApiResponse<Volume>>('/api/volumes', body).then(r => r.data.data)
+      },
+      update(id: string, body: UpdateVolumeInput) {
+        return axios.put<ApiResponse<Volume>>(`/api/volumes/${id}`, body).then(r => r.data.data)
+      },
+      delete(id: string) {
+        return axios.delete(`/api/volumes/${id}`)
       },
     },
     // Image Repositories
@@ -267,7 +307,7 @@ export const api = {
       return axios.post('/__admin/migrate-user-index', { ids })
     },
     triggerTick() {
-      return axios.post('/_tick')
+      return axios.post('/__tick')
     },
   },
 
@@ -334,6 +374,18 @@ export const api = {
     },
     getTemplates() {
       return axios.get('/api/permissions/templates').then(r => (r.data as Record<string,unknown>).data as unknown[])
+    },
+    /** Invite a user to join a user group (requires adminIds membership) */
+    invite(data: { groupId: string; inviteeId: string }) {
+      return axios.post('/api/permissions/invite', data).then(r => (r.data as Record<string,unknown>).data)
+    },
+    /** Create user group with full fields (including adminIds) */
+    createUserGroup(data: { name: string; memberIds: string[]; adminIds?: string[]; dependsOn?: string[] }) {
+      return axios.post<ApiResponse<UserGroup>>('/api/permissions/user-groups', data).then(r => r.data.data)
+    },
+    /** Update user group with full fields */
+    updateUserGroup(id: string, data: { name: string; memberIds?: string[]; adminIds?: string[]; dependsOn?: string[] }) {
+      return axios.put<ApiResponse<UserGroup>>(`/api/permissions/user-groups/${id}`, data).then(r => r.data.data)
     },
   },
 }

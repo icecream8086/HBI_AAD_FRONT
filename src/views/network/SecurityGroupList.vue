@@ -6,6 +6,17 @@
       <el-button type="primary" size="small" @click="openCreate">{{ $t('securityGroup.create') }}</el-button>
     </div>
 
+    <el-card class="filters">
+      <el-form inline>
+        <el-form-item :label="$t('table.name')">
+          <el-input v-model="filter.name" :placeholder="$t('table.name')" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <el-table :data="items" v-loading="loading" stripe :empty-text="$t('table.empty')">
       <el-table-column prop="name" :label="$t('securityGroup.name')" min-width="140" />
       <el-table-column prop="securityGroupId" :label="$t('topology.securityGroupId')" width="140" />
@@ -27,6 +38,18 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+      v-if="total > limit"
+      v-model:current-page="page"
+      :page-size="limit"
+      :total="total"
+      layout="total, prev, pager, next"
+      background
+      small
+      style="margin-top:16px;justify-content:center"
+      @current-change="fetchData"
+    />
 
     <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('securityGroup.edit') : $t('securityGroup.create')" width="520px" destroy-on-close>
       <el-form :model="form" label-width="110px">
@@ -87,6 +110,10 @@ const saving = ref(false)
 const items = ref<SecurityGroup[]>([])
 const instances = ref<ComputeInstance[]>([])
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
+const page = ref(1)
+const limit = 50
+const total = ref(0)
+const filter = reactive({ name: '' })
 function resetForm() {
   form.name = ''; form.instanceId = ''; form.securityGroupId = ''; form.visibility = 'private'
   form.egressBandwidth = 100; form.ingressBandwidth = 50; form.burstBandwidth = 200; form.qosPriority = 5
@@ -132,11 +159,18 @@ function openEdit(row: any) {
 async function fetchData() {
   loading.value = true
   try {
-    const res = await api.securityGroups.list()
+    const params: Record<string, any> = { page: page.value, limit }
+    if (filter.name) params.name = filter.name
+    const res = await api.securityGroups.list(params)
     const data = (res.data as any)?.data
     items.value = data?.items ?? (Array.isArray(data) ? data : [])
+    total.value = data?.total ?? items.value.length
   } catch { ElMessage.error(t('securityGroup.fetchFailed')) }
   finally { loading.value = false }
+}
+
+function resetFilter() {
+  filter.name = ''; page.value = 1; fetchData()
 }
 
 async function handleSave() {
@@ -188,6 +222,8 @@ onMounted(async () => {
 <style scoped>
 .back { margin-bottom: 8px; }
 .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters { margin-bottom: 16px; }
+.filters :deep(.el-form-item) { margin-bottom: 0; }
 .inherit-hint { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px; }
 .cont-card { border: 1px solid var(--el-border-color); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
 .section-label { font-size: 13px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 8px; }
