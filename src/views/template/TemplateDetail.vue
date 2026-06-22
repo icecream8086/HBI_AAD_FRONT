@@ -10,7 +10,7 @@
         </div>
         <div class="actions">
           <el-button @click="openEdit">{{ $t('table.edit') }}</el-button>
-          <el-button type="primary" @click="handleApply">{{ $t('template.apply') }}</el-button>
+          <el-button type="primary" @click="openApply">{{ $t('template.apply') }}</el-button>
         </div>
       </div>
 
@@ -280,9 +280,7 @@
         <div v-for="(c, ci) in edit.form.containers" :key="ci" class="cont-card">
           <el-form-item :label="`#${ci+1}`">
             <el-input v-model="c.name" :placeholder="$t('template.name')" style="width:140px;margin-right:6px" size="small" />
-            <el-select v-model="c.image" filterable allow-create clearable :placeholder="$t('template.imagePlaceholder')" style="width:300px;margin-right:6px" size="small">
-              <el-option v-for="img in existingImages" :key="img" :label="img" :value="img" />
-            </el-select>
+            <el-input v-model="c.image" :placeholder="$t('template.imagePlaceholder')" style="width:300px;margin-right:6px" size="small" />
             <el-button type="danger" size="small" @click="edit.form.containers.splice(ci,1)" circle>−</el-button>
           </el-form-item>
           <el-form-item :label="$t('table.command')">
@@ -434,6 +432,24 @@
       <template #footer>
         <el-button @click="edit.show=false">{{ $t('template.cancel') }}</el-button>
         <el-button type="primary" :loading="edit.saving" @click="handleSave">{{ $t('table.save') }}</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Apply dialog -->
+    <el-dialog v-model="applyDlg.show" :title="$t('template.apply')" width="420px" destroy-on-close>
+      <el-form :model="applyDlg.form" label-width="100px">
+        <el-form-item :label="$t('template.name')">
+          <el-input v-model="applyDlg.form.name" />
+        </el-form-item>
+        <el-form-item :label="$t('topology.instanceTitle')" required>
+          <el-select v-model="applyDlg.form.instanceId" filterable :placeholder="$t('topology.instanceTitle')" style="width:100%">
+            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="applyDlg.show = false">{{ $t('table.cancel') }}</el-button>
+        <el-button type="primary" :loading="applyDlg.saving" @click="handleApplyConfirm">{{ $t('template.apply') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -758,12 +774,25 @@ async function handleSave() {
   finally { edit.saving = false }
 }
 
-async function handleApply() {
+const applyDlg = reactive({ show: false, saving: false, form: { name: '', instanceId: '' } })
+
+function openApply() {
+  applyDlg.form.name = template.value?.name || 'sandbox-' + Date.now()
+  applyDlg.form.instanceId = template.value?.container?.instanceId || ''
+  applyDlg.show = true
+}
+
+async function handleApplyConfirm() {
+  if (!applyDlg.form.instanceId) { ElMessage.warning(t('topology.nameRequired')); return }
+  applyDlg.saving = true
   try {
-    await api.templates.apiTemplatesIdApplyPost(route.params.id as string, { name: template.value?.name || 'applied' } as any)
+    const body: Record<string, any> = { name: applyDlg.form.name, instanceId: applyDlg.form.instanceId }
+    await api.templates.apiTemplatesIdApplyPost(route.params.id as string, body as any)
     ElMessage.success(t('template.applyInstanceSuccess'))
+    applyDlg.show = false
     router.push('/sandboxes')
   } catch { ElMessage.error(t('template.applyFailed')) }
+  finally { applyDlg.saving = false }
 }
 
 onMounted(async () => {

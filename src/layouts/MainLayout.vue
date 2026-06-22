@@ -19,6 +19,21 @@
           <el-icon><Odometer /></el-icon>
           <template #title>{{ $t('menu.dashboard') }}</template>
         </el-menu-item>
+
+        <el-sub-menu index="actions">
+          <template #title>
+            <el-icon><VideoPlay /></el-icon>
+            <span>{{ $t('menu.actions') }}</span>
+          </template>
+          <el-menu-item index="/actions/dashboard">{{ $t('menu.actionDashboard') }}</el-menu-item>
+          <el-menu-item index="/actions/workflows">{{ $t('menu.workflows') }}</el-menu-item>
+          <el-menu-item index="/actions/runs">{{ $t('menu.workflowRuns') }}</el-menu-item>
+          <el-menu-item index="/actions/runners">{{ $t('menu.runners') }}</el-menu-item>
+          <el-menu-item index="/actions/registry">{{ $t('menu.actionRegistry') }}</el-menu-item>
+          <el-menu-item index="/actions/shared-links">{{ $t('menu.sharedLinks') }}</el-menu-item>
+          <el-menu-item index="/actions/organizations">{{ $t('menu.actionOrganizations') }}</el-menu-item>
+        </el-sub-menu>
+
         <el-sub-menu index="sandbox-group">
           <template #title>
             <el-icon><Monitor /></el-icon>
@@ -57,7 +72,10 @@
             <el-icon><MapLocation /></el-icon>
             <span>{{ $t('menu.topology') }}</span>
           </template>
-          <el-menu-item index="/topology/instances">{{ $t('menu.instances') }}</el-menu-item>
+          <el-menu-item index="/topology/instances">
+            <el-icon><Cpu /></el-icon>
+            {{ $t('menu.instances') }}
+          </el-menu-item>
           <el-menu-item index="/topology/credentials">{{ $t('menu.credentials') }}</el-menu-item>
           <el-menu-item index="/topology/buckets">{{ $t('menu.buckets') }}</el-menu-item>
           <el-menu-item index="/topology/volumes">{{ $t('menu.volumes') }}</el-menu-item>

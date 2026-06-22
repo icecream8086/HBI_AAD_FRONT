@@ -143,7 +143,7 @@ function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 function fmtNetwork(net: any): string {
   if (!net) return '-'
   const o = typeof net === 'string' ? tryParse(net) : net
-  return o?.privateIp || o?.ip || o?.publicIp || JSON.stringify(o)
+  return o?.externalIp || o?.eipAddress || o?.publicIp || o?.privateIp || o?.internalIp || o?.ip || JSON.stringify(o)
 }
 function tryParse(s: string) { try { return JSON.parse(s) } catch { return null } }
 

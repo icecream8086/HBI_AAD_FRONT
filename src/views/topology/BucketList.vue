@@ -76,6 +76,10 @@
             <el-option v-for="c in creds" :key="c.name" :label="`${c.name} (${c.platform})`" :value="c.name" />
           </el-select>
         </el-form-item>
+        <el-form-item :label="$t('topology.autoGenerateKeys')">
+          <el-switch v-model="form.autoGenerateKeys" />
+          <span style="font-size:12px;color:var(--el-text-color-secondary);margin-left:8px">{{ $t('topology.autoGenerateKeysHint') }}</span>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
@@ -171,7 +175,7 @@ const regionOptions = computed(() => {
   return [...new Set(all)].sort()
 })
 const form = reactive({
-  name: '', bucketType: '' as RegionBucketType | '', instanceId: '', credentialRef: '',
+  name: '', bucketType: '' as RegionBucketType | '', instanceId: '', credentialRef: '', autoGenerateKeys: false,
 })
 
 const instMap = computed(() => {
@@ -190,14 +194,14 @@ function fmtInstance(id: string) {
 
 function openCreate() {
   dialog.isEdit = false; dialog.editId = ''
-  form.name = ''; form.bucketType = ''; form.instanceId = ''; form.credentialRef = ''
+  form.name = ''; form.bucketType = ''; form.instanceId = ''; form.credentialRef = ''; form.autoGenerateKeys = false
   dialog.show = true
 }
 
 function openEdit(row: RegionBucket) {
   dialog.isEdit = true; dialog.editId = row.id
   form.name = row.name; form.bucketType = row.bucketType; form.instanceId = row.instanceId
-  form.credentialRef = row.credentialRef || ''
+  form.credentialRef = row.credentialRef || ''; form.autoGenerateKeys = row.autoGenerateKeys ?? false
   dialog.show = true
 }
 
@@ -223,7 +227,7 @@ async function handleSave() {
   saving.value = true
   try {
     if (dialog.isEdit) {
-      const upd: Record<string, any> = { name: form.name, instanceId: form.instanceId }
+      const upd: Record<string, any> = { name: form.name, instanceId: form.instanceId, autoGenerateKeys: form.autoGenerateKeys }
       if (form.credentialRef) upd.credentialRef = form.credentialRef
       else upd.credentialRef = null
       await api.topology.buckets.update(dialog.editId, upd)
@@ -233,6 +237,7 @@ async function handleSave() {
         name: form.name,
         bucketType: form.bucketType as RegionBucketType,
         instanceId: form.instanceId,
+        autoGenerateKeys: form.autoGenerateKeys,
       }
       if (form.credentialRef) body.credentialRef = form.credentialRef
       await api.topology.buckets.create(body as CreateBucketInput)

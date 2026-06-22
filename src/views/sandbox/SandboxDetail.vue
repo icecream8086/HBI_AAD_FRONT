@@ -263,7 +263,7 @@ function fmtCmd(cmd: string[] | undefined): string {
 function fmtNetwork(net: any): string {
   if (!net) return '-'
   const o = typeof net === 'string' ? (() => { try { return JSON.parse(net) } catch { return null } })() : net
-  return o?.privateIp || o?.ip || o?.publicIp || JSON.stringify(o)
+  return o?.externalIp || o?.eipAddress || o?.publicIp || o?.privateIp || o?.internalIp || o?.ip || JSON.stringify(o)
 }
 
 async function load() {

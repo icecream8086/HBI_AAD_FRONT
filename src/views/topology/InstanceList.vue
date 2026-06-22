@@ -96,9 +96,8 @@
             </el-select>
           </el-form-item></el-col>
         </el-row>
-        <el-form-item :label="$t('topology.zone')" required>
+        <el-form-item :label="$t('topology.zone')">
           <el-input v-model="form.zone" :placeholder="$t('topology.zoneHint')" />
-          <div class="hint">{{ $t('topology.zoneHint') }}</div>
         </el-form-item>
         <el-form-item :label="$t('topology.endpoint')">
           <el-input v-model="form.endpoint" placeholder="http://192.168.1.1:8080" />
@@ -145,8 +144,8 @@ const refCache = useReferenceCache()
 const loading = ref(false)
 const saving = ref(false)
 const instances = ref<ComputeInstance[]>([])
-const regions = ref<string[]>([])
 const creds = ref<MaskedCredential[]>([])
+const regions = ref<string[]>([])
 const loadingRegions = ref(false)
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 
@@ -198,9 +197,11 @@ async function onPlatformChange() {
   if (!form.platform) return
   loadingRegions.value = true
   try {
-    const pr = await api.topology.regions.list(form.platform) as any
-    regions.value = pr?.regions ?? []
-  } catch { /* ignore */ }
+    const res = await api.platforms.regions({ platform: form.platform })
+    regions.value = (res.regions ?? []).map((r: { RegionId: string }) => r.RegionId)
+  } catch (e) {
+    console.error('Failed to load regions:', e)
+  }
   finally { loadingRegions.value = false }
 }
 
@@ -256,12 +257,12 @@ function resetFilter() {
 async function handleSave() {
   if (!form.name) { ElMessage.warning(t('topology.nameRequired')); return }
   if (!form.region) { ElMessage.warning(t('topology.region')); return }
-  if (!form.zone) { ElMessage.warning(t('topology.zone')); return }
+  // zone 可选，ECI 自动跨可用区调度
   saving.value = true
   try {
     const body: CreateInstanceInput = {
       name: form.name, platform: form.platform as Platform,
-      region: form.region, zone: form.zone, endpoint: form.endpoint,
+      region: form.region, zone: form.zone || undefined, endpoint: form.endpoint,
       credentialRef: form.credentialRef || undefined,
       labels: buildLabels(),
       capabilities: buildCapabilities(),

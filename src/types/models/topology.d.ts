@@ -45,7 +45,7 @@ interface CreateInstanceInput {
   name: string
   platform: Platform
   region: string
-  zone: string
+  zone?: string
   endpoint: string
   credentialRef?: string
   capabilities?: InstanceCapabilities
@@ -83,6 +83,7 @@ interface RegionBucket {
   instanceId: string
   credentialRef?: string
   status: 'Active' | 'Inactive'
+  autoGenerateKeys?: boolean
   createdAt: number
   updatedAt: number
 }
@@ -92,6 +93,7 @@ interface CreateBucketInput {
   bucketType: RegionBucketType
   instanceId: string
   credentialRef?: string
+  autoGenerateKeys?: boolean
 }
 
 interface UpdateBucketInput {
@@ -100,6 +102,7 @@ interface UpdateBucketInput {
   instanceId?: string
   credentialRef?: string | null
   status?: 'Active' | 'Inactive'
+  autoGenerateKeys?: boolean
 }
 
 // ─── Credential ───
@@ -155,9 +158,8 @@ interface UpdateCredentialInput {
   status?: 'active' | 'inactive'
 }
 
-interface PlatformRegions {
-  platform: Platform
-  regions: string[]
+interface PlatformRegion {
+  regionId: string
 }
 
 // ─── ImageRepository ───
@@ -206,6 +208,26 @@ interface BandwidthConfig {
   ingress?: number
   burst?: number
   priority?: number
+}
+
+// ─── Extension Fields (平台扩展字段) ───
+
+interface ExtensionField {
+  key: string
+  type: 'boolean' | 'number' | 'string' | 'string[]'
+  label: string
+  description?: string
+  default?: unknown
+  validation?: Record<string, unknown>
+  category: string
+}
+
+interface ExtensionFieldGroup {
+  provider: string
+  label: string
+  instanceId: string
+  instanceName: string
+  fields: ExtensionField[]
 }
 
 // ─── SecurityGroup (原 VirtualNetwork, 无 CIDR) ───
@@ -299,6 +321,7 @@ interface DiskConfig {
   diskId: string
   fsType: string
   sizeGiB?: number
+  diskCategory?: 'cloud_efficiency' | 'cloud_ssd' | 'cloud_essd'
   readOnly?: boolean
   deleteWithInstance?: boolean
 }

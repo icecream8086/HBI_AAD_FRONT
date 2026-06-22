@@ -56,6 +56,20 @@ const routes: RouteRecordRaw[] = [
       { path: 'audit', name: 'AuditLogs', component: () => import('../views/AuditLogs.vue'), meta: { title: 'route.audit' } },
       { path: 'events', name: 'Events', component: () => import('../views/EventLoop.vue'), meta: { title: 'route.events' } },
 
+      // Actions
+      { path: 'actions/dashboard', name: 'ActionDashboard', component: () => import('../views/action/ActionDashboard.vue'), meta: { title: 'route.actionDashboard' } },
+      { path: 'actions/organizations', name: 'ActionOrgs', component: () => import('../views/action/OrganizationList.vue'), meta: { title: 'route.actionOrganizations' } },
+      { path: 'actions/registry', name: 'ActionRegistry', component: () => import('../views/action/ActionRegistry.vue'), meta: { title: 'route.actionRegistry' } },
+      { path: 'actions/runners', name: 'Runners', component: () => import('../views/action/RunnerList.vue'), meta: { title: 'route.runners' } },
+      { path: 'actions/runs', name: 'WorkflowRuns', component: () => import('../views/action/RunList.vue'), meta: { title: 'route.workflowRuns' } },
+      { path: 'actions/runs/:id', name: 'RunDetail', component: () => import('../views/action/RunDetail.vue'), meta: { title: 'route.runDetail' } },
+      { path: 'actions/runs/:runId/jobs/:jobId', name: 'JobDetail', component: () => import('../views/action/JobDetail.vue'), meta: { title: 'route.jobDetail' } },
+      { path: 'actions/secrets/:workflowId', name: 'WorkflowSecrets', component: () => import('../views/action/SecretList.vue'), meta: { title: 'route.workflowSecrets' } },
+      { path: 'actions/shared-links', name: 'SharedLinks', component: () => import('../views/action/SharedLinkList.vue'), meta: { title: 'route.sharedLinks' } },
+      { path: 'actions/workflows', name: 'Workflows', component: () => import('../views/action/WorkflowList.vue'), meta: { title: 'route.workflows' } },
+      { path: 'actions/workflows/:id', name: 'WorkflowDetail', component: () => import('../views/action/WorkflowDetail.vue'), meta: { title: 'route.workflowDetail' } },
+      { path: 'actions/workflows/:id/editor', name: 'WorkflowEditor', component: () => import('../views/action/WorkflowEditor.vue'), meta: { title: 'route.workflowEditor' } },
+
       // Profile
       { path: 'profile', name: 'Profile', component: () => import('../views/Profile.vue'), meta: { title: 'route.profile' } },
     ],

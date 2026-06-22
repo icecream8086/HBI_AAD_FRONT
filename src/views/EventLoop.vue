@@ -127,8 +127,7 @@ async function handleTick() {
   ticking.value = true
   try {
     const res = await api.dev.triggerTick()
-    const data = (res as any).data?.data || (res as any).data
-    ElMessage.success(`[dev] Tick done — queue: ${data.queueSize}, processed: ${data.processedCount}`)
+    ElMessage.success(`[dev] ${(res as any).data?.message || 'Tick done'}`)
     await fetchStatus()
   } catch { ElMessage.error('[dev] Tick failed') }
   finally { ticking.value = false }

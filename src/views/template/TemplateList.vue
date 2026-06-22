@@ -66,8 +66,8 @@
         <el-form-item :label="$t('template.name')">
           <el-input v-model="applyDlg.form.name" />
         </el-form-item>
-        <el-form-item :label="$t('topology.instanceTitle')">
-          <el-select v-model="applyDlg.form.instanceId" filterable clearable placeholder="Optional" style="width:100%">
+        <el-form-item :label="$t('topology.instanceTitle')" required>
+          <el-select v-model="applyDlg.form.instanceId" filterable :placeholder="$t('topology.instanceTitle')" style="width:100%">
             <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
           </el-select>
         </el-form-item>
@@ -509,12 +509,12 @@ function handleApply(row: SandboxTemplate) {
 }
 
 async function handleApplyConfirm() {
+  if (!applyDlg.form.instanceId) { ElMessage.warning(t('topology.nameRequired')); return }
   applyDlg.saving = true
   try {
-    const body: Record<string, any> = { name: applyDlg.form.name }
-    if (applyDlg.form.instanceId) body.instanceId = applyDlg.form.instanceId
+    const body: Record<string, any> = { name: applyDlg.form.name, instanceId: applyDlg.form.instanceId }
     await api.templates.apiTemplatesIdApplyPost(applyDlg.templateId, body as any)
-    ElMessage.success(t('template.applySandboxSuccess'))
+    ElMessage.success(t('template.applyInstanceSuccess'))
     applyDlg.show = false
   } catch { ElMessage.error(t('template.applyFailed')) }
   finally { applyDlg.saving = false }

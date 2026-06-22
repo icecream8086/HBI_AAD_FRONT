@@ -62,7 +62,14 @@ export const api = {
   containerSecrets: new ContainerSecretsApi(config, undefined, axios),
   info: new InfoApi(config, undefined, axios),
   permissions: new PermissionsApi(config, undefined, axios),
-  platforms: new PlatformsApi(config, undefined, axios),
+  platforms: Object.assign(new PlatformsApi(config, undefined, axios), {
+    extensionFields(instanceId: string) {
+      return axios.get<ApiResponse<ExtensionFieldGroup>>('/api/platforms/extension-fields', { params: { instanceId } }).then(r => r.data.data)
+    },
+    regions(params: { instanceId?: string; platform?: string }) {
+      return axios.get<ApiResponse<{ platform: string; regions: { RegionId: string }[] }>>('/api/platforms/regions', { params }).then(r => r.data.data)
+    },
+  }),
   sandboxes: new SandboxesApi(config, undefined, axios),
   pods: {
     list(params?: { status?: string; limit?: number; cursor?: string }) {
@@ -113,12 +120,6 @@ export const api = {
 
   // ─── Topology (topo.http) ───
   topology: {
-    // Regions
-    regions: {
-      list(platform?: string) {
-        return axios.get<ApiResponse<PlatformRegions>>('/api/topology/regions', { params: { platform } }).then(r => r.data.data)
-      },
-    },
     // Instances (core topology node — replaces old clusters)
     instances: {
       list(params?: { region?: string; platform?: string; status?: string; page?: number; limit?: number }) {
@@ -246,6 +247,37 @@ export const api = {
     },
   },
 
+  // ─── Runtime Images ( /api/images , 对标 docker images ) ───
+  images: {
+    list(params?: { search?: string; limit?: number; instanceId?: string }) {
+      return axios.get<ApiResponse<{ items: ImageInfo[] }>>('/api/images', { params }).then(r => r.data.data.items)
+    },
+    pull(body: ImagePullRequest) {
+      return axios.post<ApiResponse<ImageInfo>>('/api/images/pull', body).then(r => r.data.data)
+    },
+    get(id: string) {
+      return axios.get<ApiResponse<ImageInfo>>(`/api/images/${id}`).then(r => r.data.data)
+    },
+    delete(id: string) {
+      return axios.delete(`/api/images/${id}`)
+    },
+    tag(id: string, body: ImageTagRequest) {
+      return axios.post<ApiResponse<ImageInfo>>(`/api/images/${id}/tag`, body).then(r => r.data.data)
+    },
+    search(params: { term: string }) {
+      return axios.get<ApiResponse<ImageSearchResult[]>>('/api/images/search', { params }).then(r => r.data.data)
+    },
+    prune() {
+      return axios.post('/api/images/prune')
+    },
+    history(id: string) {
+      return axios.get<ApiResponse<ImageHistoryLayer[]>>(`/api/images/${id}/history`).then(r => r.data.data)
+    },
+    build(body: ImageBuildRequest) {
+      return axios.post<ApiResponse<ImageInfo>>('/api/images/build', body).then(r => r.data.data)
+    },
+  },
+
   // ─── Security Groups (/api/networks) ───
   securityGroups: {
     list(params?: { page?: number; limit?: number }) {
@@ -301,13 +333,13 @@ export const api = {
   // ─── Dev (auth.http) ───
   dev: {
     sudo() {
-      return axios.post('/api/sudo', {}).then(r => r.data as { expiry: number; durationMs: number })
+      return axios.post('/api/sudo', {}).then(r => (r.data as ApiResponse<{ expiry: number; durationMs: number }>).data)
     },
     migrateUserIndex(ids: string[]) {
       return axios.post('/__admin/migrate-user-index', { ids })
     },
     triggerTick() {
-      return axios.post('/__tick')
+      return axios.post('/__scheduled', null, { responseType: 'text' }).then(r => ({ data: { message: r.data } }))
     },
   },
 
@@ -353,6 +385,159 @@ export const api = {
         return item as T
       })
     })
+  },
+
+  // ─── Actions (CI/CD) ───
+  actions: {
+    // Workflows
+    workflows: {
+      list(params?: { name?: string; status?: string; page?: number; limit?: number }) {
+        return axios.get<ApiResponse<{ items: WorkflowDef[]; total: number; page: number; limit: number }>>('/api/actions/workflows', { params }).then(r => r.data.data)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<WorkflowDef>>(`/api/actions/workflows/${id}`).then(r => r.data.data)
+      },
+      create(body: { name: string; on: WorkflowDef['on']; jobs: Record<string, JobDef> }) {
+        return axios.post<ApiResponse<WorkflowDef>>('/api/actions/workflows', body).then(r => r.data.data)
+      },
+      update(id: string, body: Partial<{ name: string; on: WorkflowDef['on']; jobs: Record<string, JobDef> }>) {
+        return axios.patch<ApiResponse<WorkflowDef>>(`/api/actions/workflows/${id}`, body).then(r => r.data.data)
+      },
+      delete(id: string) {
+        return axios.delete(`/api/actions/workflows/${id}`)
+      },
+      trigger(id: string, body?: { inputs?: Record<string, unknown> }) {
+        return axios.post<ApiResponse<WorkflowRun>>(`/api/actions/workflows/${id}/trigger`, body || {}).then(r => r.data.data)
+      },
+    },
+    // Runs
+    runs: {
+      list(params?: { workflowId?: string; status?: string; page?: number; limit?: number }) {
+        return axios.get<ApiResponse<{ items: WorkflowRun[]; total: number; page: number; limit: number }>>('/api/actions/runs', { params }).then(r => r.data.data)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<WorkflowRun>>(`/api/actions/runs/${id}`).then(r => r.data.data)
+      },
+      cancel(id: string) {
+        return axios.post(`/api/actions/runs/${id}/cancel`)
+      },
+      rerun(id: string) {
+        return axios.post<ApiResponse<WorkflowRun>>(`/api/actions/runs/${id}/rerun`).then(r => r.data.data)
+      },
+      dag(id: string) {
+        return axios.get<ApiResponse<RunDag>>(`/api/actions/runs/${id}/dag`).then(r => r.data.data)
+      },
+      jobs(runId: string) {
+        return axios.get<ApiResponse<JobRun[]>>(`/api/actions/runs/${runId}/jobs`).then(r => r.data.data)
+      },
+      approvals: {
+        create(runId: string, body: { jobName: string; approvers: string[]; message?: string }) {
+          return axios.post<ApiResponse<ApprovalNode>>(`/api/actions/runs/${runId}/approvals`, body).then(r => r.data.data)
+        },
+        list(runId: string) {
+          return axios.get<ApiResponse<ApprovalNode[]>>(`/api/actions/runs/${runId}/approvals`).then(r => r.data.data)
+        },
+      },
+    },
+    // Jobs
+    jobs: {
+      get(id: string) {
+        return axios.get<ApiResponse<JobRun>>(`/api/actions/jobs/${id}`).then(r => r.data.data)
+      },
+      logs(id: string, params?: { step?: string; offset?: number; limit?: number }) {
+        return axios.get<ApiResponse<{ text: string; totalBytes: number; offset: number; limit: number }>>(`/api/actions/jobs/${id}/logs`, { params }).then(r => r.data.data)
+      },
+    },
+    // Approvals
+    approvals: {
+      decide(id: string, body: { approved: boolean; reason?: string }) {
+        return axios.post<ApiResponse<ApprovalNode>>(`/api/actions/approvals/${id}/decide`, body).then(r => r.data.data)
+      },
+    },
+    // Runners
+    runners: {
+      list(params?: { labels?: string; page?: number; limit?: number }) {
+        return axios.get<ApiResponse<RunnerRegistration[]>>('/api/actions/runners', { params }).then(r => r.data.data)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<RunnerRegistration>>(`/api/actions/runners/${id}`).then(r => r.data.data)
+      },
+      drain(id: string) {
+        return axios.post(`/api/actions/runners/${id}/drain`)
+      },
+      heartbeat(body: { labels?: Record<string, string> }) {
+        return axios.post<ApiResponse<RunnerRegistration>>('/api/actions/runners/heartbeat', body).then(r => r.data.data)
+      },
+    },
+    // Action Registry
+    registry: {
+      list(params?: { page?: number; limit?: number }) {
+        return axios.get<ApiResponse<{ items: ActionDef[]; total: number }>>('/api/actions/actions', { params }).then(r => r.data.data)
+      },
+      create(body: { name: string; version: string; runs: ActionDef['runs']; inputs?: ActionDef['inputs']; outputs?: ActionDef['outputs'] }) {
+        return axios.post<ApiResponse<ActionDef>>('/api/actions/actions', body).then(r => r.data.data)
+      },
+    },
+    // Secrets
+    secrets: {
+      list(workflowId: string) {
+        return axios.get<ApiResponse<WorkflowSecret[]>>(`/api/actions/workflows/${workflowId}/secrets`).then(r => r.data.data)
+      },
+      create(workflowId: string, body: { key: string; value: string }) {
+        return axios.post<ApiResponse<WorkflowSecret>>(`/api/actions/workflows/${workflowId}/secrets`, body).then(r => r.data.data)
+      },
+      delete(secretId: string) {
+        return axios.delete(`/api/actions/secrets/${secretId}`)
+      },
+    },
+    // Shared Links
+    sharedLinks: {
+      list(params?: { page?: number; limit?: number }) {
+        return axios.get<ApiResponse<SharedLink[]>>('/api/actions/shared-links', { params }).then(r => r.data.data)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<SharedLink>>(`/api/actions/shared-links/${id}`).then(r => r.data.data)
+      },
+      create(body: { workflowId: string; name: string; password?: string; expiresAt?: number; maxUses?: number; concurrentMax?: number; defaultTtlSeconds?: number }) {
+        return axios.post<ApiResponse<SharedLink>>('/api/actions/shared-links', body).then(r => r.data.data)
+      },
+      launch(id: string, body?: { password?: string }) {
+        return axios.post<ApiResponse<{ runId: string; status: string }>>(`/api/actions/shared-links/${id}/launch`, body || {}).then(r => r.data.data)
+      },
+      disable(id: string) {
+        return axios.post(`/api/actions/shared-links/${id}/disable`)
+      },
+    },
+    // Dashboard
+    dashboard: {
+      stats() {
+        return axios.get<ApiResponse<ActionDashboard>>('/api/actions/dashboard').then(r => r.data.data)
+      },
+    },
+    // Organizations
+    orgs: {
+      list(params?: { member?: string }) {
+        return axios.get<ApiResponse<ActionOrg[]>>('/api/actions/orgs', { params }).then(r => r.data.data)
+      },
+      get(id: string) {
+        return axios.get<ApiResponse<ActionOrg>>(`/api/actions/orgs/${id}`).then(r => r.data.data)
+      },
+      create(body: { name: string }) {
+        return axios.post<ApiResponse<ActionOrg>>('/api/actions/orgs', body).then(r => r.data.data)
+      },
+      addMember(id: string, body: { userId: string; role?: string }) {
+        return axios.post(`/api/actions/orgs/${id}/members`, body)
+      },
+    },
+    // Projects
+    projects: {
+      list(params?: { orgId: string }) {
+        return axios.get<ApiResponse<ActionProject[]>>('/api/actions/projects', { params }).then(r => r.data.data)
+      },
+      create(body: { orgId: string; name: string }) {
+        return axios.post<ApiResponse<ActionProject>>('/api/actions/projects', body).then(r => r.data.data)
+      },
+    },
   },
 
   // ─── Permissions helpers (perm.http) ───
