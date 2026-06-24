@@ -1,9 +1,7 @@
-import globalAxios, { type AxiosPromise } from 'axios'
-import { Configuration } from './generated/configuration'
-import {
-  AuditApi, ContainerSecretsApi, InfoApi, PermissionsApi,
-  PlatformsApi, SandboxesApi, SystemGroupsApi, TemplatesApi, UsersApi,
-} from './generated/api'
+// Hand-crafted API surface (with manual patches for backward compatibility)
+// Regen hint: node scripts/export-api.mjs generates the base structure, then merge manual patches
+
+import axios from 'axios'
 
 export interface ApiResponse<T> {
   success: boolean
@@ -17,22 +15,15 @@ function getToken(): string {
 
 export const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000'
 
-const config = new Configuration({
-  accessToken: getToken,
-  basePath: API_BASE,
-})
+export const API = axios.create({ baseURL: API_BASE })
 
-export const axios = globalAxios.create({ baseURL: API_BASE })
-
-axios.interceptors.request.use((cfg) => {
+API.interceptors.request.use((cfg) => {
   const token = getToken()
-  if (token && cfg.headers) {
-    cfg.headers.Authorization = `Bearer ${token}`
-  }
+  if (token && cfg.headers) cfg.headers.Authorization = `Bearer ${token}`
   return cfg
 })
 
-axios.interceptors.response.use(
+API.interceptors.response.use(
   (res) => res,
   (err) => {
     const status = err.response?.status
@@ -50,527 +41,511 @@ axios.interceptors.response.use(
   },
 )
 
-// Helper to unwrap { success, data, error } → data
-function extract<T>(promise: AxiosPromise<object>): Promise<T> {
-  return promise.then((res) => (res.data as ApiResponse<T>).data)
+// ─── Unwrap helpers ───
+
+function extractData<T>(promise: Promise<{ data: ApiResponse<T> }>): Promise<T> {
+  return promise.then((res) => res.data.data)
 }
 
-// Full API surface matching all http/ test files
-export const api = {
-  // ─── Generated API classes (CORS → 后端直连) ───
-  audit: new AuditApi(config, undefined, axios),
-  containerSecrets: new ContainerSecretsApi(config, undefined, axios),
-  info: new InfoApi(config, undefined, axios),
-  permissions: new PermissionsApi(config, undefined, axios),
-  platforms: Object.assign(new PlatformsApi(config, undefined, axios), {
-    extensionFields(instanceId: string) {
-      return axios.get<ApiResponse<ExtensionFieldGroup>>('/api/platforms/extension-fields', { params: { instanceId } }).then(r => r.data.data)
-    },
-    regions(params: { instanceId?: string; platform?: string }) {
-      return axios.get<ApiResponse<{ platform: string; regions: { RegionId: string }[] }>>('/api/platforms/regions', { params }).then(r => r.data.data)
-    },
-  }),
-  sandboxes: new SandboxesApi(config, undefined, axios),
-  pods: {
-    list(params?: { status?: string; limit?: number; cursor?: string }) {
-      return axios.get<ApiResponse<{ items: PodInstance[]; nextCursor?: string }>>('/api/sandboxes/pod', { params }).then(r => r.data.data)
-    },
-    get(providerId: string) {
-      return axios.get<ApiResponse<PodInstance>>(`/api/sandboxes/pod/${providerId}`).then(r => r.data.data)
-    },
-    stop(providerId: string) {
-      return axios.post(`/api/sandboxes/pod/${providerId}/stop`)
-    },
-    delete(providerId: string) {
-      return axios.delete(`/api/sandboxes/pod/${providerId}`)
-    },
-    create(body: Record<string, unknown>) {
-      return axios.post<ApiResponse<PodInstance>>('/api/sandboxes/pod', body).then(r => r.data.data)
-    },
-  },
-  systemGroups: new SystemGroupsApi(config, undefined, axios),
-  templates: new TemplatesApi(config, undefined, axios),
-  users: new UsersApi(config, undefined, axios),
+function extractPage<T>(promise: Promise<{ data: ApiResponse<{ items: T[]; total: number }> }>): Promise<{ items: T[]; total: number }> {
+  return promise.then((res) => {
+    const d = res.data.data
+    return { items: d?.items ?? [], total: d?.total ?? 0 }
+  })
+}
 
-  // ─── Auth (auth.http) ───
+function extractItems<T>(promise: Promise<{ data: ApiResponse<{ items: T[] }> }>): Promise<T[]> {
+  return promise.then((res) => res.data.data?.items ?? [])
+}
+
+function extractArray<T>(promise: Promise<{ data: { data: T[] | { items: T[] } } }>): Promise<T[]> {
+  return promise.then((res) => {
+    const d = res.data.data
+    if (Array.isArray(d)) return d as T[]
+    if (d && typeof d === 'object' && 'items' in d) return (d as { items: T[] }).items
+    return []
+  })
+}
+
+// ─── Generated API surface ───
+export const api = {
+  // ── Auth ──
   auth: {
     register(data: { name: string; email: string; password: string }) {
-      return axios.post<ApiResponse<AuthResponse>>('/api/users/register', data).then(r => r.data.data)
+      return extractData<unknown>(API.post('/api/users/register', data))
     },
     login(data: { email: string; password: string }) {
-      return axios.post<ApiResponse<AuthResponse>>('/api/users/login', data).then(r => r.data.data)
+      return extractData<unknown>(API.post('/api/users/login', data))
     },
     loginInfo(email: string) {
-      return axios.get<ApiResponse<LoginInfo>>('/api/users/login-info', { params: { email } }).then(r => r.data.data)
+      return extractData<unknown>(API.get('/api/users/login-info', { params: { email } }))
     },
     noPasswordLogin(data: { email: string; oneTimeKey: string }) {
-      return axios.post<ApiResponse<AuthResponse>>('/api/users/no-password-login', data).then(r => r.data.data)
+      return extractData<unknown>(API.post('/api/users/no-password-login', data))
     },
-    // Sessions
     listSessions() {
-      return axios.get('/api/users/sessions').then(r => (r.data as Record<string,unknown>).data as unknown[])
+      return API.get('/api/users/sessions').then(r => (r.data as Record<string, unknown>).data as unknown[])
     },
     deleteSession(token: string) {
-      return axios.delete(`/api/users/sessions/${token}`)
+      return API.delete(`/api/users/sessions/${token}`)
     },
     search(q: string) {
-      return axios.get<ApiResponse<User | null>>('/api/users/search', { params: { q } }).then(r => r.data.data)
+      return extractData<unknown>(API.get('/api/users/search', { params: { q } }))
     },
   },
 
-  // ─── Topology (topo.http) ───
-  topology: {
-    // Instances (core topology node — replaces old clusters)
-    instances: {
-      list(params?: { region?: string; platform?: string; status?: string; page?: number; limit?: number }) {
-        return axios.get<ApiResponse<{ items: ComputeInstance[] }>>('/api/topology/instances', { params }).then(r => r.data.data)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<ComputeInstance>>(`/api/topology/instances/${id}`).then(r => r.data.data)
-      },
-      create(body: CreateInstanceInput) {
-        return axios.post<ApiResponse<ComputeInstance>>('/api/topology/instances', body).then(r => r.data.data)
-      },
-      update(id: string, body: UpdateInstanceInput) {
-        return axios.put<ApiResponse<ComputeInstance>>(`/api/topology/instances/${id}`, body).then(r => r.data.data)
-      },
-      delete(id: string) {
-        return axios.delete(`/api/topology/instances/${id}`)
-      },
-      heartbeat(id: string, body: HeartbeatBody) {
-        return axios.post(`/api/topology/instances/${id}/heartbeat`, body)
-      },
-    },
-    // Credentials
-    credentials: {
-      list(params?: { platform?: string }) {
-        return axios.get<ApiResponse<{ items: MaskedCredential[] }>>('/api/topology/credentials', { params }).then(r => r.data.data.items)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<MaskedCredential>>(`/api/topology/credentials/${id}`).then(r => r.data.data)
-      },
-      create(body: CreateCredentialInput) {
-        return axios.post<ApiResponse<MaskedCredential>>('/api/topology/credentials', body).then(r => r.data.data)
-      },
-      update(id: string, body: UpdateCredentialInput) {
-        return axios.put<ApiResponse<MaskedCredential>>(`/api/topology/credentials/${id}`, body).then(r => r.data.data)
-      },
-      delete(id: string) {
-        return axios.delete(`/api/topology/credentials/${id}`)
-      },
-    },
-    // Buckets
-    buckets: {
-      list(params?: { platform?: string; region?: string }) {
-        return axios.get<ApiResponse<{ items: RegionBucket[] }>>('/api/topology/buckets', { params }).then(r => r.data.data.items)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<RegionBucket>>(`/api/topology/buckets/${id}`).then(r => r.data.data)
-      },
-      create(body: CreateBucketInput) {
-        return axios.post<ApiResponse<RegionBucket>>('/api/topology/buckets', body).then(r => r.data.data)
-      },
-      update(id: string, body: UpdateBucketInput) {
-        return axios.put<ApiResponse<RegionBucket>>(`/api/topology/buckets/${id}`, body).then(r => r.data.data)
-      },
-      delete(id: string) {
-        return axios.delete(`/api/topology/buckets/${id}`)
-      },
-      // S3 bucket policies
-      policies: {
-        list(bucketId: string) {
-          return axios.get<ApiResponse<{ items: S3Policy[] }>>(`/api/topology/buckets/${bucketId}/policies`).then(r => r.data.data.items)
-        },
-        create(bucketId: string, body: { name: string; effect: string; actions: string[]; pathPrefix?: string }) {
-          return axios.post<ApiResponse<S3Policy>>(`/api/topology/buckets/${bucketId}/policies`, body).then(r => r.data.data)
-        },
-      },
-    },
-    // S3 policies CRUD by ID
-    bucketPolicies: {
-      get(id: string) {
-        return axios.get<ApiResponse<S3Policy>>(`/api/topology/policies/${id}`).then(r => r.data.data)
-      },
-      update(id: string, body: { name?: string; effect?: string; actions?: string[]; pathPrefix?: string }) {
-        return axios.put<ApiResponse<S3Policy>>(`/api/topology/policies/${id}`, body).then(r => r.data.data)
-      },
-      delete(id: string) {
-        return axios.delete(`/api/topology/policies/${id}`)
-      },
-    },
-    // Volumes
-    volumes: {
-      list(params?: { page?: number; limit?: number }) {
-        return axios.get<ApiResponse<{ items: Volume[] }>>('/api/volumes', { params }).then(r => r.data.data)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<Volume>>(`/api/volumes/${id}`).then(r => r.data.data)
-      },
-      create(body: CreateVolumeInput) {
-        return axios.post<ApiResponse<Volume>>('/api/volumes', body).then(r => r.data.data)
-      },
-      update(id: string, body: UpdateVolumeInput) {
-        return axios.put<ApiResponse<Volume>>(`/api/volumes/${id}`, body).then(r => r.data.data)
-      },
-      delete(id: string) {
-        return axios.delete(`/api/volumes/${id}`)
-      },
-    },
-    // Image Repositories
-    images: {
-      list(params?: { instanceId?: string; platform?: string; status?: string }) {
-        return axios.get<ApiResponse<{ items: ImageRepository[] }>>('/api/topology/images', { params }).then(r => r.data.data.items)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<ImageRepository>>(`/api/topology/images/${id}`).then(r => r.data.data)
-      },
-      create(body: CreateImageInput) {
-        return axios.post<ApiResponse<ImageRepository>>('/api/topology/images', body).then(r => r.data.data)
-      },
-      update(id: string, body: Partial<CreateImageInput>) {
-        return axios.put<ApiResponse<ImageRepository>>(`/api/topology/images/${id}`, body).then(r => r.data.data)
-      },
-      delete(id: string) {
-        return axios.delete(`/api/topology/images/${id}`)
-      },
-      pull(id: string) {
-        return axios.post<ApiResponse<{ taskId: string }>>(`/api/topology/images/${id}/pull`).then(r => r.data.data)
-      },
-      tasks(id: string) {
-        return axios.get<ApiResponse<{ items: PullTask[] }>>(`/api/topology/images/${id}/tasks`).then(r => r.data.data.items)
-      },
-    },
-    pullTasks: {
-      get(taskId: string) {
-        return axios.get<ApiResponse<PullTask>>(`/api/topology/pull-tasks/${taskId}`).then(r => r.data.data)
-      },
+  // ── Info ──
+  info: {
+    get() {
+      return API.get('/info').then(r => (r.data as Record<string, unknown>).data)
     },
   },
 
-  // ─── Runtime Images ( /api/images , 对标 docker images ) ───
-  images: {
-    list(params?: { search?: string; limit?: number; instanceId?: string }) {
-      return axios.get<ApiResponse<{ items: ImageInfo[] }>>('/api/images', { params }).then(r => r.data.data.items)
-    },
-    pull(body: ImagePullRequest) {
-      return axios.post<ApiResponse<ImageInfo>>('/api/images/pull', body).then(r => r.data.data)
-    },
-    get(id: string) {
-      return axios.get<ApiResponse<ImageInfo>>(`/api/images/${id}`).then(r => r.data.data)
-    },
-    delete(id: string) {
-      return axios.delete(`/api/images/${id}`)
-    },
-    tag(id: string, body: ImageTagRequest) {
-      return axios.post<ApiResponse<ImageInfo>>(`/api/images/${id}/tag`, body).then(r => r.data.data)
-    },
-    search(params: { term: string }) {
-      return axios.get<ApiResponse<ImageSearchResult[]>>('/api/images/search', { params }).then(r => r.data.data)
-    },
-    prune() {
-      return axios.post('/api/images/prune')
-    },
-    history(id: string) {
-      return axios.get<ApiResponse<ImageHistoryLayer[]>>(`/api/images/${id}/history`).then(r => r.data.data)
-    },
-    build(body: ImageBuildRequest) {
-      return axios.post<ApiResponse<ImageInfo>>('/api/images/build', body).then(r => r.data.data)
-    },
-  },
-
-  // ─── Security Groups (/api/networks) ───
-  securityGroups: {
-    list(params?: { page?: number; limit?: number }) {
-      return axios.get('/api/networks/', { params })
-    },
-    get(id: string) {
-      return axios.get(`/api/networks/${id}`)
-    },
-    create(body: CreateSecurityGroupInput) {
-      return axios.post('/api/networks/', body)
-    },
-    update(id: string, body: UpdateSecurityGroupInput) {
-      return axios.put(`/api/networks/${id}`, body)
-    },
-    delete(id: string) {
-      return axios.delete(`/api/networks/${id}`)
-    },
-  },
-
-  // ─── Subnets (/api/subnets) ───
-  subnets: {
-    list(params?: { page?: number; limit?: number }) {
-      return axios.get('/api/subnets/', { params })
-    },
-    get(id: string) {
-      return axios.get(`/api/subnets/${id}`)
-    },
-    create(body: CreateSubnetInput) {
-      return axios.post('/api/subnets/', body)
-    },
-    update(id: string, body: UpdateSubnetInput) {
-      return axios.put(`/api/subnets/${id}`, body)
-    },
-    delete(id: string) {
-      return axios.delete(`/api/subnets/${id}`)
-    },
-  },
-
-  // ─── Events (not in generated spec) ───
-  events: {
-    getStatus() {
-      return axios.get('/api/events/loop/status').then(r => r.data as EventLoopStatus)
-    },
-    start() { return axios.post('/api/events/loop/start') },
-    stop() { return axios.post('/api/events/loop/stop') },
-    pause() { return axios.post('/api/events/loop/pause') },
-    resume() { return axios.post('/api/events/loop/resume') },
-    configure(cfg: Partial<EventLoopConfig>) { return axios.post('/api/events/loop/configure', cfg) },
-    create(type: string, payload?: unknown) { return axios.post('/api/events', { type, payload }).then(r => r.data as { id: string }) },
-    pending() { return axios.get('/api/events/loop/pending').then(r => r.data as { type: string; id: string }[]) },
-  },
-
-  // ─── Dev (auth.http) ───
-  dev: {
-    sudo() {
-      return axios.post('/api/sudo', {}).then(r => (r.data as ApiResponse<{ expiry: number; durationMs: number }>).data)
-    },
-    migrateUserIndex(ids: string[]) {
-      return axios.post('/__admin/migrate-user-index', { ids })
-    },
-    triggerTick() {
-      return axios.post('/__scheduled', null, { responseType: 'text' }).then(r => ({ data: { message: r.data } }))
-    },
-  },
-
-  // ─── WebSocket (info.http) ───
-  ws: {
-    /** Connect to the global notification channel. Requires Workers + DO binding. */
-    notifications(token?: string): WebSocket | null {
-      try {
-        const wsUrl = API_BASE.replace(/^http/, 'ws') + '/api/ws/notifications'
-        const ws = new WebSocket(wsUrl)
-        ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token: token || getToken() }))
-        return ws
-      } catch { return null }
-    },
-  },
-
-  // ─── Extract helpers ───
-  extract<T>(promise: AxiosPromise<object>): Promise<T> { return extract<T>(promise) },
-  /** For endpoints that return either `T[]` (flat array) or `{ items: T[] }` (paginated wrapper). */
-  extractArray<T>(promise: AxiosPromise<object>): Promise<T[]> {
-    return promise.then((res) => {
-      const d = (res.data as Record<string, unknown>).data
-      if (Array.isArray(d)) return d as T[]
-      if (d && typeof d === 'object' && 'items' in d) return (d as { items: T[] }).items
-      return []
-    })
-  },
-  extractItems<T>(promise: AxiosPromise<object>): Promise<T[]> {
-    return promise.then((res) => { const d = (res.data as ApiResponse<{ items: T[] }>).data; return d?.items ?? [] })
-  },
-  extractPage<T>(promise: AxiosPromise<object>): Promise<{ items: T[]; total: number }> {
-    return promise.then((res) => {
-      const d = (res.data as ApiResponse<{ items: T[]; total: number }>).data
-      return { items: d?.items ?? [], total: d?.total ?? 0 }
-    })
-  },
-  extractLines<T>(promise: AxiosPromise<object>): Promise<T[]> {
-    return promise.then((res) => {
-      const d = (res.data as ApiResponse<{ lines: unknown[] }>).data
-      const raw = d?.lines ?? []
-      return raw.map((item: unknown) => {
-        if (typeof item === 'string') try { return JSON.parse(item) as T } catch { return item as T }
-        return item as T
-      })
-    })
-  },
-
-  // ─── Actions (CI/CD) ───
+  // ── Actions / CI-CD ──
   actions: {
-    // Workflows
     workflows: {
-      list(params?: { name?: string; status?: string; page?: number; limit?: number }) {
-        return axios.get<ApiResponse<{ items: WorkflowDef[]; total: number; page: number; limit: number }>>('/api/actions/workflows', { params }).then(r => r.data.data)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<WorkflowDef>>(`/api/actions/workflows/${id}`).then(r => r.data.data)
-      },
-      create(body: { name: string; on: WorkflowDef['on']; jobs: Record<string, JobDef> }) {
-        return axios.post<ApiResponse<WorkflowDef>>('/api/actions/workflows', body).then(r => r.data.data)
-      },
-      update(id: string, body: Partial<{ name: string; on: WorkflowDef['on']; jobs: Record<string, JobDef> }>) {
-        return axios.patch<ApiResponse<WorkflowDef>>(`/api/actions/workflows/${id}`, body).then(r => r.data.data)
-      },
-      delete(id: string) {
-        return axios.delete(`/api/actions/workflows/${id}`)
-      },
-      trigger(id: string, body?: { inputs?: Record<string, unknown> }) {
-        return axios.post<ApiResponse<WorkflowRun>>(`/api/actions/workflows/${id}/trigger`, body || {}).then(r => r.data.data)
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/workflows', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/workflows/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/actions/workflows', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.patch(`/api/actions/workflows/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/actions/workflows/${id}`) },
+      trigger(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/workflows/${id}/trigger`, body || {})) },
+      http(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/workflows/${id}/http`, body || {})) },
+      schedule(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/workflows/${id}/schedule`, body || {})) },
+      secrets: {
+        list(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/workflows/${id}/secrets`, { params })) },
+        create(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/workflows/${id}/secrets`, body || {})) },
       },
     },
-    // Runs
+    webhook: {
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/actions/webhook', body || {})) },
+    },
     runs: {
-      list(params?: { workflowId?: string; status?: string; page?: number; limit?: number }) {
-        return axios.get<ApiResponse<{ items: WorkflowRun[]; total: number; page: number; limit: number }>>('/api/actions/runs', { params }).then(r => r.data.data)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<WorkflowRun>>(`/api/actions/runs/${id}`).then(r => r.data.data)
-      },
-      cancel(id: string) {
-        return axios.post(`/api/actions/runs/${id}/cancel`)
-      },
-      rerun(id: string) {
-        return axios.post<ApiResponse<WorkflowRun>>(`/api/actions/runs/${id}/rerun`).then(r => r.data.data)
-      },
-      dag(id: string) {
-        return axios.get<ApiResponse<RunDag>>(`/api/actions/runs/${id}/dag`).then(r => r.data.data)
-      },
-      jobs(runId: string) {
-        return axios.get<ApiResponse<JobRun[]>>(`/api/actions/runs/${runId}/jobs`).then(r => r.data.data)
-      },
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/runs', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/runs/${id}`, { params })) },
+      cancel(id: string) { return API.post(`/api/actions/runs/${id}/cancel`) },
+      rerun(id: string) { return extractData<unknown>(API.post(`/api/actions/runs/${id}/rerun`)) },
+      jobs(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/runs/${id}/jobs`, { params })) },
+      dag(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/runs/${id}/dag`, { params })) },
       approvals: {
-        create(runId: string, body: { jobName: string; approvers: string[]; message?: string }) {
-          return axios.post<ApiResponse<ApprovalNode>>(`/api/actions/runs/${runId}/approvals`, body).then(r => r.data.data)
-        },
-        list(runId: string) {
-          return axios.get<ApiResponse<ApprovalNode[]>>(`/api/actions/runs/${runId}/approvals`).then(r => r.data.data)
-        },
+        list(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/runs/${id}/approvals`, { params })) },
+        create(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/runs/${id}/approvals`, body || {})) },
       },
     },
-    // Jobs
     jobs: {
-      get(id: string) {
-        return axios.get<ApiResponse<JobRun>>(`/api/actions/jobs/${id}`).then(r => r.data.data)
-      },
-      logs(id: string, params?: { step?: string; offset?: number; limit?: number }) {
-        return axios.get<ApiResponse<{ text: string; totalBytes: number; offset: number; limit: number }>>(`/api/actions/jobs/${id}/logs`, { params }).then(r => r.data.data)
-      },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/jobs/${id}`, { params })) },
+      logs(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/jobs/${id}/logs`, { params })) },
     },
-    // Approvals
-    approvals: {
-      decide(id: string, body: { approved: boolean; reason?: string }) {
-        return axios.post<ApiResponse<ApprovalNode>>(`/api/actions/approvals/${id}/decide`, body).then(r => r.data.data)
-      },
-    },
-    // Runners
-    runners: {
-      list(params?: { labels?: string; page?: number; limit?: number }) {
-        return axios.get<ApiResponse<RunnerRegistration[]>>('/api/actions/runners', { params }).then(r => r.data.data)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<RunnerRegistration>>(`/api/actions/runners/${id}`).then(r => r.data.data)
-      },
-      drain(id: string) {
-        return axios.post(`/api/actions/runners/${id}/drain`)
-      },
-      heartbeat(body: { labels?: Record<string, string> }) {
-        return axios.post<ApiResponse<RunnerRegistration>>('/api/actions/runners/heartbeat', body).then(r => r.data.data)
-      },
-    },
-    // Action Registry
     registry: {
-      list(params?: { page?: number; limit?: number }) {
-        return axios.get<ApiResponse<{ items: ActionDef[]; total: number }>>('/api/actions/actions', { params }).then(r => r.data.data)
-      },
-      create(body: { name: string; version: string; runs: ActionDef['runs']; inputs?: ActionDef['inputs']; outputs?: ActionDef['outputs'] }) {
-        return axios.post<ApiResponse<ActionDef>>('/api/actions/actions', body).then(r => r.data.data)
-      },
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/actions', { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/actions/actions', body || {})) },
     },
-    // Secrets
-    secrets: {
-      list(workflowId: string) {
-        return axios.get<ApiResponse<WorkflowSecret[]>>(`/api/actions/workflows/${workflowId}/secrets`).then(r => r.data.data)
-      },
-      create(workflowId: string, body: { key: string; value: string }) {
-        return axios.post<ApiResponse<WorkflowSecret>>(`/api/actions/workflows/${workflowId}/secrets`, body).then(r => r.data.data)
-      },
-      delete(secretId: string) {
-        return axios.delete(`/api/actions/secrets/${secretId}`)
-      },
-    },
-    // Shared Links
-    sharedLinks: {
-      list(params?: { page?: number; limit?: number }) {
-        return axios.get<ApiResponse<SharedLink[]>>('/api/actions/shared-links', { params }).then(r => r.data.data)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<SharedLink>>(`/api/actions/shared-links/${id}`).then(r => r.data.data)
-      },
-      create(body: { workflowId: string; name: string; password?: string; expiresAt?: number; maxUses?: number; concurrentMax?: number; defaultTtlSeconds?: number }) {
-        return axios.post<ApiResponse<SharedLink>>('/api/actions/shared-links', body).then(r => r.data.data)
-      },
-      launch(id: string, body?: { password?: string }) {
-        return axios.post<ApiResponse<{ runId: string; status: string }>>(`/api/actions/shared-links/${id}/launch`, body || {}).then(r => r.data.data)
-      },
-      disable(id: string) {
-        return axios.post(`/api/actions/shared-links/${id}/disable`)
-      },
-    },
-    // Dashboard
-    dashboard: {
-      stats() {
-        return axios.get<ApiResponse<ActionDashboard>>('/api/actions/dashboard').then(r => r.data.data)
-      },
-    },
-    // Organizations
     orgs: {
-      list(params?: { member?: string }) {
-        return axios.get<ApiResponse<ActionOrg[]>>('/api/actions/orgs', { params }).then(r => r.data.data)
-      },
-      get(id: string) {
-        return axios.get<ApiResponse<ActionOrg>>(`/api/actions/orgs/${id}`).then(r => r.data.data)
-      },
-      create(body: { name: string }) {
-        return axios.post<ApiResponse<ActionOrg>>('/api/actions/orgs', body).then(r => r.data.data)
-      },
-      addMember(id: string, body: { userId: string; role?: string }) {
-        return axios.post(`/api/actions/orgs/${id}/members`, body)
-      },
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/orgs', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/orgs/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/actions/orgs', body || {})) },
+      addMember(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/orgs/${id}/members`, body || {})) },
     },
-    // Projects
     projects: {
-      list(params?: { orgId: string }) {
-        return axios.get<ApiResponse<ActionProject[]>>('/api/actions/projects', { params }).then(r => r.data.data)
-      },
-      create(body: { orgId: string; name: string }) {
-        return axios.post<ApiResponse<ActionProject>>('/api/actions/projects', body).then(r => r.data.data)
-      },
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/projects', { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/actions/projects', body || {})) },
+    },
+    approvals: {
+      decide(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/approvals/${id}/decide`, body || {})) },
+    },
+    secrets: {
+      delete(id: string) { return API.delete(`/api/actions/secrets/${id}`) },
+    },
+    sharedLinks: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/shared-links', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/shared-links/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/actions/shared-links', body || {})) },
+      launch(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/shared-links/${id}/launch`, body || {})) },
+      disable(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/shared-links/${id}/disable`, body || {})) },
+    },
+    runners: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/runners', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/runners/${id}`, { params })) },
+      drain(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/actions/runners/${id}/drain`, body || {})) },
+      heartbeat(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/actions/runners/heartbeat', body || {})) },
+    },
+    workspace: {
+      get(runId: string, jobName: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/workspace/${runId}/${jobName}`, { params })) },
+    },
+    dashboard: {
+      stats(params?: Record<string, unknown>) { return extractData<unknown>(API.get('/api/actions/dashboard', { params })) },
+    },
+    templates: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/actions/templates', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/actions/templates/${id}`, { params })) },
     },
   },
 
-  // ─── Permissions helpers (perm.http) ───
+  // ── Audit ──
+  audit: {
+    logs: {
+      list(params?: Record<string, unknown>) { return extractData<{ lines?: unknown[]; entries?: unknown[]; total: number; nextCursor?: string }>(API.get('/api/audit/logs', { params })) },
+    },
+    stats() {
+      return API.get('/api/audit/logs/stats').then(r => (r.data as Record<string, unknown>).data)
+    },
+  },
+
+  // ── Container Secrets ──
+  containerSecrets: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/container-secrets', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/container-secrets/${id}`, { params })) },
+    create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/container-secrets', body || {})) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/container-secrets/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/container-secrets/${id}`) },
+    upload(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/container-secrets/${id}/upload`, body || {})) },
+    download(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/container-secrets/${id}/download`, { params })) },
+    scopes: {
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/container-secrets/${id}/scopes`, { params })) },
+      set(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/container-secrets/${id}/scopes`, body || {})) },
+    },
+    checkAccess(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/container-secrets/${id}/check-access`, { params })) },
+    publicKey(userId: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/container-secrets/public-key/${userId}`, { params })) },
+  },
+
+  // ── Events ──
+  events: {
+    getStatus() { return extractData<unknown>(API.get('/api/events/loop/status')) },
+    pending() { return extractData<unknown>(API.get('/api/events/loop/pending')) },
+    start() { return API.post('/api/events/loop/start') },
+    stop() { return API.post('/api/events/loop/stop') },
+    pause() { return API.post('/api/events/loop/pause') },
+    resume() { return API.post('/api/events/loop/resume') },
+    configure(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/events/loop/configure', body || {})) },
+    create(type: string, payload?: unknown) { return extractData<unknown>(API.post('/api/events', { type, payload })) },
+  },
+
+  // ── Images ──
+  images: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/images', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/images/${id}`, { params })) },
+    delete(id: string) { return API.delete(`/api/images/${id}`) },
+    tag(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/images/${id}/tag`, body || {})) },
+    history(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/images/${id}/history`, { params })) },
+    pull(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/images/pull', body || {})) },
+    search(params?: Record<string, unknown>) { return extractData<unknown>(API.get('/api/images/search', { params })) },
+    prune(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/images/prune', body || {})) },
+    build(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/images/build', body || {})) },
+  },
+
+  // ── Instances ──
+  instances: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/instances', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/instances/${id}`, { params })) },
+    create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/instances', body || {})) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/instances/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/instances/${id}`) },
+    heartbeat(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/instances/${id}/heartbeat`, body || {})) },
+    markStale(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/instances/mark-stale', body || {})) },
+    registrationToken(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/instances/registration-token', body || {})) },
+    validateToken(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/instances/validate-token', body || {})) },
+    groups: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/instances/groups', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/instances/groups/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/instances/groups', body || {})) },
+      delete(id: string) { return API.delete(`/api/instances/groups/${id}`) },
+    },
+  },
+
+  // ── Permissions ──
+  permissions: {
+    policies: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/policies', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/policies/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/permissions/policies', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/permissions/policies/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/permissions/policies/${id}`) },
+    },
+    userGroups: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/user-groups', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/user-groups/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/permissions/user-groups', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/permissions/user-groups/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/permissions/user-groups/${id}`) },
+    },
+    groups: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/groups', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/groups/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/permissions/groups', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/permissions/groups/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/permissions/groups/${id}`) },
+    },
+    fromTemplate(templateId: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/permissions/groups/from-template/${templateId}`, body || {})) },
+    templates: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/templates', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/templates/${id}`, { params })) },
+    },
+    userTemplates: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/user-templates', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/user-templates/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/permissions/user-templates', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/permissions/user-templates/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/permissions/user-templates/${id}`) },
+    },
+    routeAcls: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/route-acls', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/route-acls/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/permissions/route-acls', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/permissions/route-acls/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/permissions/route-acls/${id}`) },
+    },
+    invite(body?: Record<string, unknown>) { return API.post('/api/permissions/invite', body || {}).then(r => (r.data as Record<string, unknown>).data) },
+    invitations: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/invitations', { params })) },
+      accept(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/permissions/invitations/${id}/accept`, body || {})) },
+      reject(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/permissions/invitations/${id}/reject`, body || {})) },
+    },
+    logPolicy: {
+      get() { return API.get('/api/permissions/log-policy').then(r => (r.data as Record<string, unknown>).data) },
+      update(body?: Record<string, unknown>) { return extractData<unknown>(API.put('/api/permissions/log-policy', body || {})) },
+    },
+    caps: {
+      user: {
+        get(userId: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/caps/user/${userId}`, { params })) },
+        update(userId: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/permissions/caps/user/${userId}`, body || {})) },
+      },
+      group: {
+        get(groupId: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/permissions/caps/group/${groupId}`, { params })) },
+        update(groupId: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/permissions/caps/group/${groupId}`, body || {})) },
+      },
+    },
+    elevate: {
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/permissions/elevate', body || {})) },
+      delete(userId: string) { return API.delete(`/api/permissions/elevate/${userId}`) },
+    },
+    elevations: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/permissions/elevations', { params })) },
+    },
+    compare: {
+      permGroups(idA: string, idB: string) {
+        return extractData<unknown>(API.post('/api/permissions/compare/perm-groups', { idA, idB }))
+      },
+      userGroups(idA: string, idB: string) {
+        return extractData<unknown>(API.post('/api/permissions/compare/user-groups', { idA, idB }))
+      },
+    },
+    check(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/permissions/check', body || {})) },
+  },
+
+  // ── perm (convenience aliases) ──
   perm: {
     check(data: { userId: string; action: string; resource: string; ip?: string }) {
-      return axios.post('/api/permissions/check', data).then(r => (r.data as Record<string,unknown>).data)
+      return API.post('/api/permissions/check', data).then(r => (r.data as Record<string, unknown>).data)
     },
     comparePermGroups(idA: string, idB: string) {
-      return axios.post('/api/permissions/compare/perm-groups', { idA, idB }).then(r => (r.data as Record<string,unknown>).data)
+      return API.post('/api/permissions/compare/perm-groups', { idA, idB }).then(r => (r.data as Record<string, unknown>).data)
     },
     compareUserGroups(idA: string, idB: string) {
-      return axios.post('/api/permissions/compare/user-groups', { idA, idB }).then(r => (r.data as Record<string,unknown>).data)
+      return API.post('/api/permissions/compare/user-groups', { idA, idB }).then(r => (r.data as Record<string, unknown>).data)
     },
     getLogPolicy() {
-      return axios.get('/api/permissions/log-policy').then(r => (r.data as Record<string,unknown>).data)
+      return API.get('/api/permissions/log-policy').then(r => (r.data as Record<string, unknown>).data)
     },
-    updateLogPolicy(data: Record<string,unknown>) {
-      return axios.put('/api/permissions/log-policy', data).then(r => (r.data as Record<string,unknown>).data)
+    updateLogPolicy(data: Record<string, unknown>) {
+      return API.put('/api/permissions/log-policy', data).then(r => (r.data as Record<string, unknown>).data)
     },
     getTemplates() {
-      return axios.get('/api/permissions/templates').then(r => (r.data as Record<string,unknown>).data as unknown[])
+      return API.get('/api/permissions/templates').then(r => (r.data as Record<string, unknown>).data as unknown[])
     },
-    /** Invite a user to join a user group (requires adminIds membership) */
     invite(data: { groupId: string; inviteeId: string }) {
-      return axios.post('/api/permissions/invite', data).then(r => (r.data as Record<string,unknown>).data)
+      return API.post('/api/permissions/invite', data).then(r => (r.data as Record<string, unknown>).data)
     },
-    /** Create user group with full fields (including adminIds) */
     createUserGroup(data: { name: string; memberIds: string[]; adminIds?: string[]; dependsOn?: string[] }) {
-      return axios.post<ApiResponse<UserGroup>>('/api/permissions/user-groups', data).then(r => r.data.data)
+      return extractData<unknown>(API.post('/api/permissions/user-groups', data))
     },
-    /** Update user group with full fields */
     updateUserGroup(id: string, data: { name: string; memberIds?: string[]; adminIds?: string[]; dependsOn?: string[] }) {
-      return axios.put<ApiResponse<UserGroup>>(`/api/permissions/user-groups/${id}`, data).then(r => r.data.data)
+      return extractData<unknown>(API.put(`/api/permissions/user-groups/${id}`, data))
     },
   },
+
+  // ── Platforms ──
+  platforms: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/platforms', { params })) },
+    extensionFields(instanceId: string) {
+      return API.get<ApiResponse<unknown>>('/api/platforms/extension-fields', { params: { instanceId } }).then(r => r.data.data)
+    },
+    regions(params?: { instanceId?: string; platform?: string }) {
+      return API.get<ApiResponse<{ platform: string; regions: { RegionId: string }[] }>>('/api/platforms/regions', { params }).then(r => r.data.data)
+    },
+  },
+
+  // ── Sandboxes ──
+  sandboxes: {
+    list(params?: Record<string, unknown>) { return extractData<{ items: unknown[]; nextCursor?: string }>(API.get('/api/sandboxes', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/sandboxes/${id}`, { params })) },
+    delete(id: string) { return API.delete(`/api/sandboxes/${id}`) },
+    stop(id: string) { return API.post(`/api/sandboxes/${id}/stop`) },
+    start(id: string) { return API.post(`/api/sandboxes/${id}/start`) },
+    sync(id: string) { return API.post(`/api/sandboxes/${id}/sync`) },
+    health(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/sandboxes/${id}/health`, { params })) },
+  },
+
+  // ── Subnets ──
+  subnets: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/subnets', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/subnets/${id}`, { params })) },
+    create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/subnets', body || {})) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/subnets/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/subnets/${id}`) },
+  },
+
+  // ── Security Groups (Networks) ──
+  securityGroups: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/networks', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/networks/${id}`, { params })) },
+    create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/networks', body || {})) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/networks/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/networks/${id}`) },
+  },
+
+  // ── System Groups ──
+  systemGroups: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/system-groups', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/system-groups/${id}`, { params })) },
+    create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/system-groups', body || {})) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/system-groups/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/system-groups/${id}`) },
+  },
+
+  // ── Templates ──
+  templates: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/templates', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/templates/${id}`, { params })) },
+    create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/templates', body || {})) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/templates/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/templates/${id}`) },
+    resolved(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/templates/${id}/resolved`, { params })) },
+    apply(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/templates/${id}/apply`, body || {})) },
+  },
+
+  // ── Topology ──
+  topology: {
+    regions: {
+      list(params?: Record<string, unknown>) { return extractData<unknown>(API.get('/api/topology/regions', { params })) },
+    },
+    instances: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/topology/instances', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/instances/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/topology/instances', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/topology/instances/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/topology/instances/${id}`) },
+      heartbeat(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/topology/instances/${id}/heartbeat`, body || {})) },
+    },
+    buckets: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/topology/buckets', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/buckets/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/topology/buckets', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/topology/buckets/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/topology/buckets/${id}`) },
+    },
+    bucketPolicies: {
+      list(bucketId: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/buckets/${bucketId}/policies`, { params })) },
+      create(bucketId: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/topology/buckets/${bucketId}/policies`, body || {})) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/policies/${id}`, { params })) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/topology/policies/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/topology/policies/${id}`) },
+    },
+    images: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/topology/images', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/images/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/topology/images', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/topology/images/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/topology/images/${id}`) },
+      pull(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/topology/images/${id}/pull`, body || {})) },
+      tasks(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/images/${id}/tasks`, { params })) },
+    },
+    pullTasks: {
+      get(taskId: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/pull-tasks/${taskId}`, { params })) },
+    },
+    volumes: {
+      list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/volumes', { params })) },
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/volumes/${id}`, { params })) },
+      create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/volumes', body || {})) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/volumes/${id}`, body || {})) },
+      delete(id: string) { return API.delete(`/api/volumes/${id}`) },
+    },
+  },
+
+  // ── Users ──
+  users: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/users', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/users/${id}`, { params })) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/users/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/users/${id}`) },
+    refresh(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.post(`/api/users/${id}/refresh`, body || {})) },
+    search(params?: Record<string, unknown>) { return extractData<unknown>(API.get('/api/users/search', { params })) },
+    sessions: {
+      list(params?: Record<string, unknown>) { return API.get('/api/users/sessions', { params }).then(r => (r.data as Record<string, unknown>).data) },
+      delete(token: string) { return API.delete(`/api/users/sessions/${token}`) },
+    },
+    loginPolicy: {
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/users/${id}/login-policy`, { params })) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/users/${id}/login-policy`, body || {})) },
+      delete(id: string) { return API.delete(`/api/users/${id}/login-policy`) },
+    },
+    publicKey: {
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/users/${id}/public-key`, { params })) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/users/${id}/public-key`, body || {})) },
+      delete(id: string) { return API.delete(`/api/users/${id}/public-key`) },
+    },
+    avatar: {
+      get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/users/${id}/avatar`, { params })) },
+      update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/users/${id}/avatar`, body || {})) },
+      delete(id: string) { return API.delete(`/api/users/${id}/avatar`) },
+    },
+    supplementaryGroups: {
+      list(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/users/${id}/supplementary-groups`, { params })) },
+      add(id: string, gid: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/users/${id}/supplementary-groups/${gid}`, body || {})) },
+      remove(id: string, gid: string) { return API.delete(`/api/users/${id}/supplementary-groups/${gid}`) },
+    },
+  },
+
+  // ── Volumes (under topology for backward compat) ──
+  volumes: {
+    list(params?: Record<string, unknown>) { return extractPage<unknown>(API.get('/api/volumes', { params })) },
+    get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/volumes/${id}`, { params })) },
+    create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/volumes', body || {})) },
+    update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/volumes/${id}`, body || {})) },
+    delete(id: string) { return API.delete(`/api/volumes/${id}`) },
+  },
+
+  // ── Dev ──
+  dev: {
+    triggerTick() { return API.post('/__tick') },
+    migrateUserIndex(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/__admin/migrate-user-index', body || {})) },
+    sudo(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/sudo', body || {})) },
+    openapi() { return API.get('/api/openapi.json').then(r => r.data) },
+  },
+
+  // ── WebSocket ──
+  ws: {
+    notifications(params?: Record<string, unknown>) { return API.get('/api/ws/notifications', { params }) },
+  },
+
+  // ── Extract helpers (for generated SDK classes) ──
+  extract<T>(promise: Promise<{ data: ApiResponse<T> }>): Promise<T> { return extractData<T>(promise) },
+  extractArray,
+  extractItems,
+  extractPage,
+}
+
+// ── Manual patches (not derivable from OpenAPI) ──
+;(api as Record<string, unknown>).pods = {
+  list(params?: Record<string, unknown>) { return extractData<unknown>(API.get('/api/sandboxes/pod', { params })) },
+  get(providerId: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/sandboxes/pod/${providerId}`, { params })) },
+  stop(providerId: string) { return API.post(`/api/sandboxes/pod/${providerId}/stop`) },
+  delete(providerId: string) { return API.delete(`/api/sandboxes/pod/${providerId}`) },
+  create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/sandboxes/pod', body || {})) },
+}
+;(api.topology as Record<string, unknown>).credentials = {
+  list(params?: Record<string, unknown>) { return extractItems<unknown>(API.get('/api/topology/credentials', { params })) },
+  get(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/topology/credentials/${id}`, { params })) },
+  create(body?: Record<string, unknown>) { return extractData<unknown>(API.post('/api/topology/credentials', body || {})) },
+  update(id: string, body?: Record<string, unknown>) { return extractData<unknown>(API.put(`/api/topology/credentials/${id}`, body || {})) },
+  delete(id: string) { return API.delete(`/api/topology/credentials/${id}`) },
 }

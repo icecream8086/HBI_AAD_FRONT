@@ -694,8 +694,8 @@ async function load() {
   loading.value = true
   try {
     const [raw, res] = await Promise.all([
-      api.extract<SandboxTemplate>(api.templates.apiTemplatesIdGet(route.params.id as string)),
-      api.extract<SandboxTemplate>(api.templates.apiTemplatesIdResolvedGet(route.params.id as string)),
+      api.templates.get(route.params.id as string) as Promise<SandboxTemplate>,
+      api.templates.resolved(route.params.id as string) as Promise<SandboxTemplate>,
     ])
     template.value = raw; resolved.value = res
   } catch { ElMessage.error(t('template.fetchFailed')) }
@@ -768,7 +768,7 @@ async function handleSave() {
       if (hcs.length) body.healthChecks = hcs
     }
     if (edit.form.dependsOn.length) body.dependsOn = edit.form.dependsOn
-    await api.templates.apiTemplatesIdPut(route.params.id as string, body as any)
+    await api.templates.update(route.params.id as string, body as any)
     ElMessage.success(t('common.saved')); edit.show = false; await load()
   } catch { ElMessage.error(t('common.saveFailed')) }
   finally { edit.saving = false }
@@ -787,7 +787,7 @@ async function handleApplyConfirm() {
   applyDlg.saving = true
   try {
     const body: Record<string, any> = { name: applyDlg.form.name, instanceId: applyDlg.form.instanceId }
-    await api.templates.apiTemplatesIdApplyPost(route.params.id as string, body as any)
+    await api.templates.apply(route.params.id as string, body as any)
     ElMessage.success(t('template.applyInstanceSuccess'))
     applyDlg.show = false
     router.push('/sandboxes')
@@ -798,7 +798,7 @@ async function handleApplyConfirm() {
 onMounted(async () => {
   await loadRefs()
   await load()
-  try { allTemplates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) } catch { /* ignore */ }
+  try { allTemplates.value = await api.templates.list({ limit: 100 }).then(r => r.items) } catch { /* ignore */ }
   await refCache.instances.load()
   instances.value = refCache.instances.data.value
   try { volumes.value = await api.topology.volumes.list().then(r => (r as any).items ?? r ?? []) } catch { /* ignore */ }

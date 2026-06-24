@@ -161,10 +161,9 @@ async function fetchData() {
   try {
     const params: Record<string, any> = { page: page.value, limit }
     if (filter.name) params.name = filter.name
-    const res = await api.securityGroups.list(params)
-    const data = (res.data as any)?.data
-    items.value = data?.items ?? (Array.isArray(data) ? data : [])
-    total.value = data?.total ?? items.value.length
+    const pageResult = await api.securityGroups.list(params)
+    items.value = pageResult.items ?? []
+    total.value = pageResult.total ?? items.value.length
   } catch { ElMessage.error(t('securityGroup.fetchFailed')) }
   finally { loading.value = false }
 }

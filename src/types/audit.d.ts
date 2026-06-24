@@ -1,8 +1,9 @@
 interface AuditLog {
   id: string
   timestamp: number
-  level: string
+  level: number
   facility: string
+  priority?: number
   message: string
   actorId?: string
   requestId?: string
@@ -10,10 +11,10 @@ interface AuditLog {
 }
 
 interface AuditLogQuery {
-  levelMin?: string
-  levelMax?: string
+  levelMin?: number
   facility?: string
   search?: string
+  requestId?: string
   since?: number
   until?: number
   page?: number
@@ -22,5 +23,6 @@ interface AuditLogQuery {
 
 interface AuditLogStats {
   total: number
-  bufferSize: number
+  entryCount: number
+  totalBytes: number
 }

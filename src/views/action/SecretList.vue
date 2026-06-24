@@ -63,7 +63,7 @@ function openCreate() {
 async function fetchData() {
   loading.value = true
   try {
-    items.value = await api.actions.secrets.list(workflowId)
+    items.value = await api.actions.workflows.secrets.list(workflowId)
   } catch { ElMessage.error(t('action.secretFetchFailed')) }
   finally { loading.value = false }
 }
@@ -73,7 +73,7 @@ async function handleSave() {
   if (!dlg.form.value) { ElMessage.warning(t('action.secretValueRequired')); return }
   dlg.saving = true
   try {
-    await api.actions.secrets.create(workflowId, { key: dlg.form.key, value: dlg.form.value })
+    await api.actions.workflows.secrets.create(workflowId, { key: dlg.form.key, value: dlg.form.value })
     ElMessage.success(t('action.secretCreateSuccess'))
     dlg.show = false; await fetchData()
   } catch { ElMessage.error(t('action.secretSaveFailed')) }

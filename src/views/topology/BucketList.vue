@@ -305,7 +305,7 @@ function openPolicies(row: RegionBucket) {
 async function fetchPolicies() {
   if (!policyDlg.bucketId) return
   policyDlg.loading = true
-  try { policyDlg.policies = await api.topology.buckets.policies.list(policyDlg.bucketId) }
+  try { policyDlg.policies = await api.topology.bucketPolicies.list(policyDlg.bucketId) }
   catch { ElMessage.error(t('topology.fetchFailed')) }
   finally { policyDlg.loading = false }
 }
@@ -367,7 +367,7 @@ async function handlePolicySave() {
       await api.topology.bucketPolicies.update(policyFormDlg.editId, body)
       ElMessage.success(t('topology.updateSuccess'))
     } else {
-      await api.topology.buckets.policies.create(policyDlg.bucketId, body as any)
+      await api.topology.bucketPolicies.create(policyDlg.bucketId, body as any)
       ElMessage.success(t('topology.createSuccess'))
     }
     policyFormDlg.show = false

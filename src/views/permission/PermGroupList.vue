@@ -380,7 +380,7 @@ function openEdit(row: PermissionGroup) {
 
 async function fetchData() {
   loading.value = true
-  try { const params: Record<string, any> = {page:page.value,limit:limit.value}; if (filter.name) params.name = filter.name; const r = await api.extractPage<PermissionGroup>(api.permissions.apiPermissionsGroupsGet({params})); groups.value = r.items; total.value = r.total }
+  try { const params: Record<string, any> = {page:page.value,limit:limit.value}; if (filter.name) params.name = filter.name; const r = await api.permissions.groups.list(params); groups.value = r.items; total.value = r.total }
   catch { ElMessage.error(t('permission.groupFetchFailed')) }
   finally { loading.value = false }
 }
@@ -416,16 +416,16 @@ async function handleSave() {
   saving.value = true
   try {
     const body = { name: form.name, rules, userGroupIds: form.userGroupIds.length ? form.userGroupIds : undefined, userIds: form.userIds.length ? form.userIds : undefined, dependsOn: form.dependsOn.length ? form.dependsOn : undefined }
-    if (dialog.isEdit) { await api.permissions.apiPermissionsGroupsIdPut(dialog.editId, body as any); ElMessage.success(t('permission.updated')) }
-    else { await api.permissions.apiPermissionsGroupsPost(body as any); ElMessage.success(t('permission.created')) }
+    if (dialog.isEdit) { await api.permissions.groups.update(dialog.editId, body as any); ElMessage.success(t('permission.updated')) }
+    else { await api.permissions.groups.create(body as any); ElMessage.success(t('permission.created')) }
     dialog.show=false; await fetchData()
   } catch { ElMessage.error(t('permission.actionFailed')) }
   finally { saving.value = false }
 }
-async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.groupDeleteConfirm'), t('table.confirm')); await api.permissions.apiPermissionsGroupsIdDelete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
+async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.groupDeleteConfirm'), t('table.confirm')); await api.permissions.groups.delete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
 onMounted(async () => {
   await fetchData()
-  try { allUg.value = await api.extractItems<UserGroup>(api.permissions.apiPermissionsUserGroupsGet()) } catch { /* ignore */ }
+  try { allUg.value = await api.permissions.userGroups.list({ limit: 100 }).then(r => r.items) } catch { /* ignore */ }
   await refCache.users.load()
   allUsers.value = refCache.users.data.value as User[]
 })

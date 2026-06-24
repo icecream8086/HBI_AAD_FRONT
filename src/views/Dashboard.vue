@@ -95,14 +95,14 @@ function formatUptime(ms: number): string {
 }
 
 onMounted(async () => {
-  try { Object.assign(info, await api.extract<ServerInfo>(api.info.infoGet())) } catch { /* ignore */ }
+  try { Object.assign(info, await api.info.get() as ServerInfo) } catch { /* ignore */ }
 
   try {
     const [sb, tm, im, us] = await Promise.allSettled([
-      api.extractItems<unknown>(api.sandboxes.apiSandboxesGet()),
-      api.extractArray<unknown>(api.templates.apiTemplatesGet()),
-      api.extractItems<unknown>(api.topology.images.list()),
-      api.extractArray<unknown>(api.users.apiUsersGet()),
+      api.sandboxes.list({ limit: 200 }).then(r => r.items),
+      api.templates.list({ limit: 200 }).then(r => r.items),
+      api.topology.images.list({ limit: 200 }).then(r => r.items),
+      api.users.list({ limit: 200 }).then(r => r.items),
     ])
     if (sb.status === 'fulfilled') { statCards[0].value = sb.value.length; statCards[0].tag = t('dashboard.active') }
     if (tm.status === 'fulfilled') statCards[1].value = tm.value.length

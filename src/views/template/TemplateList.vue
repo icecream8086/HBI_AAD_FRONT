@@ -453,7 +453,7 @@ async function onDependsChange(ids: string[]) {
   if (!ids.length) return
   const parentId = ids[ids.length - 1]
   try {
-    const resolved = await api.extract<SandboxTemplate>(api.templates.apiTemplatesIdResolvedGet(parentId))
+    const resolved = await api.templates.resolved(parentId) as SandboxTemplate
     if (resolved?.container?.containers?.length) inherited.value = resolved.container.containers.map(c => ({ name: c.name || '', image: c.image || '' }))
   } catch { /* no resolved */ }
 }
@@ -473,7 +473,7 @@ async function fetchData() {
   try {
     const params: Record<string, any> = {}
     if (filter.name) params.name = filter.name
-    templates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet({ params }))
+    templates.value = await api.templates.list(params).then(r => r.items)
   } catch { ElMessage.error(t('template.fetchFailed')) }
   finally { loading.value = false }
 }
@@ -494,7 +494,7 @@ async function handleSave() {
       body.kind = 'ContainerGroup'
     }
 
-    await api.templates.apiTemplatesPost(body as any)
+    await api.templates.create(body as any)
     ElMessage.success(t('template.createSuccess'))
     dlg.show = false; await fetchData()
   } catch (e: any) { ElMessage.error(e?.response?.data?.error?.message || t('common.actionFailed')) }
@@ -513,7 +513,7 @@ async function handleApplyConfirm() {
   applyDlg.saving = true
   try {
     const body: Record<string, any> = { name: applyDlg.form.name, instanceId: applyDlg.form.instanceId }
-    await api.templates.apiTemplatesIdApplyPost(applyDlg.templateId, body as any)
+    await api.templates.apply(applyDlg.templateId, body as any)
     ElMessage.success(t('template.applyInstanceSuccess'))
     applyDlg.show = false
   } catch { ElMessage.error(t('template.applyFailed')) }
@@ -523,7 +523,7 @@ async function handleApplyConfirm() {
 async function handleDelete(id: string) {
   try {
     await ElMessageBox.confirm(t('template.deleteConfirm'), t('table.confirm'), { type: 'warning' })
-    await api.templates.apiTemplatesIdDelete(id)
+    await api.templates.delete(id)
     ElMessage.success(t('template.deleteSuccess')); await fetchData()
   } catch { /* ignore */ }
 }

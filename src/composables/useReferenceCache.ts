@@ -49,37 +49,33 @@ export function useReferenceCache() {
   return {
     instances: {
       data: instancesCache.data,
-      load: () => loadOnce(instancesCache, () => api.topology.instances.list().then(r => (r as { items: ComputeInstance[] }).items ?? (r as unknown as ComputeInstance[]) ?? [])),
-      refresh: () => refresh(instancesCache, () => api.topology.instances.list().then(r => (r as { items: ComputeInstance[] }).items ?? (r as unknown as ComputeInstance[]) ?? [])),
+      load: () => loadOnce(instancesCache, () => api.topology.instances.list().then(r => (r as { items: ComputeInstance[] }).items ?? [])),
+      refresh: () => refresh(instancesCache, () => api.topology.instances.list().then(r => (r as { items: ComputeInstance[] }).items ?? [])),
     },
     credentials: {
       data: credentialsCache.data,
-      load: () => loadOnce(credentialsCache, () => api.topology.credentials.list().then(r => r ?? [])),
-      refresh: () => refresh(credentialsCache, () => api.topology.credentials.list().then(r => r ?? [])),
+      load: () => loadOnce(credentialsCache, () => ((api.topology as Record<string, unknown>).credentials as { list: () => Promise<MaskedCredential[]> }).list().then((r) => r ?? [])),
+      refresh: () => refresh(credentialsCache, () => ((api.topology as Record<string, unknown>).credentials as { list: () => Promise<MaskedCredential[]> }).list().then((r) => r ?? [])),
     },
     images: {
       data: imagesCache.data,
-      load: () => loadOnce(imagesCache, () => api.topology.images.list().then(r => r ?? [])),
-      refresh: () => refresh(imagesCache, () => api.topology.images.list().then(r => r ?? [])),
+      load: () => loadOnce(imagesCache, () => api.topology.images.list().then((r) => r.items as ImageRepository[])),
+      refresh: () => refresh(imagesCache, () => api.topology.images.list().then((r) => r.items as ImageRepository[])),
     },
     users: {
       data: usersCache.data,
-      load: () => loadOnce(usersCache, () => api.extractArray<User>(api.users.apiUsersGet())),
-      refresh: () => refresh(usersCache, () => api.extractArray<User>(api.users.apiUsersGet())),
+      load: () => loadOnce(usersCache, () => api.users.list().then((r) => (r.items ?? []) as User[])),
+      refresh: () => refresh(usersCache, () => api.users.list().then((r) => (r.items ?? []) as User[])),
     },
     securityGroups: {
       data: securityGroupsCache.data,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      load: () => loadOnce(securityGroupsCache, () => api.securityGroups.list().then(r => (r.data as any)?.data?.items ?? []) as Promise<unknown[]>),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      refresh: () => refresh(securityGroupsCache, () => api.securityGroups.list().then(r => (r.data as any)?.data?.items ?? []) as Promise<unknown[]>),
+      load: () => loadOnce(securityGroupsCache, () => api.securityGroups.list().then((r) => (r.items ?? []) as unknown[])),
+      refresh: () => refresh(securityGroupsCache, () => api.securityGroups.list().then((r) => (r.items ?? []) as unknown[])),
     },
     subnets: {
       data: subnetsCache.data,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      load: () => loadOnce(subnetsCache, () => api.subnets.list().then(r => (r.data as any)?.data?.items ?? []) as Promise<unknown[]>),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      refresh: () => refresh(subnetsCache, () => api.subnets.list().then(r => (r.data as any)?.data?.items ?? []) as Promise<unknown[]>),
+      load: () => loadOnce(subnetsCache, () => api.subnets.list().then((r) => (r.items ?? []) as unknown[])),
+      refresh: () => refresh(subnetsCache, () => api.subnets.list().then((r) => (r.items ?? []) as unknown[])),
     },
   }
 }

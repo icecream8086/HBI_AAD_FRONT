@@ -57,7 +57,7 @@ function openEdit(row: RouteAcl) { dialog.isEdit=true; dialog.editId=row.id; for
 
 async function fetchData() {
   loading.value = true
-  try { const params: Record<string, any> = { page: page.value, limit: limit.value }; if (filter.pathPrefix) params.pathPrefix = filter.pathPrefix; const r = await api.extractPage<RouteAcl>(api.permissions.apiPermissionsRouteAclsGet({ params })); acls.value = r.items; total.value = r.total }
+  try { const params: Record<string, any> = { page: page.value, limit: limit.value }; if (filter.pathPrefix) params.pathPrefix = filter.pathPrefix; const r = await api.permissions.routeAcls.list(params); acls.value = r.items; total.value = r.total }
   catch { ElMessage.error(t('permission.aclFetchFailed')) }
   finally { loading.value = false }
 }
@@ -67,13 +67,13 @@ async function handleSave() {
   saving.value = true
   const p = { method: form.method, pathPrefix: form.pathPrefix, matchType: form.matchType, effect: form.effect, userId: form.userId||undefined, priority: form.priority }
   try {
-    if (dialog.isEdit) { await api.permissions.apiPermissionsRouteAclsIdPut(dialog.editId, p as any); ElMessage.success(t('permission.updated')) }
-    else { await api.permissions.apiPermissionsRouteAclsPost(p as any); ElMessage.success(t('permission.created')) }
+    if (dialog.isEdit) { await api.permissions.routeAcls.update(dialog.editId, p as any); ElMessage.success(t('permission.updated')) }
+    else { await api.permissions.routeAcls.create(p as any); ElMessage.success(t('permission.created')) }
     dialog.show = false; await fetchData()
   } catch { ElMessage.error(t('permission.actionFailed')) }
   finally { saving.value = false }
 }
-async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.aclDeleteConfirm'), t('table.confirm')); await api.permissions.apiPermissionsRouteAclsIdDelete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
+async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.aclDeleteConfirm'), t('table.confirm')); await api.permissions.routeAcls.delete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
 onMounted(async () => { await loadRefs(); await fetchData() })
 </script>
 

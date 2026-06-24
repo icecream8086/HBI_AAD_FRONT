@@ -260,7 +260,7 @@ async function fetchData() {
   try {
     const params: Record<string, any> = { page: page.value, limit: limit.value }
     if (filter.name) params.name = filter.name
-    const res = await api.extractPage<StoredPolicy>(api.permissions.apiPermissionsPoliciesGet({ params }))
+    const res = await api.permissions.policies.list(params)
     policies.value = res.items; total.value = res.total
   } catch { ElMessage.error(t('permission.fetchFailed')) }
   finally { loading.value = false }
@@ -285,10 +285,10 @@ async function handleSave() {
   saving.value = true
   try {
     if (dialog.isEdit) {
-      await api.permissions.apiPermissionsPoliciesIdPut(dialog.editId, { name: payload.name, priority: payload.priority as number })
+      await api.permissions.policies.update(dialog.editId, { name: payload.name, priority: payload.priority as number })
       ElMessage.success(t('permission.updated'))
     } else {
-      await api.permissions.apiPermissionsPoliciesPost({
+      await api.permissions.policies.create({
         name: payload.name as string,
         effect: payload.effect as 'allow' | 'deny',
         actions: payload.actions as string[],
@@ -304,7 +304,7 @@ async function handleSave() {
 async function handleDelete(id: string) {
   try {
     await ElMessageBox.confirm(t('permission.deleteConfirm'), t('table.confirm'))
-    await api.permissions.apiPermissionsPoliciesIdDelete(id)
+    await api.permissions.policies.delete(id)
     ElMessage.success(t('permission.deleteSuccess')); await fetchData()
   } catch { /* ignore */ }
 }

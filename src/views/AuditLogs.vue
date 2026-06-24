@@ -60,7 +60,7 @@
       :page-sizes="[10, 15, 30, 50]"
       layout="total, sizes, prev, pager, next"
       @size-change="fetchData"
-      @current-change="fetchData"
+      @current-change="onPageChange"
     />
 
     <!-- Detail dialog -->
@@ -110,6 +110,8 @@ const logs = ref<AuditLog[]>([])
 const page = ref(1)
 const pageSize = ref(15)
 const total = ref(0)
+const cursor = ref<string | undefined>()
+const nextCursor = ref<string | undefined>()
 const f = reactive({ levelMin: '' as number | string, facility: '', search: '', requestId: '' })
 
 const LEVEL_NAMES: Record<number, string> = { 0:'EMERG',1:'ALERT',2:'CRIT',3:'ERR',4:'WARNING',5:'NOTICE',6:'INFO',7:'DEBUG' }
@@ -121,7 +123,7 @@ function levelType(lv: number) { return LEVEL_TAGS[lv] ?? 'info' }
 const userMap = ref<Record<string, string>>({})
 async function loadUsers() {
   try {
-    const users = await api.extractArray<User>(api.users.apiUsersGet())
+    const users = await api.users.list({ limit: 200 }).then(r => r.items)
     userMap.value = Object.fromEntries(users.map(u => [u.id, u.name || u.email]))
   } catch { /* ignore */ }
 }
@@ -149,19 +151,34 @@ function resetFilter() {
   fetchData()
 }
 
+function normalizeLogEntry(item: any): AuditLog {
+  return typeof item === 'string' ? JSON.parse(item) : item
+}
+
 async function fetchData() {
   loading.value = true
   try {
-    const params: Record<string, any> = { page: page.value, limit: pageSize.value }
+    const params: Record<string, any> = { limit: pageSize.value }
+    if (cursor.value && page.value > 1) params.afterCursor = cursor.value
+    else params.page = page.value
     if (f.levelMin !== '') params.levelMin = f.levelMin
     if (f.facility) params.facility = f.facility
     if (f.search) params.search = f.search
     if (f.requestId) params.requestId = f.requestId
-    const res = await api.extract<{ lines: AuditLog[]; total: number }>(api.audit.apiAuditLogsGet({ params }))
-    logs.value = (res.lines || []).map((l: any) => typeof l === 'string' ? JSON.parse(l) : l)
+    const res = await api.audit.logs.list(params)
+    const raw = res.entries ?? res.lines ?? []
+    logs.value = raw.map(normalizeLogEntry)
     total.value = res.total ?? logs.value.length
+    nextCursor.value = res.nextCursor
   } catch (e) { console.error(e); ElMessage.error(t('audit.fetchFailed')) }
   finally { loading.value = false }
+}
+
+function onPageChange(newPage: number) {
+  if (newPage > page.value && nextCursor.value) cursor.value = nextCursor.value
+  else if (newPage <= 1) cursor.value = undefined
+  page.value = newPage
+  fetchData()
 }
 
 onMounted(async () => {

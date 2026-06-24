@@ -348,8 +348,8 @@ const inviteUsers = ref<User[]>([])
 async function loadInviteRefs() {
   try {
     const [groups, users] = await Promise.all([
-      api.extractItems<UserGroup>(api.permissions.apiPermissionsUserGroupsGet()),
-      api.extractArray<User>(api.users.apiUsersGet()),
+      api.permissions.userGroups.list({ limit: 100 }).then(r => r.items),
+      api.users.list({ limit: 200 }).then(r => r.items),
     ])
     inviteGroups.value = groups
     inviteUsers.value = users
@@ -390,7 +390,7 @@ onMounted(async () => {
     try {
       const userId = localStorage.getItem('current_user_id')
       if (userId) {
-        const user = await api.extract<User>(api.users.apiUsersIdGet(userId))
+        const user = await api.users.get(userId)
         store.commit('auth/SET_USER', user)
       }
     } catch { /* ignore */ }

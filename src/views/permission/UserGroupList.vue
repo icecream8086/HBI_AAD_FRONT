@@ -136,7 +136,7 @@ function openInvite(row: UserGroup) {
 
 async function fetchData() {
   loading.value = true
-  try { const params: Record<string, any> = {page:page.value,limit:limit.value}; if (filter.name) params.name = filter.name; const r = await api.extractPage<UserGroup>(api.permissions.apiPermissionsUserGroupsGet({params})); items.value = r.items; total.value = r.total }
+  try { const params: Record<string, any> = {page:page.value,limit:limit.value}; if (filter.name) params.name = filter.name; const r = await api.permissions.userGroups.list(params); items.value = r.items; total.value = r.total }
   catch { ElMessage.error(t('permission.userGroupFetchFailed')) }
   finally { loading.value = false }
 }
@@ -170,7 +170,7 @@ async function handleSave() {
   } catch { ElMessage.error(t('permission.actionFailed')) }
   finally { saving.value = false }
 }
-async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.groupDeleteConfirm'), t('table.confirm')); await api.permissions.apiPermissionsUserGroupsIdDelete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
+async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.groupDeleteConfirm'), t('table.confirm')); await api.permissions.userGroups.delete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
 onMounted(async () => {
   await loadRefs()
   await fetchData()

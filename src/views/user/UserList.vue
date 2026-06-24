@@ -81,7 +81,7 @@ async function handleSearch() {
   searching.value = true
   searchResult.value = null
   try {
-    const user = await api.users.search(q)
+    const user = await api.auth.search(q)
     if (user) {
       searchResult.value = user
     } else {
@@ -98,7 +98,7 @@ function clearSearch() {
 
 onMounted(async () => {
   loading.value = true
-  try { users.value = await api.extractArray<User>(api.users.apiUsersGet()) } catch { /* ignore */ }
+  try { users.value = await api.users.list({ limit: 200 }).then(r => r.items) } catch { /* ignore */ }
   finally { loading.value = false }
 })
 </script>

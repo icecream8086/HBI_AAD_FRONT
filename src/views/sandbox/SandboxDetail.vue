@@ -268,7 +268,7 @@ function fmtNetwork(net: any): string {
 
 async function load() {
   loading.value = true
-  try { sandbox.value = await api.extract<Sandbox>(api.sandboxes.apiSandboxesIdGet(route.params.id as string)) }
+  try { sandbox.value = await api.sandboxes.get(route.params.id as string) as Sandbox }
   catch { ElMessage.error(t('sandbox.loadFailed')) }
   finally { loading.value = false }
 }
@@ -289,7 +289,7 @@ async function handleStart() {
 async function handleStop() {
   if (throttle()) return
   try {
-    await api.sandboxes.apiSandboxesIdStopPost(route.params.id as string)
+    await api.sandboxes.stop(route.params.id as string)
     ElMessage.success(t('sandbox.stopSuccess'))
     await load()
   } catch { ElMessage.error(t('sandbox.actionFailed')) }
@@ -297,21 +297,21 @@ async function handleStop() {
 async function handleDelete() {
   try {
     await ElMessageBox.confirm(t('sandbox.deleteConfirm'), t('table.confirm'))
-    await api.sandboxes.apiSandboxesIdDelete(route.params.id as string)
+    await api.sandboxes.delete(route.params.id as string)
     ElMessage.success(t('sandbox.deleteSuccess')); router.push('/sandboxes')
   } catch { /* ignore */ }
 }
 async function handleSync() {
   if (throttle()) return
   try {
-    await api.sandboxes.apiSandboxesIdSyncPost(route.params.id as string)
+    await api.sandboxes.sync(route.params.id as string)
     ElMessage.success(t('sandbox.syncSuccess'))
     await load()
   } catch { ElMessage.error(t('sandbox.syncFailed')) }
 }
 async function fetchHealth() {
   try {
-    const h = await api.extract<ContainerHealth[]>(api.sandboxes.apiSandboxesIdHealthGet(route.params.id as string))
+    const h = await api.sandboxes.health(route.params.id as string) as ContainerHealth[]
     if (!h?.length) { ElMessage.info('No container health data'); return }
     h.forEach(c => ElMessage.info(`${t('sandbox.containerLabel')} ${c.containerName}: ${c.status}${c.ready ? ' ✓' : ''}`))
   } catch { ElMessage.error('Health check failed') }

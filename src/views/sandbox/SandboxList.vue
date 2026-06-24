@@ -126,7 +126,7 @@ watch(() => createForm.templateId, async (id) => {
   resolvedTpl.value = null
   if (!id) return
   try {
-    const resolved = await api.extract<SandboxTemplate>(api.templates.apiTemplatesIdResolvedGet(id))
+    const resolved = await api.templates.resolved(id) as SandboxTemplate
     resolvedTpl.value = resolved
     if (resolved?.container?.containers?.length) {
       createForm.containers = resolved.container.containers.map(c => ({ name: c.name || '', image: c.image || '' }))
@@ -177,12 +177,11 @@ async function fetchData() {
   loading.value = true
   nextCursor.value = undefined
   try {
-    const opts: any = { params: { limit: PAGE_LIMIT } }
-    if (filter.status) opts.params.status = filter.status
-    const res = await api.sandboxes.apiSandboxesGet(opts)
-    const d = (res.data as any)?.data as { items: Sandbox[]; nextCursor?: string } | undefined
-    sandboxes.value = d?.items ?? []
-    nextCursor.value = d?.nextCursor
+    const params: any = { limit: PAGE_LIMIT }
+    if (filter.status) params.status = filter.status
+    const d = await api.sandboxes.list(params)
+    sandboxes.value = (d as any).items ?? []
+    nextCursor.value = (d as any).nextCursor
   } catch { ElMessage.error(t('sandbox.loadFailed')) }
   finally { loading.value = false }
 }
@@ -191,25 +190,24 @@ async function loadMore() {
   if (!nextCursor.value) return
   loading.value = true
   try {
-    const opts: any = { params: { limit: PAGE_LIMIT, cursor: nextCursor.value } }
-    if (filter.status) opts.params.status = filter.status
-    const res = await api.sandboxes.apiSandboxesGet(opts)
-    const d = (res.data as any)?.data as { items: Sandbox[]; nextCursor?: string } | undefined
-    sandboxes.value.push(...(d?.items ?? []))
-    nextCursor.value = d?.nextCursor
+    const params: any = { limit: PAGE_LIMIT, cursor: nextCursor.value }
+    if (filter.status) params.status = filter.status
+    const d = await api.sandboxes.list(params)
+    sandboxes.value.push(...((d as any).items ?? []))
+    nextCursor.value = (d as any).nextCursor
   } catch { ElMessage.error(t('sandbox.loadFailed')) }
   finally { loading.value = false }
 }
 
 async function handleStop(row: Sandbox) {
-  try { await api.sandboxes.apiSandboxesIdStopPost(row.id); ElMessage.success(t('sandbox.stopSuccess')); await fetchData() }
+  try { await api.sandboxes.stop(row.id); ElMessage.success(t('sandbox.stopSuccess')); await fetchData() }
   catch { ElMessage.error(t('sandbox.actionFailed')) }
 }
 
 async function handleDelete(id: string) {
   try {
     await ElMessageBox.confirm(t('sandbox.deleteConfirm'), t('table.confirm'), { confirmButtonText: t('table.delete'), cancelButtonText: t('table.cancel'), type: 'warning' })
-    await api.sandboxes.apiSandboxesIdDelete(id)
+    await api.sandboxes.delete(id)
     ElMessage.success(t('sandbox.deleteSuccess'))
     await fetchData()
   } catch { /* canceled or error */ }
@@ -222,7 +220,7 @@ async function handleCreate() {
       const applyBody: Record<string, any> = { name: 'sandbox-' + Date.now() }
       if (createForm.provider) applyBody.provider = createForm.provider
       if (createForm.instanceId) applyBody.instanceId = createForm.instanceId
-      await api.templates.apiTemplatesIdApplyPost(createForm.templateId, applyBody as any)
+      await api.templates.apply(createForm.templateId, applyBody as any)
     }
     ElMessage.success(t('sandbox.createSuccess'))
     showCreate.value = false
@@ -233,7 +231,7 @@ async function handleCreate() {
 
 onMounted(async () => {
   await fetchData()
-  try { templates.value = await api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()) } catch { /* ignore */ }
+  try { templates.value = await api.templates.list({ limit: 100 }).then(r => r.items) } catch { /* ignore */ }
   await refCache.instances.load()
   instances.value = refCache.instances.data.value
 })

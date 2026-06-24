@@ -38,7 +38,7 @@ function sysGroupName(id: string) {
 
 onMounted(async () => {
   loading.value = true
-  try { groups.value = await api.extractArray<SystemGroup>(api.systemGroups.apiSystemGroupsGet()) }
+  try { groups.value = await api.systemGroups.list({ limit: 100 }).then(r => r.items) }
   catch { ElMessage.error(t('permission.systemGroupFetchFailed')) }
   finally { loading.value = false }
 })

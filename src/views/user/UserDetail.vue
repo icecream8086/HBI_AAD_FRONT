@@ -155,7 +155,7 @@ function openPolicyEdit() {
 async function handleSavePolicy() {
   savingPolicy.value = true
   try {
-    await api.users.apiUsersIdLoginPolicyPut(route.params.id as string, {
+    await api.users.loginPolicy.update(route.params.id as string, {
       enabled: policyForm.enabled,
       timeRanges: policyForm.timeRanges,
       allowedCIDRs: policyForm.allowedCIDRs,
@@ -175,24 +175,24 @@ const savingGroups = ref(false)
 async function load() {
   loading.value = true
   try {
-    user.value = await api.extract<User>(api.users.apiUsersIdGet(route.params.id as string))
+    user.value = await api.users.get(route.params.id as string) as User
     form.name = user.value.name; form.role = user.value.role
   } catch { ElMessage.error(t('user.loadFailed')) }
   finally { loading.value = false }
 }
 
 async function fetchPolicy() {
-  try { policy.value = await api.extract<LoginPolicy>(api.users.apiUsersIdLoginPolicyGet(route.params.id as string)) as any }
+  try { policy.value = await api.users.loginPolicy.get(route.params.id as string) as any }
   catch { policy.value = null }
 }
 async function fetchPublicKey() {
-  try { publicKey.value = await api.extract<string>(api.users.apiUsersIdPublicKeyGet(route.params.id as string)) as any }
+  try { publicKey.value = await api.users.publicKey.get(route.params.id as string) as any }
   catch { publicKey.value = null }
 }
 
 async function fetchGroups() {
   try {
-    const groups = await api.extractItems<UserGroup>(api.permissions.apiPermissionsUserGroupsGet())
+    const groups = await api.permissions.userGroups.list({ limit: 100 }).then(r => r.items)
     allGroups.value = groups
     userGroups.value = groups.filter(g => g.memberIds?.includes(route.params.id as string))
   } catch { /* ignore */ }
@@ -231,7 +231,7 @@ watch(showGroupDialog, (v) => {
 async function handleSave() {
   saving.value = true
   try {
-    await api.users.apiUsersIdPut(route.params.id as string, { name: form.name, role: form.role, privateKeyEd25519: user.value?.privateKeyEd25519 || '' })
+    await api.users.update(route.params.id as string, { name: form.name, role: form.role, privateKeyEd25519: user.value?.privateKeyEd25519 || '' })
     ElMessage.success(t('user.saved'))
   } catch { ElMessage.error(t('user.saveFailed')) }
   finally { saving.value = false }
@@ -240,7 +240,7 @@ async function handleSave() {
 async function handleRefresh() {
   refreshing.value = true
   try {
-    await api.users.apiUsersIdRefreshPost(route.params.id as string)
+    await api.users.refresh(route.params.id as string)
     ElMessage.success(t('user.cacheRefreshed'))
   } catch { ElMessage.error(t('user.refreshFailed')) }
   finally { refreshing.value = false }

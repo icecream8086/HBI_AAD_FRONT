@@ -13,10 +13,10 @@ export function useResolver() {
     if (loaded.value) return
     loaded.value = true
     const r = await Promise.allSettled([
-      api.extractArray<User>(api.users.apiUsersGet()).then(v => { users.value = v }),
-      api.extractArray<SandboxTemplate>(api.templates.apiTemplatesGet()).then(v => { templates.value = v }),
-      api.extractItems<UserGroup>(api.permissions.apiPermissionsUserGroupsGet()).then(v => { userGroups.value = v }),
-      api.extractItems<PermissionGroup>(api.permissions.apiPermissionsGroupsGet()).then(v => { permGroups.value = v }),
+      api.users.list().then((v) => { users.value = (v.items ?? []) as User[] }),
+      api.templates.list().then((v) => { templates.value = (v.items ?? []) as SandboxTemplate[] }),
+      api.permissions.userGroups.list().then((v) => { userGroups.value = (v.items ?? []) as UserGroup[] }),
+      api.permissions.groups.list().then((v) => { permGroups.value = (v.items ?? []) as PermissionGroup[] }),
     ])
     return r
   }

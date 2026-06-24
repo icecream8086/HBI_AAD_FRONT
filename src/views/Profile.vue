@@ -117,7 +117,7 @@ onMounted(async () => {
     const userId = localStorage.getItem('current_user_id')
     if (userId) {
       try {
-        const u = await api.extract<User>(api.users.apiUsersIdGet(userId))
+        const u = await api.users.get(userId)
         store.commit('auth/SET_USER', u)
       } catch { /* will retry on next interaction */ }
     }

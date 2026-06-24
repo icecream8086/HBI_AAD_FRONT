@@ -157,3 +157,14 @@ interface RunDag {
     to: string
   }[]
 }
+
+interface ActionTemplate {
+  id: string
+  name: string
+  description?: string
+  version: string
+  tags?: string[]
+  on: WorkflowDef['on']
+  jobs: Record<string, JobDef>
+  createdAt: number
+}

@@ -8,6 +8,10 @@ test-results
 openapi.json
 openapi-summary.json
 .claude
-claude.md
+CLAUDE.md
 .vscode
 deps.svg
+
+# generated (real API is src/api/index.ts)
+src/api/index-generated.ts
+src/api/generated/
