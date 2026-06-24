@@ -47,7 +47,7 @@
     </el-table>
 
     <el-pagination
-      v-if="total > limit"
+     
       v-model:current-page="page"
       :page-size="limit"
       :total="total"

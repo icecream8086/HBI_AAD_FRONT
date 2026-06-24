@@ -36,7 +36,7 @@
     </el-table>
 
     <el-pagination
-      v-if="total > limit"
+     
       v-model:current-page="page"
       :page-size="limit"
       :total="total"
@@ -89,7 +89,7 @@ const items = ref<Subnet[]>([])
 const instances = ref<ComputeInstance[]>([])
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 const page = ref(1)
-const limit = 50
+const limit = 20
 const total = ref(0)
 const filter = reactive({ name: '' })
 const form = reactive({

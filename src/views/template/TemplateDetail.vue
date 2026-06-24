@@ -75,8 +75,8 @@
               </div>
               <div v-if="c.resources?.limits" class="sub-section">
                 <h5>{{ $t('template.resources') }}</h5>
-                <span v-if="c.resources.limits.cpu">{{ c.resources.limits.cpu }}{{ $t('sandbox.cores') }} </span>
-                <span v-if="c.resources.limits.memory">{{ c.resources.limits.memory }}Mi</span>
+                <span v-if="c.resources.limits.cpu">CPU: {{ c.resources.limits.cpu }} </span>
+                <span v-if="c.resources.limits.memory">Mem: {{ c.resources.limits.memory }}</span>
                 <span v-if="c.resources.limits.gpu" style="margin-left:6px">GPU: {{ c.resources.limits.gpu }}{{ c.resources.limits.gpuType ? '×'+c.resources.limits.gpuType : '' }}</span>
                 <span v-if="!c.resources.limits.cpu && !c.resources.limits.memory && !c.resources.limits.gpu">-</span>
               </div>
@@ -489,7 +489,7 @@ const resolvedContainers = computed(() => {
       image: svc.image,
       command: svc.command,
       ports: svc.ports,
-      resources: { limits: { cpu: svc.resources?.cpu ? Number(svc.resources.cpu) : undefined, memory: svc.resources?.memory ? Number(svc.resources.memory) : undefined } },
+      resources: { limits: { cpu: svc.resources?.cpu || undefined, memory: svc.resources?.memory || undefined } },
       env: svc.env?.map(e => ({ name: e.name, value: e.value })),
     } as ContainerDef))
   }
@@ -802,7 +802,7 @@ onMounted(async () => {
   await refCache.instances.load()
   instances.value = refCache.instances.data.value
   try { volumes.value = await api.topology.volumes.list().then(r => (r as any).items ?? r ?? []) } catch { /* ignore */ }
-  try { buckets.value = await api.topology.buckets.list() } catch { /* ignore */ }
+  try { buckets.value = await api.topology.buckets.list().then(r => (r as any).items ?? r ?? []) } catch { /* ignore */ }
   await refCache.images.load()
   existingImages.value = [...new Set(refCache.images.data.value.map(r => r.image).filter(Boolean))]
   await refCache.securityGroups.load()

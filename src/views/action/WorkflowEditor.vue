@@ -235,6 +235,11 @@ async function handleSave() {
       on,
       jobs: jobs || {},
     })
+    if (triggerType.value === 'cron') {
+      await api.actions.workflows.schedule(workflowId, { cron: cronExpr.value || '0 0 * * *' })
+    } else if (triggerType.value === 'http') {
+      await api.actions.workflows.http(workflowId, { signatureSecret: httpSecret.value || undefined })
+    }
     ElMessage.success(t('action.editorSaved'))
   } catch (e: any) {
     ElMessage.error(e?.response?.data?.error?.message || t('action.saveFailed'))

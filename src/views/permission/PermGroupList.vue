@@ -109,6 +109,11 @@
             {{ $t('table.edit') }}
           </el-button><el-button
             size="small"
+            @click="openCaps(row)"
+          >
+            {{ $t('permission.groupCaps') }}
+          </el-button><el-button
+            size="small"
             type="danger"
             @click="handleDelete(row.id)"
           >
@@ -118,7 +123,7 @@
       </el-table-column>
     </el-table>
     <el-pagination
-      v-if="total > limit"
+     
       v-model:current-page="page"
       v-model:page-size="limit"
       :total="total"
@@ -248,6 +253,20 @@
         >
           {{ dialog.isEdit?$t('table.save'):$t('table.create') }}
         </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Group Caps Dialog -->
+    <el-dialog v-model="capsDialog.show" :title="$t('permission.groupCaps')" width="400px" destroy-on-close>
+      <el-form v-if="capsDialog.groupId" label-width="100px">
+        <el-form-item v-for="(v, k) in capsForm" :key="k" :label="k">
+          <el-switch v-model="capsForm[k]" />
+        </el-form-item>
+        <el-empty v-if="!Object.keys(capsForm).length" :description="$t('user.noCaps')" :image-size="40" />
+      </el-form>
+      <template #footer>
+        <el-button @click="capsDialog.show=false">{{ $t('table.cancel') }}</el-button>
+        <el-button type="primary" :loading="savingCaps" @click="handleSaveCaps">{{ $t('user.save') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -423,6 +442,33 @@ async function handleSave() {
   finally { saving.value = false }
 }
 async function handleDelete(id: string) { try { await ElMessageBox.confirm(t('permission.groupDeleteConfirm'), t('table.confirm')); await api.permissions.groups.delete(id); ElMessage.success(t('permission.deleteSuccess')); await fetchData() } catch {/* ignore */} }
+
+// ─── Group Caps ───
+const capsDialog = reactive({ show: false, groupId: '' })
+const capsForm = reactive<Record<string, boolean>>({})
+const savingCaps = ref(false)
+
+async function openCaps(row: any) {
+  capsDialog.groupId = row.id
+  Object.keys(capsForm).forEach(k => delete capsForm[k])
+  try {
+    const caps = await api.permissions.caps.group.get(row.id) as any
+    if (caps && typeof caps === 'object') Object.assign(capsForm, caps)
+  } catch { /* no caps */ }
+  capsDialog.show = true
+}
+
+async function handleSaveCaps() {
+  if (!capsDialog.groupId) return
+  savingCaps.value = true
+  try {
+    await api.permissions.caps.group.update(capsDialog.groupId, { ...capsForm })
+    ElMessage.success(t('permission.capsUpdated'))
+    capsDialog.show = false
+  } catch { ElMessage.error(t('permission.actionFailed')) }
+  finally { savingCaps.value = false }
+}
+
 onMounted(async () => {
   await fetchData()
   try { allUg.value = await api.permissions.userGroups.list({ limit: 100 }).then(r => r.items) } catch { /* ignore */ }

@@ -32,6 +32,7 @@
           <el-menu-item index="/actions/registry">{{ $t('menu.actionRegistry') }}</el-menu-item>
           <el-menu-item index="/actions/shared-links">{{ $t('menu.sharedLinks') }}</el-menu-item>
           <el-menu-item index="/actions/organizations">{{ $t('menu.actionOrganizations') }}</el-menu-item>
+          <el-menu-item index="/actions/templates">{{ $t('menu.actionTemplates') }}</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="sandbox-group">
@@ -65,6 +66,11 @@
           <el-menu-item index="/permissions/user-groups">{{ $t('menu.userGroups') }}</el-menu-item>
           <el-menu-item index="/permissions/route-acls">{{ $t('menu.routeAcls') }}</el-menu-item>
           <el-menu-item index="/permissions/system-groups">{{ $t('menu.systemGroups') }}</el-menu-item>
+          <el-menu-item index="/permissions/user-templates">{{ $t('menu.userTemplates') }}</el-menu-item>
+          <el-menu-item index="/permissions/container-secrets">{{ $t('menu.containerSecrets') }}</el-menu-item>
+          <el-menu-item index="/permissions/elevations">{{ $t('menu.elevations') }}</el-menu-item>
+          <el-menu-item index="/permissions/invitations">{{ $t('menu.invitations') }}</el-menu-item>
+          <el-menu-item index="/permissions/tools">{{ $t('menu.permTools') }}</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="topology">

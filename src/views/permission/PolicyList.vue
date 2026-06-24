@@ -40,7 +40,7 @@
       </el-table-column>
     </el-table>
     <el-pagination
-      v-if="total > limit"
+     
       v-model:current-page="page"
       v-model:page-size="limit"
       :total="total"
@@ -285,7 +285,13 @@ async function handleSave() {
   saving.value = true
   try {
     if (dialog.isEdit) {
-      await api.permissions.policies.update(dialog.editId, { name: payload.name, priority: payload.priority as number })
+      await api.permissions.policies.update(dialog.editId, {
+        name: payload.name,
+        effect: payload.effect as 'allow' | 'deny',
+        actions: payload.actions as string[],
+        resource: payload.resource as string | undefined,
+        priority: payload.priority as number,
+      })
       ElMessage.success(t('permission.updated'))
     } else {
       await api.permissions.policies.create({

@@ -33,7 +33,7 @@
     </el-table>
 
     <el-pagination
-      v-if="total > limit"
+     
       v-model:current-page="page"
       :page-size="limit"
       :total="total"
@@ -101,8 +101,8 @@ async function fetchData() {
   loading.value = true
   try {
     const res = await api.actions.sharedLinks.list({ page: page.value, limit })
-    items.value = res ?? []
-    total.value = Array.isArray(res) ? res.length : 0
+    items.value = (res as any).items ?? []
+    total.value = (res as any).total ?? 0
   } catch { ElMessage.error(t('action.fetchSharedLinksFailed')) }
   finally { loading.value = false }
 }

@@ -211,7 +211,8 @@ async function fetchData() {
     const params: Record<string, string> = {}
     if (filter.platform) params.platform = filter.platform
     if (filter.region) params.region = filter.region
-    buckets.value = await api.topology.buckets.list(params)
+    const listRes = await api.topology.buckets.list(params)
+    buckets.value = (listRes as any).items ?? []
   } catch { ElMessage.error(t('topology.fetchFailed')) }
   finally { loading.value = false }
 }

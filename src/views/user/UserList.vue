@@ -55,6 +55,17 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+      v-model:current-page="page"
+      :page-size="limit"
+      :total="total"
+      layout="total, prev, pager, next"
+      background
+      small
+      style="margin-top:16px;justify-content:center"
+      @current-change="fetchData"
+    />
   </div>
 </template>
 
@@ -68,6 +79,9 @@ const { t } = useI18n()
 
 const loading = ref(false)
 const users = ref<User[]>([])
+const page = ref(1)
+const total = ref(0)
+const limit = 20
 const searchQuery = ref('')
 const searching = ref(false)
 const searchResult = ref<User | null>(null)
@@ -96,10 +110,18 @@ function clearSearch() {
   searchResult.value = null
 }
 
-onMounted(async () => {
+async function fetchData() {
   loading.value = true
-  try { users.value = await api.users.list({ limit: 200 }).then(r => r.items) } catch { /* ignore */ }
+  try {
+    const { items, total: totalItems } = await api.users.list({ page: page.value, limit })
+    users.value = items
+    total.value = totalItems
+  } catch { /* ignore */ }
   finally { loading.value = false }
+}
+
+onMounted(async () => {
+  await fetchData()
 })
 </script>
 

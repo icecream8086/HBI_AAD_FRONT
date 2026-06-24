@@ -115,6 +115,80 @@
         </div>
         <el-empty v-else :description="$t('user.noPublicKey')" :image-size="60" />
       </el-card>
+
+      <!-- User Caps -->
+      <el-card class="section">
+        <template #header>
+          <span>{{ $t('user.userCaps') }}</span>
+          <el-button size="small" style="float:right" @click="openCapsEdit">{{ $t('table.edit') }}</el-button>
+        </template>
+        <div v-if="userCaps && Object.keys(userCaps).length">
+          <el-tag v-for="(v, k) in userCaps" :key="k" :type="v ? 'success' : 'danger'" style="margin:0 6px 6px 0">
+            {{ k }}: {{ v ? $t('common.yes') : $t('common.no') }}
+          </el-tag>
+        </div>
+        <el-empty v-else :description="$t('user.noCaps')" :image-size="50" />
+      </el-card>
+
+      <el-dialog v-model="showCapsDialog" :title="$t('user.editCaps')" width="400px">
+        <el-form label-width="100px">
+          <el-form-item v-for="(v, k) in capsForm" :key="k" :label="k">
+            <el-switch v-model="capsForm[k]" />
+          </el-form-item>
+          <el-empty v-if="!Object.keys(capsForm).length" :description="$t('user.noCaps')" :image-size="40" />
+        </el-form>
+        <template #footer>
+          <el-button @click="showCapsDialog=false">{{ $t('table.cancel') }}</el-button>
+          <el-button type="primary" :loading="savingCaps" @click="handleSaveCaps">{{ $t('user.save') }}</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- Supplementary Groups -->
+      <el-card class="section">
+        <template #header>
+          <span>{{ $t('user.supplementaryGroups') }}</span>
+          <el-button size="small" style="float:right" @click="showSuppGroupDialog = true">{{ $t('user.addSupplementaryGroup') }}</el-button>
+        </template>
+        <div v-if="suppGroups.length">
+          <el-tag v-for="gid in suppGroups" :key="gid" closable style="margin:0 6px 6px 0" @close="handleRemoveSuppGroup(gid)">
+            {{ gid }}
+          </el-tag>
+        </div>
+        <el-empty v-else :description="$t('user.noSupplementaryGroups')" :image-size="50" />
+      </el-card>
+
+      <el-dialog v-model="showSuppGroupDialog" :title="$t('user.addSupplementaryGroup')" width="400px">
+        <el-form label-width="80px">
+          <el-form-item :label="$t('user.supplementaryGid')">
+            <el-input v-model="newSuppGid" placeholder="GID" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="showSuppGroupDialog=false">{{ $t('table.cancel') }}</el-button>
+          <el-button type="primary" :loading="savingSuppGroup" @click="handleAddSuppGroup">{{ $t('table.create') }}</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- Active Sessions -->
+      <el-card class="section">
+        <template #header>
+          <span>{{ $t('user.sessions') }} ({{ sessions.length }})</span>
+        </template>
+        <el-table v-if="sessions.length" :data="sessions" size="small">
+          <el-table-column prop="id" label="Token" width="200">
+            <template #default="{ row }">{{ (row.id || row.token || '').slice(0, 16) }}…</template>
+          </el-table-column>
+          <el-table-column label="Created" width="160">
+            <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
+          </el-table-column>
+          <el-table-column :label="$t('table.actions')" width="100">
+            <template #default="{ row }">
+              <el-button size="small" type="danger" @click="handleRevokeSession(row)">{{ $t('user.sessionRevoke') }}</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-empty v-else :description="$t('user.noSessions')" :image-size="50" />
+      </el-card>
     </div>
   </div>
 </template>
@@ -172,6 +246,85 @@ const selectedGroupIds = ref<string[]>([])
 const showGroupDialog = ref(false)
 const savingGroups = ref(false)
 
+// ─── User Caps ───
+const userCaps = ref<Record<string, boolean> | null>(null)
+const showCapsDialog = ref(false)
+const savingCaps = ref(false)
+const capsForm = reactive<Record<string, boolean>>({})
+
+async function fetchCaps() {
+  try { userCaps.value = await api.permissions.caps.user.get(route.params.id as string) as any }
+  catch { userCaps.value = null }
+}
+
+function openCapsEdit() {
+  capsForm && Object.keys(capsForm).forEach(k => delete capsForm[k])
+  if (userCaps.value) Object.assign(capsForm, { ...userCaps.value })
+  showCapsDialog.value = true
+}
+
+async function handleSaveCaps() {
+  savingCaps.value = true
+  try {
+    await api.permissions.caps.user.update(route.params.id as string, { ...capsForm })
+    userCaps.value = { ...capsForm }
+    ElMessage.success(t('user.capsUpdated'))
+    showCapsDialog.value = false
+  } catch { ElMessage.error(t('user.saveFailed')) }
+  finally { savingCaps.value = false }
+}
+
+// ─── Supplementary Groups ───
+const suppGroups = ref<string[]>([])
+const showSuppGroupDialog = ref(false)
+const savingSuppGroup = ref(false)
+const newSuppGid = ref('')
+
+async function fetchSuppGroups() {
+  try { suppGroups.value = await api.users.supplementaryGroups.list(route.params.id as string) as any }
+  catch { suppGroups.value = [] }
+}
+
+async function handleAddSuppGroup() {
+  if (!newSuppGid.value.trim()) { ElMessage.warning(t('user.gidRequired')); return }
+  savingSuppGroup.value = true
+  try {
+    await api.users.supplementaryGroups.add(route.params.id as string, newSuppGid.value.trim())
+    ElMessage.success(t('user.suppGroupAdded'))
+    showSuppGroupDialog.value = false
+    newSuppGid.value = ''
+    await fetchSuppGroups()
+  } catch { ElMessage.error(t('user.saveFailed')) }
+  finally { savingSuppGroup.value = false }
+}
+
+async function handleRemoveSuppGroup(gid: string) {
+  try {
+    await api.users.supplementaryGroups.remove(route.params.id as string, gid)
+    ElMessage.success(t('user.suppGroupRemoved'))
+    await fetchSuppGroups()
+  } catch { ElMessage.error(t('user.saveFailed')) }
+}
+
+// ─── Sessions ───
+const sessions = ref<any[]>([])
+
+async function fetchSessions() {
+  try {
+    const res = await api.users.sessions.list({ userId: route.params.id as string })
+    sessions.value = Array.isArray(res) ? res : (res as any)?.items ?? []
+  } catch { sessions.value = [] }
+}
+
+async function handleRevokeSession(row: any) {
+  try {
+    const tid = row.token || row.id
+    await api.users.sessions.delete(tid)
+    ElMessage.success(t('user.sessionRevoked'))
+    await fetchSessions()
+  } catch { ElMessage.error(t('user.saveFailed')) }
+}
+
 async function load() {
   loading.value = true
   try {
@@ -219,9 +372,11 @@ async function handleSaveGroups() {
   finally { savingGroups.value = false }
 }
 
+function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
+
 onMounted(async () => {
   await load()
-  await Promise.all([fetchPolicy(), fetchPublicKey(), fetchGroups()])
+  await Promise.all([fetchPolicy(), fetchPublicKey(), fetchGroups(), fetchCaps(), fetchSuppGroups(), fetchSessions()])
 })
 
 watch(showGroupDialog, (v) => {

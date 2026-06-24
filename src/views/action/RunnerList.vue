@@ -60,8 +60,8 @@ function runnerStatusType(s: string) {
 async function fetchData() {
   loading.value = true
   try {
-    items.value = await api.actions.runners.list()
-    items.value = items.value ?? []
+    const { items: runnerItems } = await api.actions.runners.list()
+    items.value = runnerItems ?? []
   } catch { ElMessage.error(t('action.fetchRunnersFailed')) }
   finally { loading.value = false }
 }

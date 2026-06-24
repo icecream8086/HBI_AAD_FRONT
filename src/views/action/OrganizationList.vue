@@ -12,7 +12,6 @@
           <strong>{{ org.name }}</strong>
           <div class="org-actions">
             <el-button size="small" @click="openCreateProject(org.id)">{{ $t('action.createProject') }}</el-button>
-            <el-button size="small" type="danger" @click="handleDeleteOrg(org.id)">{{ $t('table.delete') }}</el-button>
           </div>
         </div>
       </template>
@@ -22,11 +21,6 @@
           <el-table-column prop="id" label="ID" width="200" show-overflow-tooltip />
           <el-table-column :label="$t('table.createdAt')" width="170">
             <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-          </el-table-column>
-          <el-table-column :label="$t('table.actions')" width="100">
-            <template #default="{ row }">
-              <el-button size="small" type="danger" @click="handleDeleteProject(org.id, row.id)">{{ $t('table.delete') }}</el-button>
-            </template>
           </el-table-column>
         </el-table>
       </div>
@@ -66,7 +60,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { api } from '../../api'
 
 const { t } = useI18n()
@@ -95,11 +89,11 @@ async function fetchData() {
   loading.value = true
   try {
     const orgsRes = await api.actions.orgs.list()
-    orgs.value = orgsRes ?? []
+    orgs.value = orgsRes.items ?? []
     for (const org of orgs.value) {
       try {
         const projRes = await api.actions.projects.list({ orgId: org.id })
-        projects.value[org.id] = projRes ?? []
+        projects.value[org.id] = projRes.items ?? []
       } catch { projects.value[org.id] = [] }
     }
   } catch { ElMessage.error(t('action.fetchOrgsFailed')) }
@@ -117,14 +111,6 @@ async function handleCreateOrg() {
   finally { orgDlg.saving = false }
 }
 
-async function handleDeleteOrg(id: string) {
-  try {
-    await ElMessageBox.confirm(t('action.deleteOrgConfirm'), t('table.confirm'), { type: 'warning' })
-    // No delete endpoint in spec — just reload
-    await fetchData()
-  } catch { /* ignore */ }
-}
-
 async function handleCreateProject() {
   if (!projectDlg.form.name) { ElMessage.warning(t('action.projectNameRequired')); return }
   projectDlg.saving = true
@@ -134,13 +120,6 @@ async function handleCreateProject() {
     projectDlg.show = false; await fetchData()
   } catch { ElMessage.error(t('common.actionFailed')) }
   finally { projectDlg.saving = false }
-}
-
-async function handleDeleteProject(orgId: string, projectId: string) {
-  try {
-    await ElMessageBox.confirm(t('action.deleteProjectConfirm'), t('table.confirm'), { type: 'warning' })
-    await fetchData()
-  } catch { /* ignore */ }
 }
 
 onMounted(fetchData)

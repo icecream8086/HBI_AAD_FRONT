@@ -105,6 +105,17 @@
         <el-descriptions-item :label="$t('table.updatedAt')">{{ fmt(detail.updatedAt) }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
+
+    <el-pagination
+      v-model:current-page="page"
+      :page-size="limit"
+      :total="total"
+      layout="total, prev, pager, next"
+      background
+      small
+      style="margin-top:16px;justify-content:center"
+      @current-change="fetchData"
+    />
   </div>
 </template>
 
@@ -121,6 +132,9 @@ const refCache = useReferenceCache()
 const loading = ref(false)
 const creating = ref(false)
 const repos = ref<ImageRepository[]>([])
+const page = ref(1)
+const limit = 20
+const total = ref(0)
 const instances = ref<ComputeInstance[]>([])
 const pullingId = ref('')
 const taskMap = ref<Record<string, string>>({})
@@ -157,11 +171,13 @@ function statusType(s: string): 'primary' | 'warning' | 'success' | 'danger' {
 async function fetchData() {
   loading.value = true
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, any> = { page: page.value, limit }
     if (filter.instanceId) params.instanceId = filter.instanceId
     if (filter.platform) params.platform = filter.platform
     if (filter.status) params.status = filter.status
-    repos.value = await api.topology.images.list(params)
+    const { items, total: totalItems } = await api.topology.images.list(params)
+    repos.value = items
+    total.value = totalItems
   } catch { ElMessage.error(t('image.fetchFailed')) }
   finally { loading.value = false }
 }

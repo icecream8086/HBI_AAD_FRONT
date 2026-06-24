@@ -139,22 +139,13 @@ async function handleUpload(options: any) {
   const uid = user.value?.id
   if (!uid) { ElMessage.warning(t('profile.notLoggedIn')); return }
   try {
-    const token = localStorage.getItem('access_token')
-    const res = await fetch(`${API_BASE}/api/users/${uid}/avatar`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: options.file,
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err?.error?.message || t('profile.uploadFailed'))
-    }
+    const formData = new FormData()
+    formData.append('file', options.file)
+    await api.users.avatar.update(uid, formData)
     avatarVer.value++
     localStorage.setItem('_has_avatar', '1')
     ElMessage.success(t('profile.uploadSuccess'))
-  } catch (e: unknown) {
-    ElMessage.error((e as Error)?.message || t('profile.uploadFailed'))
-  }
+  } catch { ElMessage.error(t('profile.uploadFailed')) }
 }
 
 async function handleDelete() {
@@ -162,12 +153,7 @@ async function handleDelete() {
   if (!uid) { ElMessage.warning(t('profile.notLoggedIn')); return }
   deleting.value = true
   try {
-    const token = localStorage.getItem('access_token')
-    const res = await fetch(`${API_BASE}/api/users/${uid}/avatar`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-    if (!res.ok) throw new Error()
+    await api.users.avatar.delete(uid)
     avatarVer.value++
     localStorage.removeItem('_has_avatar')
     ElMessage.success(t('profile.deleteSuccess'))
@@ -182,19 +168,11 @@ async function handleSave() {
   saving.value = true
   try {
     const body = { name: editForm.name.trim(), role: user.value!.role, privateKeyEd25519: editForm.privateKey || '' }
-    const token = localStorage.getItem('access_token')
-    const res = await fetch(`${API_BASE}/api/users/${uid}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(body),
-    })
-    const data = await res.json()
-    if (!data.success) throw new Error(data?.error?.message || t('profile.saveFailed'))
-    store.commit('auth/SET_USER', data.data)
+    const updated = await api.users.update(uid, body)
+    store.commit('auth/SET_USER', updated)
     editDlg.show = false
     ElMessage.success(t('profile.saveSuccess'))
-  } catch (e: unknown) {
-    ElMessage.error((e as Error)?.message || t('profile.saveFailed'))
+  } catch { ElMessage.error(t('profile.saveFailed'))
   }
   finally { saving.value = false }
 }

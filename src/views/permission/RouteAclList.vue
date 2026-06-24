@@ -21,7 +21,7 @@
       <el-table-column prop="priority" :label="$t('permission.priority')" width="80" />
       <el-table-column :label="$t('table.actions')" width="160" fixed="right"><template #default="{ row }"><el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button><el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button></template></el-table-column>
     </el-table>
-    <el-pagination v-if="total > limit" v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
+    <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
 
     <el-dialog v-model="dialog.show" :title="dialog.isEdit?$t('permission.editAcl'):$t('permission.createAcl')" width="550px">
       <el-form :model="form" label-width="100px">
@@ -29,7 +29,7 @@
         <el-form-item :label="$t('permission.pathPrefix')"><el-input v-model="form.pathPrefix" :placeholder="$t('permission.resourcePlaceholder')" /></el-form-item>
         <el-form-item :label="$t('permission.matchType')"><el-radio-group v-model="form.matchType"><el-radio value="prefix">{{ $t('permission.matchPrefix') }}</el-radio><el-radio value="exact">{{ $t('permission.matchExact') }}</el-radio></el-radio-group></el-form-item>
         <el-form-item :label="$t('permission.effect')"><el-radio-group v-model="form.effect"><el-radio value="allow">{{ $t('permission.allow') }}</el-radio><el-radio value="deny">{{ $t('permission.deny') }}</el-radio></el-radio-group></el-form-item>
-        <el-form-item :label="$t('permission.userGroupId')"><el-input v-model="form.userId" :placeholder="$t('permission.userGroupIdPlaceholder')" /></el-form-item>
+        <el-form-item :label="$t('permission.userOrGroup')"><el-input v-model="form.userId" :placeholder="$t('permission.userGroupIdPlaceholder')" /></el-form-item>
         <el-form-item :label="$t('permission.priority')"><el-input-number v-model="form.priority" :min="0" :max="9999" /></el-form-item>
       </el-form>
       <template #footer><el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button><el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit?$t('table.save'):$t('table.create') }}</el-button></template>

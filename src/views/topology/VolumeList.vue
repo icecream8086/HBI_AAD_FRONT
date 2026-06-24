@@ -62,7 +62,7 @@
     </el-table>
 
     <el-pagination
-      v-if="total > limit"
+     
       v-model:current-page="page"
       :page-size="limit"
       :total="total"
@@ -187,7 +187,7 @@ const volumes = ref<Volume[]>([])
 const instances = ref<ComputeInstance[]>([])
 const creds = ref<MaskedCredential[]>([])
 const page = ref(1)
-const limit = 50
+const limit = 20
 const total = ref(0)
 const filter = reactive({ name: '', instanceId: '', type: '' as VolumeType | '', status: '' })
 

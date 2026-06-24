@@ -68,7 +68,7 @@
     </el-table>
 
     <el-pagination
-      v-if="total > limit"
+     
       v-model:current-page="page"
       :page-size="limit"
       :total="total"
@@ -152,7 +152,7 @@ const dialog = reactive({ show: false, isEdit: false, editId: '' })
 // Filters + pagination
 const filter = reactive({ platform: '', region: '', status: '' })
 const page = ref(1)
-const limit = 50
+const limit = 20
 const total = ref(0)
 
 const platforms = ['alibaba', 'aws', 'podman', 'stub']

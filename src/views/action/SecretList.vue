@@ -13,7 +13,7 @@
         <template #default>{{ $t('action.valueMasked') }}</template>
       </el-table-column>
       <el-table-column :label="$t('table.createdAt')" width="170">
-        <template #default>{{ '-' }}</template>
+        <template #default="{ row }">{{ row.createdAt ? fmt(row.createdAt) : '-' }}</template>
       </el-table-column>
       <el-table-column :label="$t('table.actions')" width="120" fixed="right">
         <template #default="{ row }">
@@ -45,6 +45,8 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
+
+function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 const route = useRoute()
 const { t } = useI18n()

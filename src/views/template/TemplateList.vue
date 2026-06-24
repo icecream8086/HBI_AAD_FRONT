@@ -287,6 +287,17 @@
         <el-button type="primary" :loading="dlg.saving" @click="handleSave">{{ $t('template.save') }}</el-button>
       </template>
     </el-dialog>
+
+    <el-pagination
+      v-model:current-page="page"
+      :page-size="limit"
+      :total="total"
+      layout="total, prev, pager, next"
+      background
+      small
+      style="margin-top:16px;justify-content:center"
+      @current-change="fetchData"
+    />
   </div>
 </template>
 
@@ -301,6 +312,9 @@ const { t } = useI18n()
 
 const loading = ref(false)
 const templates = ref<SandboxTemplate[]>([])
+const page = ref(1)
+const total = ref(0)
+const limit = 20
 const instances = ref<ComputeInstance[]>([])
 const providers = ref<string[]>([])
 const filter = reactive({ name: '' })
@@ -471,15 +485,17 @@ function openCreate() {
 async function fetchData() {
   loading.value = true
   try {
-    const params: Record<string, any> = {}
+    const params: Record<string, any> = { page: page.value, limit }
     if (filter.name) params.name = filter.name
-    templates.value = await api.templates.list(params).then(r => r.items)
+    const { items, total: totalItems } = await api.templates.list(params)
+    templates.value = items
+    total.value = totalItems
   } catch { ElMessage.error(t('template.fetchFailed')) }
   finally { loading.value = false }
 }
 
 function resetFilter() {
-  filter.name = ''; fetchData()
+  filter.name = ''; page.value = 1; fetchData()
 }
 
 async function handleSave() {

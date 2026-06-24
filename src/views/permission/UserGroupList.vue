@@ -45,7 +45,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination v-if="total > limit" v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
+    <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
 
     <!-- Bound permission groups dialog -->
     <el-dialog v-model="permDlg.show" :title="$t('permission.boundPermGroups')" width="600px">

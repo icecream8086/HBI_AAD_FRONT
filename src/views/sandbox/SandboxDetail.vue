@@ -43,7 +43,7 @@
               <el-tag :type="ctStatusType(c)" size="small">{{ ctStatus(c) }}</el-tag>
               <el-tag v-if="c.state?.ready" type="success" size="small" effect="plain" style="margin-left:4px">{{ $t('sandbox.ready') }}</el-tag>
             </el-descriptions-item>
-            <el-descriptions-item :label="$t('sandbox.cpuMem')">{{ c.cpu ?? '-' }}{{ $t('sandbox.cores') }} / {{ c.memory ?? '-' }}Mi<span v-if="c.gpu" style="margin-left:6px">GPU: {{ c.gpu }}{{ c.gpuType ? '×'+c.gpuType : '' }}</span></el-descriptions-item>
+            <el-descriptions-item :label="$t('sandbox.cpuMem')">CPU: {{ c.cpu ?? '-' }} / Mem: {{ c.memory ?? '-' }}<span v-if="c.gpu" style="margin-left:6px">GPU: {{ c.gpu }}{{ c.gpuType ? '×'+c.gpuType : '' }}</span></el-descriptions-item>
           </el-descriptions>
           <div v-if="c.state?.startTime" class="sub">{{ $t('sandbox.startTime') }}: {{ fmtStr(c.state.startTime) }}</div>
           <div v-if="c.health?.status" class="sub">
@@ -151,7 +151,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { api, axios } from '../../api'
+import { api } from '../../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -279,7 +279,7 @@ async function handleStart() {
   if (throttle()) return
   starting.value = true
   try {
-    await axios.post(`/api/sandboxes/${route.params.id}/start`)
+    await api.sandboxes.start(route.params.id as string)
     ElMessage.success(t('sandbox.startSuccess'))
     await load()
   } catch { ElMessage.error(t('sandbox.actionFailed')) }

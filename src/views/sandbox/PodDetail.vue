@@ -45,7 +45,7 @@
               <el-tag :type="c.ready ? 'success' : 'danger'" size="small">{{ c.ready ? 'Yes' : 'No' }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('pod.restartCount')">{{ c.restartCount ?? 0 }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('pod.startedAt')">{{ c.startedAt || '-' }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('pod.startedAt')">{{ fmt(c.startedAt) }}</el-descriptions-item>
           </el-descriptions>
         </div>
         <el-empty v-if="!pod.containers?.length" :description="$t('pod.noContainers')" :image-size="50" />
@@ -64,7 +64,7 @@
           <el-table-column prop="reason" label="Reason" width="160" />
           <el-table-column prop="message" label="Message" show-overflow-tooltip />
           <el-table-column :label="$t('pod.startedAt')" width="170">
-            <template #default="{ row }">{{ row.lastTransitionTime || '-' }}</template>
+            <template #default="{ row }">{{ fmt(row.lastTransitionTime) }}</template>
           </el-table-column>
         </el-table>
       </el-card>
@@ -78,7 +78,7 @@
           <el-table-column prop="message" label="Message" show-overflow-tooltip />
           <el-table-column :label="$t('table.count')" width="80" prop="count" />
           <el-table-column :label="$t('pod.startedAt')" width="170">
-            <template #default="{ row }">{{ row.lastTimestamp || '-' }}</template>
+            <template #default="{ row }">{{ fmt(row.lastTimestamp) }}</template>
           </el-table-column>
         </el-table>
         <el-empty v-if="!pod.events?.length" :description="$t('pod.noEvents')" :image-size="50" />

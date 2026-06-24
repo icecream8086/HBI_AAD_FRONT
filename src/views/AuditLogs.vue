@@ -24,6 +24,9 @@
         <el-form-item :label="$t('audit.requestId')">
           <el-input v-model="f.requestId" placeholder="req_xxx" style="width:150px" clearable />
         </el-form-item>
+        <el-form-item :label="$t('audit.actorIdRaw')">
+          <el-input v-model="f.actorId" placeholder="user_xxx" style="width:150px" clearable />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchData">{{ $t('audit.query') }}</el-button>
           <el-button @click="resetFilter">{{ $t('audit.reset') }}</el-button>
@@ -52,16 +55,11 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination
-      v-if="total > pageSize"
-      v-model:current-page="page"
-      v-model:page-size="pageSize"
-      :total="total"
-      :page-sizes="[10, 15, 30, 50]"
-      layout="total, sizes, prev, pager, next"
-      @size-change="fetchData"
-      @current-change="onPageChange"
-    />
+    <div v-if="total > pageSize" class="pagination-bar">
+      <el-button :disabled="pageIndex <= 1" @click="goPrev">← Previous</el-button>
+      <span class="page-indicator">Page {{ pageIndex }} / {{ Math.ceil(total / pageSize) || 1 }} ({{ total }} total)</span>
+      <el-button :disabled="!hasNext" @click="goNext">Next →</el-button>
+    </div>
 
     <!-- Detail dialog -->
     <el-dialog v-model="detail.show" :title="$t('audit.detailTitle')" width="700px">
@@ -107,12 +105,13 @@ const { t } = useI18n()
 
 const loading = ref(false)
 const logs = ref<AuditLog[]>([])
-const page = ref(1)
 const pageSize = ref(15)
 const total = ref(0)
-const cursor = ref<string | undefined>()
+const pageIndex = ref(1)
+const cursors = ref<string[]>([])
 const nextCursor = ref<string | undefined>()
-const f = reactive({ levelMin: '' as number | string, facility: '', search: '', requestId: '' })
+const hasNext = ref(false)
+const f = reactive({ levelMin: '' as number | string, facility: '', search: '', requestId: '', actorId: '' })
 
 const LEVEL_NAMES: Record<number, string> = { 0:'EMERG',1:'ALERT',2:'CRIT',3:'ERR',4:'WARNING',5:'NOTICE',6:'INFO',7:'DEBUG' }
 const LEVEL_TAGS: Record<number, string> = { 0:'danger',1:'danger',2:'danger',3:'danger',4:'warning',5:'warning',6:'info',7:'info' }
@@ -148,6 +147,10 @@ function resetFilter() {
   f.facility = ''
   f.search = ''
   f.requestId = ''
+  f.actorId = ''
+  cursors.value = []
+  pageIndex.value = 1
+  hasNext.value = false
   fetchData()
 }
 
@@ -159,25 +162,35 @@ async function fetchData() {
   loading.value = true
   try {
     const params: Record<string, any> = { limit: pageSize.value }
-    if (cursor.value && page.value > 1) params.afterCursor = cursor.value
-    else params.page = page.value
+    if (cursors.value.length > 0) {
+      params.afterCursor = cursors.value[cursors.value.length - 1]
+    }
     if (f.levelMin !== '') params.levelMin = f.levelMin
     if (f.facility) params.facility = f.facility
     if (f.search) params.search = f.search
     if (f.requestId) params.requestId = f.requestId
+    if (f.actorId) params.actorId = f.actorId
     const res = await api.audit.logs.list(params)
     const raw = res.entries ?? res.lines ?? []
     logs.value = raw.map(normalizeLogEntry)
     total.value = res.total ?? logs.value.length
     nextCursor.value = res.nextCursor
+    hasNext.value = !!res.nextCursor
   } catch (e) { console.error(e); ElMessage.error(t('audit.fetchFailed')) }
   finally { loading.value = false }
 }
 
-function onPageChange(newPage: number) {
-  if (newPage > page.value && nextCursor.value) cursor.value = nextCursor.value
-  else if (newPage <= 1) cursor.value = undefined
-  page.value = newPage
+function goNext() {
+  if (!nextCursor.value) return
+  cursors.value.push(nextCursor.value)
+  pageIndex.value++
+  fetchData()
+}
+
+function goPrev() {
+  if (pageIndex.value <= 1) return
+  cursors.value.pop()
+  pageIndex.value--
   fetchData()
 }
 
@@ -189,6 +202,8 @@ onMounted(async () => {
 
 <style scoped>
 .filters { margin-bottom: 16px; }
+.pagination-bar { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; }
+.page-indicator { font-size: 14px; color: var(--el-text-color-secondary); }
 .no-reqid { color: var(--el-text-color-placeholder); }
 .msg-pre {
   margin: 0; white-space: pre-wrap; word-break: break-word;

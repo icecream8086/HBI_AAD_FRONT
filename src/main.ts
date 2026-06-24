@@ -7,6 +7,8 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import i18n from './i18n'
+import { API } from './api'
+import { installContractCheck } from './api/contract'
 import './assets/themes/index.css'
 import './assets/themes/light.css'
 import './assets/themes/dark.css'
@@ -16,6 +18,10 @@ import './assets/themes/ocean.css'
 import './assets/themes/sakura.css'
 import './assets/themes/gnu.css'
 import './assets/themes/frutiger.css'
+
+if (process.env.NODE_ENV === 'development') {
+  installContractCheck(API)
+}
 
 const app = createApp(App)
 
