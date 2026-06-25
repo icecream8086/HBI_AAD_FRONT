@@ -5,7 +5,27 @@
     <div v-if="template">
       <div class="page-head">
         <div>
-          <h2>{{ template.name }}</h2>
+          <h2>
+            {{ template.name }}
+            <template v-if="groupName">
+              <el-tag v-if="!groupNameEditing" type="warning" size="small" class="pod-tag">
+                {{ $t('template.containerGroup') }}: {{ groupName }}
+                <el-button text size="small" class="pod-edit-btn" @click.stop="startEditGroupName">
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+              </el-tag>
+              <el-input
+                v-else
+                v-model="groupNameInput"
+                size="small"
+                style="width:240px;vertical-align:middle"
+                @blur="saveGroupName"
+                @keyup.enter="saveGroupName"
+                @keyup.escape="groupNameEditing=false"
+                ref="groupNameInputRef"
+              />
+            </template>
+          </h2>
           <p v-if="template.description" class="desc">{{ template.description }}</p>
         </div>
         <div class="actions">
@@ -225,7 +245,7 @@
         <template v-if="edit.form.templateType === 'ContainerGroup'">
           <el-divider>{{ $t('template.podSpec') }}</el-divider>
           <el-row :gutter="12">
-            <el-col :span="8"><el-form-item :label="$t('template.podName')"><el-input v-model="edit.form.podName" :placeholder="$t('template.name')" /></el-form-item></el-col>
+            <el-col :span="8"><el-form-item :label="$t('template.podName')"><el-input v-model="edit.form.podName" placeholder="Container group name" /></el-form-item></el-col>
             <el-col :span="8"><el-form-item :label="$t('template.podRegion')"><el-input v-model="edit.form.podRegion" placeholder="cn-hangzhou" /></el-form-item></el-col>
           </el-row>
           <el-row :gutter="12">
@@ -495,6 +515,39 @@ const resolvedContainers = computed(() => {
   }
   return resolved.value?.container?.containers || template.value?.container?.containers || []
 })
+const groupName = computed(() => {
+  if (!template.value) return ''
+  if (template.value.kind === 'ContainerGroup') return template.value.podSpec?.name || ''
+  return template.value.container?.containers?.[0]?.name || ''
+})
+const groupNameEditing = ref(false)
+const groupNameInput = ref('')
+const groupNameInputRef = ref()
+function startEditGroupName() {
+  groupNameInput.value = groupName.value
+  groupNameEditing.value = true
+  // Focus input on next tick
+  setTimeout(() => { groupNameInputRef.value?.focus?.() }, 50)
+}
+async function saveGroupName() {
+  groupNameEditing.value = false
+  const newName = groupNameInput.value.trim()
+  if (!newName || newName === groupName.value || !template.value) return
+  try {
+    if (template.value.kind === 'ContainerGroup') {
+      const podSpec = { ...template.value.podSpec, name: newName }
+      await api.templates.update(template.value.id, { podSpec } as any)
+    } else {
+      const containers = [...(template.value.container?.containers || [])]
+      if (containers.length > 0) {
+        containers[0] = { ...containers[0], name: newName }
+        await api.templates.update(template.value.id, { container: { containers } } as any)
+      }
+    }
+    ElMessage.success(t('common.saved'))
+    await load()
+  } catch { ElMessage.error(t('common.saveFailed')) }
+}
 const visibility = computed(() => template.value?.visibility || 'public')
 const visTag = computed(() => visibility.value === 'public' ? 'success' : 'info')
 
@@ -713,7 +766,8 @@ async function handleSave() {
     if (edit.form.templateType === 'ContainerGroup') {
       body.apiVersion = 'hbi-aad/v2'
       body.kind = 'ContainerGroup'
-      const podSpec: Record<string, any> = { name: edit.form.podName || edit.form.name }
+      const podSpec: Record<string, any> = {}
+      if (edit.form.podName) podSpec.name = edit.form.podName
       if (edit.form.podRegion) podSpec.region = edit.form.podRegion
       if (edit.form.podCpu || edit.form.podMemory) {
         podSpec.resources = {}
@@ -725,7 +779,7 @@ async function handleSave() {
         podSpec.services = {}
         svcs.forEach(s => { podSpec.services[s.name] = buildServiceSpec(s) })
       }
-      if (Object.keys(podSpec).length > 1 || podSpec.services) body.podSpec = podSpec
+      if (Object.keys(podSpec).length) body.podSpec = podSpec
     } else {
       const containers = edit.form.containers.filter(c => c.image).map(buildContSpec)
       if (containers.length || edit.form.region || edit.form.restartPolicy || edit.form.instanceId || edit.form.zone) {
@@ -815,6 +869,9 @@ onMounted(async () => {
 <style scoped>
 .back { margin-bottom: 8px; padding: 0; }
 .page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.pod-tag { margin-left: 12px; vertical-align: middle; }
+.pod-edit-btn { margin-left: 2px; padding: 2px; opacity: 0.6; }
+.pod-edit-btn:hover { opacity: 1; }
 .desc { color: var(--el-text-color-secondary); font-size: 13px; margin-top: 4px; }
 .storage-list { display: flex; flex-direction: column; gap: 8px; }
 .storage-card { border: 1px solid var(--el-border-color); border-radius: 6px; padding: 8px 12px; }

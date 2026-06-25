@@ -43,7 +43,7 @@ export interface VendorGroup {
   fields: readonly FieldNode[]
 }
 
-export interface ResolvedField extends FieldNode {
+export interface ResolvedField extends Omit<FieldNode, 'visibility' | 'required' | 'locked'> {
   visible: boolean
   locked: boolean
   required: boolean
