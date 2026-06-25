@@ -33,4 +33,23 @@ app.use(ElementPlus)
 app.use(i18n)
 app.use(store)
 app.use(router)
+
+// 抑制无害的 ResizeObserver 良性警告
+const suppressRO = (e: ErrorEvent | PromiseRejectionEvent) => {
+  const msg = (e as ErrorEvent).message || (e as PromiseRejectionEvent).reason?.message || ''
+  if (msg.includes('ResizeObserver loop')) {
+    e.preventDefault?.()
+    e.stopPropagation?.()
+    return true
+  }
+  return false
+}
+window.addEventListener('error', (e) => { if (suppressRO(e)) e.stopImmediatePropagation() })
+window.addEventListener('unhandledrejection', (e) => { if (suppressRO(e)) e.preventDefault() })
+
+app.config.errorHandler = (err: unknown) => {
+  if (err instanceof Error && err.message?.includes('ResizeObserver loop')) return
+  console.error(err)
+}
+
 app.mount('#app')

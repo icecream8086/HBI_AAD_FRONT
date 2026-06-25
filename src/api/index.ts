@@ -184,7 +184,7 @@ export const api = {
   // ── Audit ──
   audit: {
     logs: {
-      list(params?: Record<string, unknown>) { return extractData<{ lines?: unknown[]; entries?: unknown[]; total: number; nextCursor?: string }>(API.get('/api/audit/logs', { params })) },
+      list(params?: Record<string, unknown>) { return extractData<{ entries?: unknown[]; items?: unknown[]; lines?: unknown[]; total: number; page?: number; pageSize?: number; hasNext?: boolean; nextCursor?: string }>(API.get('/api/audit/logs', { params })) },
     },
     stats() {
       return API.get('/api/audit/logs/stats').then(r => (r.data as Record<string, unknown>).data)
@@ -383,6 +383,7 @@ export const api = {
     start(id: string) { return API.post(`/api/sandboxes/${id}/start`) },
     sync(id: string) { return API.post(`/api/sandboxes/${id}/sync`) },
     health(id: string, params?: Record<string, unknown>) { return extractData<unknown>(API.get(`/api/sandboxes/${id}/health`, { params })) },
+    logs(id: string, params?: Record<string, unknown>) { return extractData<{ content: string; containerName?: string; timestamp?: number }>(API.get(`/api/sandboxes/${id}/logs`, { params })) },
   },
 
   // ── Subnets ──

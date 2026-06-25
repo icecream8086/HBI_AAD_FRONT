@@ -6,7 +6,12 @@
       <div class="page-head">
         <div>
           <h2>{{ sandbox.config?.name || sandbox.name || $t('sandbox.title') }}</h2>
-          <el-tag :type="statusType(sandbox.status)" effect="dark" size="large">{{ sandbox.status }}</el-tag>
+          <div class="head-meta">
+            <el-tag :type="statusType(sandbox.status)" effect="dark" size="large">{{ sandbox.status }}</el-tag>
+            <el-tag v-if="sandbox.config?.spotStrategy" type="warning" size="small" effect="plain">{{ sandbox.config.spotStrategy }}</el-tag>
+            <el-tag v-if="sandbox.config?.restartPolicy" size="small" effect="plain">{{ sandbox.config.restartPolicy }}</el-tag>
+          </div>
+          <p v-if="sandbox.config?.description" class="head-desc">{{ sandbox.config.description }}</p>
         </div>
         <div class="actions">
           <el-button v-if="sandbox.status==='Stopped'" type="success" @click="handleStart" :loading="starting">{{ $t('table.start') }}</el-button>
@@ -17,19 +22,78 @@
         </div>
       </div>
 
-      <el-descriptions :column="3" border size="small">
-        <el-descriptions-item label="ID" :span="3"><code>{{ sandbox.id }}</code></el-descriptions-item>
-        <el-descriptions-item label="Provider">{{ sandbox.providerId || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Region">{{ sandbox.config?.region || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('table.network')">{{ fmtNetwork(sandbox.network) }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('table.createdAt')">{{ fmt(sandbox.createdAt) }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('table.updatedAt')">{{ fmt(sandbox.updatedAt) }}</el-descriptions-item>
-      </el-descriptions>
+      <!-- Resource spec overview -->
+      <el-card class="section" v-if="sandbox.config?.resourceSpec">
+        <template #header>{{ $t('table.resources') }}</template>
+        <el-descriptions :column="5" border size="small">
+          <el-descriptions-item label="CPU">{{ sandbox.config.resourceSpec.cpu }} cores</el-descriptions-item>
+          <el-descriptions-item label="Memory">{{ sandbox.config.resourceSpec.memory }} Mi</el-descriptions-item>
+          <el-descriptions-item label="GPU">
+            <template v-if="sandbox.config.resourceSpec.gpu">{{ sandbox.config.resourceSpec.gpu }}×{{ sandbox.config.resourceSpec.gpuType || 'GPU' }}</template>
+            <template v-else>-</template>
+          </el-descriptions-item>
+          <el-descriptions-item label="Health Retries">{{ sandbox.config.healthMaxRetries ?? 3 }}</el-descriptions-item>
+          <el-descriptions-item label="Version"><code>{{ sandbox.version?.slice(0,8) || '-' }}</code></el-descriptions-item>
+        </el-descriptions>
+      </el-card>
 
-      <!-- Labels -->
-      <el-card class="section" v-if="sandbox.config?.labels">
+      <!-- Basic info -->
+      <el-card class="section">
+        <template #header>{{ $t('sandbox.basicInfo') || 'Basic Info' }}</template>
+        <el-descriptions :column="3" border size="small">
+          <el-descriptions-item label="ID" :span="3"><code>{{ sandbox.id }}</code></el-descriptions-item>
+          <el-descriptions-item label="Provider">{{ sandbox.providerId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="Region">{{ sandbox.config?.region || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="Zone">{{ sandbox.providerIdentity?.zoneId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="Platform">{{ sandbox.providerIdentity?.platform || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="Instance">{{ sandbox.providerIdentity?.instanceId || sandbox.config?.instanceId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="Credential"><code>{{ (sandbox.providerIdentity?.credentialRef || '').slice(0,12) }}...</code></el-descriptions-item>
+          <el-descriptions-item :label="$t('table.createdAt')">{{ fmt(sandbox.createdAt) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('table.updatedAt')">{{ fmt(sandbox.updatedAt) }}</el-descriptions-item>
+          <el-descriptions-item label="Creator"><code>{{ (sandbox.creatorId || sandbox.config?.creatorId || '').slice(0,8) }}...</code></el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <!-- Network -->
+      <el-card class="section">
+        <template #header>{{ $t('table.network') }}</template>
+        <el-descriptions :column="4" border size="small">
+          <el-descriptions-item v-if="sandbox.network?.publicIp" label="Public IP"><code>{{ sandbox.network.publicIp }}</code></el-descriptions-item>
+          <el-descriptions-item v-if="sandbox.network?.privateIp" label="Private IP"><code>{{ sandbox.network.privateIp }}</code></el-descriptions-item>
+          <el-descriptions-item v-if="sandbox.network?.vpcId" label="VPC"><code>{{ sandbox.network.vpcId }}</code></el-descriptions-item>
+          <el-descriptions-item v-if="sandbox.network?.subnetId" label="Subnet"><code>{{ sandbox.network.subnetId }}</code></el-descriptions-item>
+          <el-descriptions-item v-if="sandbox.network?.securityGroupId" label="Security Group"><code>{{ sandbox.network.securityGroupId }}</code></el-descriptions-item>
+          <el-descriptions-item v-if="sandbox.network?.eniId" label="ENI"><code>{{ sandbox.network.eniId }}</code></el-descriptions-item>
+          <el-descriptions-item v-if="sandbox.config?.network?.allocatePublicIp !== undefined" label="Public IP">
+            <el-tag :type="sandbox.config.network.allocatePublicIp ? 'success' : 'info'" size="small">{{ sandbox.config.network.allocatePublicIp ? 'Yes' : 'No' }}</el-tag>
+            <span v-if="sandbox.config.network.publicIpBandwidth" style="margin-left:4px">{{ sandbox.config.network.publicIpBandwidth }} Mbps</span>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <!-- Provider overrides -->
+      <el-card class="section" v-if="sandbox.config?.providerOverrides">
+        <template #header>Provider Overrides</template>
+        <div v-for="(override, platform) in sandbox.config.providerOverrides" :key="platform as string">
+          <h4 style="margin: 0 0 8px 0">{{ platform }}</h4>
+          <el-descriptions :column="4" border size="small">
+            <el-descriptions-item v-for="(v, k) in override as Record<string, unknown>" :key="k" :label="k as string">{{ v }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </el-card>
+
+      <!-- Tags -->
+      <el-card class="section" v-if="hasTags">
         <template #header>{{ $t('table.tags') }}</template>
-        <el-tag v-for="(v, k) in sandbox.config.labels" :key="k" size="small" style="margin-right:6px">{{ k }}={{ v }}</el-tag>
+        <template v-if="sandbox.config?.tags?.length">
+          <el-tag v-for="(t, i) in sandbox.config.tags" :key="i" size="small" style="margin-right:6px;margin-bottom:4px">{{ t.key }}={{ t.value }}</el-tag>
+        </template>
+        <template v-else-if="sandbox.config?.labels">
+          <el-tag v-for="(v, k) in sandbox.config.labels" :key="k" size="small" style="margin-right:6px;margin-bottom:4px">{{ k }}={{ v }}</el-tag>
+        </template>
+        <span v-if="sandbox.tags?.length">
+          <el-tag v-for="(t, i) in sandbox.tags" :key="i" size="small" style="margin-right:6px;margin-bottom:4px">{{ typeof t === 'string' ? t : `${(t as any).key}=${(t as any).value}` }}</el-tag>
+        </span>
       </el-card>
 
       <!-- Runtime Containers -->
@@ -113,28 +177,54 @@
       <el-card class="section">
         <template #header>
           <span>{{ $t('sandbox.logs') }}</span>
-          <span v-if="ws" class="log-count">{{ logLines.length }} lines</span>
-          <el-tag v-if="wsStatus === 'connected'" type="success" size="small" effect="plain" style="margin-left:6px">{{ $t('sandbox.logConnected') }}</el-tag>
-          <el-tag v-else-if="wsStatus === 'closed' || wsStatus === 'error'" type="info" size="small" effect="plain" style="margin-left:6px">
-            {{ wsStatus === 'error' ? $t('sandbox.logError') : $t('sandbox.logDisconnected') }}
-            <el-button size="small" text type="primary" @click="openLogs" style="margin-left:4px;font-size:12px">{{ $t('sandbox.logReconnect') }}</el-button>
-          </el-tag>
+          <span v-if="logActive" class="log-count">{{ logLines.length }} lines</span>
+
+          <!-- Stream mode status -->
+          <template v-if="logMode === 'stream'">
+            <el-tag v-if="wsStatus === 'connected'" type="success" size="small" effect="plain" style="margin-left:6px">{{ $t('sandbox.logConnected') }}</el-tag>
+            <el-tag v-else-if="wsStatus === 'closed' || wsStatus === 'error'" type="info" size="small" effect="plain" style="margin-left:6px">
+              {{ wsStatus === 'error' ? $t('sandbox.logError') : $t('sandbox.logDisconnected') }}
+            </el-tag>
+          </template>
+          <template v-else>
+            <span v-if="logLastFetch && logActive" class="log-fetch-time">Fetched {{ logLastFetch }}</span>
+            <el-tag v-if="logFetchError" type="danger" size="small" effect="plain" style="margin-left:6px">{{ logFetchError }}</el-tag>
+          </template>
+
+          <!-- Log mode badge -->
+          <el-tag size="small" effect="plain" style="margin-left:6px" :type="logMode === 'stream' ? '' : 'warning'">{{ logMode === 'stream' ? 'WebSocket' : 'HTTP Poll' }}</el-tag>
+
           <div class="log-actions">
-            <span v-if="ws" class="log-toolbar">
-              <el-checkbox v-model="logFollow" size="small" style="margin-right:8px">{{ $t('sandbox.logFollow') }}</el-checkbox>
-              <el-select v-model="logTail" size="small" style="width:80px;margin-right:8px" @change="openLogs" :disabled="!ws">
+            <span class="log-toolbar">
+              <!-- Stream controls -->
+              <template v-if="logMode === 'stream' && ws">
+                <el-checkbox v-model="logFollow" size="small" style="margin-right:8px">{{ $t('sandbox.logFollow') }}</el-checkbox>
+              </template>
+              <!-- Snapshot controls -->
+              <template v-if="logMode === 'snapshot' && logActive">
+                <el-select v-model="logPollInterval" size="small" style="width:80px;margin-right:8px" @change="restartPollLogs">
+                  <el-option :value="0" label="Manual" />
+                  <el-option :value="3000" label="3s" />
+                  <el-option :value="5000" label="5s" />
+                  <el-option :value="10000" label="10s" />
+                </el-select>
+              </template>
+              <!-- Common controls -->
+              <el-select v-model="logTail" size="small" style="width:80px;margin-right:8px" @change="reopenLogs">
                 <el-option :value="200" label="200" />
                 <el-option :value="500" label="500" />
                 <el-option :value="1000" label="1000" />
               </el-select>
               <el-button size="small" text @click="logLines=[]">{{ $t('sandbox.logClear') }}</el-button>
             </span>
-            <el-button size="small" style="margin-left:4px" @click="toggleLogs">{{ ws ? $t('sandbox.logClose') : $t('sandbox.logOpen') }}</el-button>
+            <!-- Snapshot: manual fetch button -->
+            <el-button v-if="logMode === 'snapshot' && logActive" size="small" style="margin-left:4px" @click="fetchLogs" :loading="logFetching">Refresh</el-button>
+            <el-button size="small" style="margin-left:4px" @click="toggleLogs">{{ logActive ? $t('sandbox.logClose') : $t('sandbox.logOpen') }}</el-button>
           </div>
         </template>
-        <div v-if="ws" class="log-viewer" ref="logRef" @scroll="onLogScroll">
+        <div v-if="logActive" class="log-viewer" ref="logRef" @scroll="onLogScroll">
           <div v-for="(line, i) in logLines" :key="i" class="log-line" :class="line.cls">{{ line.text }}</div>
-          <div v-if="!logLines.length" class="log-placeholder">{{ $t('sandbox.logWaiting') }}</div>
+          <div v-if="!logLines.length" class="log-placeholder">{{ logFetching ? 'Loading...' : $t('sandbox.logWaiting') }}</div>
         </div>
         <div v-else class="log-viewer log-placeholder" style="min-height:80px">
           {{ $t('sandbox.logHint') }}
@@ -147,7 +237,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -159,31 +249,35 @@ const { t } = useI18n()
 const loading = ref(false)
 const starting = ref(false)
 const sandbox = ref<Sandbox | null>(null)
+const hasTags = computed(() => {
+  return !!(sandbox.value?.config?.tags?.length || sandbox.value?.config?.labels || sandbox.value?.tags?.length)
+})
 
-// Log viewer
-const ws = ref<WebSocket | null>(null)
-const wsStatus = ref<'idle' | 'connected' | 'closed' | 'error'>('idle')
+// logMode: 'stream' for Podman (WebSocket), 'snapshot' for ECI/Alibaba (HTTP poll)
+const logMode = computed(() => {
+  const platform = sandbox.value?.providerIdentity?.platform?.toLowerCase()
+  return platform === 'podman' ? 'stream' : 'snapshot'
+})
+
+// Log viewer — shared state
+const logActive = ref(false)
 const logLines = ref<{ text: string; cls: string }[]>([])
 const logRef = ref<HTMLElement | null>(null)
 const logFollow = ref(true)
 const logTail = ref(200)
-const logSince = ref<number>(0)
 const API_BASE = 'http://localhost:3000'
 
 function getToken(): string { return localStorage.getItem('access_token') || '' }
 
-function toggleLogs() {
-  if (ws.value) { closeLogs(); return }
-  openLogs()
-}
+// ── Stream mode (WebSocket) ──
+const ws = ref<WebSocket | null>(null)
+const wsStatus = ref<'idle' | 'connected' | 'closed' | 'error'>('idle')
 
-function openLogs() {
+function openStream() {
   if (!sandbox.value?.id) return
-  closeLogs()
+  closeStream()
   const token = getToken()
-  const params = [`token=${token}`, `tail=${logTail.value}`]
-  if (logSince.value) params.push(`since=${logSince.value}`)
-  const url = `${API_BASE.replace(/^http/, 'ws')}/api/sandboxes/${sandbox.value.id}/logs?${params.join('&')}`
+  const url = `${API_BASE.replace(/^http/, 'ws')}/api/sandboxes/${sandbox.value.id}/logs?token=${token}&tail=${logTail.value}`
   const socket = new WebSocket(url)
   socket.onopen = () => { wsStatus.value = 'connected' }
   socket.onmessage = (e) => {
@@ -202,7 +296,6 @@ function openLogs() {
         }
       } catch { /* ignore */ }
     } else {
-      // Strip DO/KV framing bytes from raw log lines
       const raw = typeof e.data === 'string' ? e.data : ''
       // eslint-disable-next-line no-control-regex
       logLines.value.push({ text: raw.replace(/^\x01Z/, ''), cls: '' })
@@ -214,12 +307,90 @@ function openLogs() {
   ws.value = socket
 }
 
-function closeLogs() {
+function closeStream() {
   if (ws.value) { ws.value.close(); ws.value = null }
   wsStatus.value = 'idle'
+}
+
+// ── Snapshot mode (HTTP polling) ──
+const logPollTimer = ref<ReturnType<typeof setInterval> | null>(null)
+const logPollInterval = ref(0)
+const logFetching = ref(false)
+const logFetchError = ref('')
+const logLastFetch = ref('')
+
+async function fetchLogs() {
+  if (!sandbox.value?.id || logFetching.value) return
+  logFetching.value = true
+  logFetchError.value = ''
+  try {
+    const data = await api.sandboxes.logs(sandbox.value.id, { tail: logTail.value }) as { content: string; containerName?: string; timestamp?: number }
+    logLines.value = (data.content || '').split('\n').map(line => ({ text: line, cls: '' }))
+    logLastFetch.value = new Date().toLocaleTimeString()
+    if (logFollow.value) nextTick(() => { if (logRef.value) logRef.value.scrollTop = logRef.value.scrollHeight })
+  } catch {
+    logFetchError.value = 'Failed to fetch logs'
+  } finally {
+    logFetching.value = false
+  }
+}
+
+function startPollLogs() {
+  stopPollLogs()
+  if (logPollInterval.value > 0) {
+    logPollTimer.value = setInterval(fetchLogs, logPollInterval.value)
+  }
+}
+
+function stopPollLogs() {
+  if (logPollTimer.value) { clearInterval(logPollTimer.value); logPollTimer.value = null }
+}
+
+function restartPollLogs() {
+  if (!logActive.value) return
+  startPollLogs()
+  fetchLogs()
+}
+
+// ── Unified open/close ──
+function openLogs() {
+  logActive.value = true
   logLines.value = []
   logFollow.value = true
-  logSince.value = 0
+  logFetchError.value = ''
+  logLastFetch.value = ''
+
+  if (logMode.value === 'stream') {
+    openStream()
+  } else {
+    fetchLogs()
+    startPollLogs()
+  }
+}
+
+function closeLogs() {
+  logActive.value = false
+  closeStream()
+  stopPollLogs()
+  logLines.value = []
+  logFollow.value = true
+  logLastFetch.value = ''
+  logFetchError.value = ''
+}
+
+function toggleLogs() {
+  if (logActive.value) { closeLogs(); return }
+  openLogs()
+}
+
+function reopenLogs() {
+  if (!logActive.value) return
+  if (logMode.value === 'stream') {
+    closeStream()
+    openStream()
+  } else {
+    fetchLogs()
+  }
 }
 
 function onLogScroll() {
@@ -322,6 +493,8 @@ async function fetchHealth() {
 .back { margin-bottom: 8px; padding: 0; }
 .page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 .page-head h2 { margin: 0 0 4px 0; }
+.head-meta { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+.head-desc { color: var(--el-text-color-secondary); font-size: 13px; margin: 6px 0 0 0; max-width: 600px; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .section { margin-top: 16px; }
 .cont-box { border: 1px solid var(--el-border-color); border-radius: 6px; padding: 12px; margin-bottom: 10px; }
@@ -334,6 +507,7 @@ code { font-size: 12px; background: var(--el-bg-color-page); padding: 2px 6px; b
 .log-warn { color: #d29922; }
 .log-error { color: #f85149; }
 .log-count { font-size: 12px; color: var(--el-text-color-secondary); margin-left: 6px; }
+.log-fetch-time { font-size: 11px; color: var(--el-text-color-secondary); margin-left: 6px; }
 .log-actions { display: inline-flex; align-items: center; gap: 4px; float: right; }
 .log-toolbar { display: inline-flex; align-items: center; gap: 2px; }
 </style>

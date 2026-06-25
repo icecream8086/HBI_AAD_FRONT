@@ -9,8 +9,27 @@
           <div class="stat-card">
             <div class="stat-label">{{ card.label }}</div>
             <div class="stat-value">{{ card.value }}</div>
-            <el-tag :type="card.tagType" size="small" v-if="card.tag">{{ card.tag }}</el-tag>
+            <div class="stat-tags" v-if="card.breakdown">
+              <el-tag v-for="b in card.breakdown" :key="b.label" :type="b.type" size="small" effect="plain">{{ b.label }} {{ b.count }}</el-tag>
+            </div>
           </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- Resource summary -->
+    <el-row :gutter="16" class="row-section" v-if="resourceSummary">
+      <el-col :span="24">
+        <el-card>
+          <template #header>{{ $t('dashboard.resourceSummary') || 'Resource Summary' }}</template>
+          <el-descriptions :column="6" border size="small">
+            <el-descriptions-item label="CPU">{{ resourceSummary.totalCpu }} cores</el-descriptions-item>
+            <el-descriptions-item label="Memory">{{ resourceSummary.totalMem }} Mi</el-descriptions-item>
+            <el-descriptions-item label="GPU">{{ resourceSummary.totalGpu || 0 }}</el-descriptions-item>
+            <el-descriptions-item label="Containers">{{ resourceSummary.totalContainers }}</el-descriptions-item>
+            <el-descriptions-item label="Instances">{{ resourceSummary.instanceCount }}</el-descriptions-item>
+            <el-descriptions-item label="Regions">{{ resourceSummary.regions.join(', ') || '-' }}</el-descriptions-item>
+          </el-descriptions>
         </el-card>
       </el-col>
     </el-row>
@@ -64,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api'
@@ -73,17 +92,21 @@ const { t } = useI18n()
 const store = useStore<State>()
 const user = computed(() => store.state.auth.currentUser)
 const roleTag = computed(() => {
-  const m: Record<string, string> = { root: 'danger', Operator: 'warning', Viewer: 'info' }
+  const m: Record<string, string> = { root: 'danger', Operator: 'warning', Viewer: 'info', wheel: 'success' }
   return m[user.value?.role || ''] || 'info'
 })
 
 const info = reactive<ServerInfo>({ name: '', version: '', platform: '', features: [], uptime: 0, storeMetrics: {} })
 const statCards = reactive([
-  { label: t('menu.sandboxes'), value: 0, tag: '', tagType: '' },
-  { label: t('menu.templates'), value: 0, tag: '', tagType: '' },
-  { label: t('menu.images'), value: 0, tag: '', tagType: '' },
-  { label: t('menu.users'), value: 0, tag: '', tagType: '' },
+  { label: t('menu.sandboxes'), value: 0, breakdown: [] as { label: string; count: number; type: string }[] },
+  { label: t('menu.templates'), value: 0, breakdown: [] as { label: string; count: number; type: string }[] },
+  { label: t('menu.images'), value: 0, breakdown: [] as { label: string; count: number; type: string }[] },
+  { label: t('menu.users'), value: 0, breakdown: [] as { label: string; count: number; type: string }[] },
 ])
+const resourceSummary = ref<{
+  totalCpu: number; totalMem: number; totalGpu: number
+  totalContainers: number; instanceCount: number; regions: string[]
+} | null>(null)
 
 function formatUptime(ms: number): string {
   if (!ms) return '-'
@@ -92,6 +115,24 @@ function formatUptime(ms: number): string {
   const h = Math.floor((s % 86400) / 3600)
   const m = Math.floor((s % 3600) / 60)
   return `${d}d ${h}h ${m}m`
+}
+
+function statusBreakdown(items: any[]): { label: string; count: number; type: string }[] {
+  const m: Record<string, { label: string; type: string }> = {
+    Running: { label: 'Running', type: 'success' },
+    Stopped: { label: 'Stopped', type: 'info' },
+    Pending: { label: 'Pending', type: 'warning' },
+    Scheduling: { label: 'Scheduling', type: 'warning' },
+    Failed: { label: 'Failed', type: 'danger' },
+    Terminated: { label: 'Terminated', type: 'info' },
+    Deleted: { label: 'Deleted', type: 'info' },
+  }
+  const counts: Record<string, number> = {}
+  for (const item of items) {
+    const s = item.status || 'Unknown'
+    counts[s] = (counts[s] || 0) + 1
+  }
+  return Object.entries(counts).map(([k, v]) => ({ label: m[k]?.label || k, count: v, type: m[k]?.type || 'info' }))
 }
 
 onMounted(async () => {
@@ -104,10 +145,32 @@ onMounted(async () => {
       api.topology.images.list({ limit: 200 }).then(r => r.items),
       api.users.list({ limit: 200 }).then(r => r.items),
     ])
-    if (sb.status === 'fulfilled') { statCards[0].value = sb.value.length; statCards[0].tag = t('dashboard.active') }
-    if (tm.status === 'fulfilled') statCards[1].value = tm.value.length
-    if (im.status === 'fulfilled') statCards[2].value = im.value.length
-    if (us.status === 'fulfilled') statCards[3].value = us.value.length
+
+    if (sb.status === 'fulfilled') {
+      const items = sb.value as any[]
+      statCards[0].value = items.length
+      statCards[0].breakdown = statusBreakdown(items)
+
+      let totalCpu = 0, totalMem = 0, totalGpu = 0, totalContainers = 0
+      const regions = new Set<string>()
+      for (const s of items) {
+        const spec = s.config?.resourceSpec
+        if (spec) {
+          totalCpu += spec.cpu || 0
+          totalMem += spec.memory || 0
+          totalGpu += spec.gpu || 0
+        }
+        totalContainers += (s.containers?.length || s.config?.containers?.length || 0)
+        if (s.config?.region) regions.add(s.config.region)
+      }
+      resourceSummary.value = {
+        totalCpu, totalMem, totalGpu, totalContainers,
+        instanceCount: items.length, regions: [...regions],
+      }
+    }
+    if (tm.status === 'fulfilled') statCards[1].value = (tm.value as any[]).length
+    if (im.status === 'fulfilled') statCards[2].value = (im.value as any[]).length
+    if (us.status === 'fulfilled') statCards[3].value = (us.value as any[]).length
   } catch { /* ignore */ }
 })
 </script>
@@ -118,6 +181,7 @@ onMounted(async () => {
 .stat-card { text-align: center; }
 .stat-label { color: var(--el-text-color-secondary); font-size: 14px; }
 .stat-value { font-size: 32px; font-weight: bold; margin: 8px 0; }
+.stat-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
 .tag { margin-right: 4px; margin-bottom: 4px; }
 .row-section { margin-top: 16px; }
 .user-card { margin-top: 16px; }

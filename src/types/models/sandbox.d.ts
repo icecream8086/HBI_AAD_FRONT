@@ -2,13 +2,19 @@ type SandboxStatus = 'Pending' | 'Scheduling' | 'Running' | 'Stopped' | 'Termina
 
 interface Sandbox {
   id: string
+  name?: string
+  description?: string
   config: CreateSandboxInput
   status: SandboxStatus
+  version?: string
   providerId?: string
+  providerIdentity?: ProviderIdentity
   network: NetworkInfo
   containers: ContainerRuntime[]
   conditions?: PodCondition[]
   events: ContainerEvent[]
+  tags?: { key: string; value: string }[] | string[]
+  creatorId?: string
   createdAt: number
   updatedAt: number
 }
@@ -78,6 +84,14 @@ interface ContainerState {
   ready: boolean
   restartCount: number
   message?: string
+}
+
+interface ProviderIdentity {
+  platform: string
+  instanceId: string
+  region: string
+  zoneId?: string
+  credentialRef?: string
 }
 
 interface NetworkInfo {

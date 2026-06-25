@@ -56,8 +56,8 @@
       </el-table-column>
     </el-table>
     <div v-if="total > pageSize" class="pagination-bar">
-      <el-button :disabled="pageIndex <= 1" @click="goPrev">← Previous</el-button>
-      <span class="page-indicator">Page {{ pageIndex }} / {{ Math.ceil(total / pageSize) || 1 }} ({{ total }} total)</span>
+      <el-button :disabled="pageIndex <= 0" @click="goPrev">← Previous</el-button>
+      <span class="page-indicator">Page {{ pageIndex + 1 }} / {{ Math.ceil(total / pageSize) || 1 }} ({{ total }} total)</span>
       <el-button :disabled="!hasNext" @click="goNext">Next →</el-button>
     </div>
 
@@ -105,11 +105,9 @@ const { t } = useI18n()
 
 const loading = ref(false)
 const logs = ref<AuditLog[]>([])
-const pageSize = ref(15)
+const pageSize = ref(20)
 const total = ref(0)
-const pageIndex = ref(1)
-const cursors = ref<string[]>([])
-const nextCursor = ref<string | undefined>()
+const pageIndex = ref(0)
 const hasNext = ref(false)
 const f = reactive({ levelMin: '' as number | string, facility: '', search: '', requestId: '', actorId: '' })
 
@@ -148,8 +146,7 @@ function resetFilter() {
   f.search = ''
   f.requestId = ''
   f.actorId = ''
-  cursors.value = []
-  pageIndex.value = 1
+  pageIndex.value = 0
   hasNext.value = false
   fetchData()
 }
@@ -161,35 +158,31 @@ function normalizeLogEntry(item: any): AuditLog {
 async function fetchData() {
   loading.value = true
   try {
-    const params: Record<string, any> = { limit: pageSize.value }
-    if (cursors.value.length > 0) {
-      params.afterCursor = cursors.value[cursors.value.length - 1]
-    }
+    const params: Record<string, any> = { page: pageIndex.value, pageSize: pageSize.value }
     if (f.levelMin !== '') params.levelMin = f.levelMin
     if (f.facility) params.facility = f.facility
     if (f.search) params.search = f.search
     if (f.requestId) params.requestId = f.requestId
     if (f.actorId) params.actorId = f.actorId
     const res = await api.audit.logs.list(params)
-    const raw = res.entries ?? res.lines ?? []
+    const raw = res.entries ?? res.lines ?? res.items ?? []
     logs.value = raw.map(normalizeLogEntry)
     total.value = res.total ?? logs.value.length
-    nextCursor.value = res.nextCursor
-    hasNext.value = !!res.nextCursor
+    hasNext.value = !!res.hasNext
+    if (res.page !== undefined) pageIndex.value = res.page
+    if (res.pageSize !== undefined) pageSize.value = res.pageSize
   } catch (e) { console.error(e); ElMessage.error(t('audit.fetchFailed')) }
   finally { loading.value = false }
 }
 
 function goNext() {
-  if (!nextCursor.value) return
-  cursors.value.push(nextCursor.value)
+  if (!hasNext.value) return
   pageIndex.value++
   fetchData()
 }
 
 function goPrev() {
-  if (pageIndex.value <= 1) return
-  cursors.value.pop()
+  if (pageIndex.value <= 0) return
   pageIndex.value--
   fetchData()
 }

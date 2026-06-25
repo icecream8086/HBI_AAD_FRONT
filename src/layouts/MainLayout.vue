@@ -3,7 +3,10 @@
     <!-- Sidebar -->
     <el-aside :width="isCollapsed ? '64px' : '240px'" class="sidebar">
       <div class="sidebar-header">
-        <span v-if="!isCollapsed" class="logo-text">HBI AAD</span>
+        <template v-if="!isCollapsed">
+          <span class="logo-text">HBI AAD</span>
+          <span class="logo-desc">扩展字段编辑器</span>
+        </template>
         <span v-else class="logo-icon">H</span>
       </div>
       <el-menu
@@ -121,6 +124,11 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <span class="ext-editor-btn" @click="$router.push('/extension-fields')">
+            <el-icon :size="15" style="margin-right:3px;vertical-align:text-bottom"><Setting /></el-icon>
+            扩展字段编辑器
+          </span>
+
           <!-- Language switcher -->
           <el-dropdown trigger="click" @command="cmd => setLang(cmd)">
             <span class="user-trigger">
@@ -416,15 +424,18 @@ onMounted(async () => {
 .sidebar-header {
   height: var(--header-height);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   font-weight: bold;
-  font-size: 20px;
   color: var(--sidebar-text, var(--el-text-color-primary));
   border-bottom: 1px solid var(--nav-border, var(--el-border-color-light));
   background: var(--sidebar-bg, transparent);
 }
-.logo-icon { font-size: 24px; }
+.logo-text { font-size: 16px; }
+.logo-desc { font-size: 11px; color: var(--el-text-color-secondary); font-weight: 400; }
+.logo-icon { font-size: 22px; }
 .header {
   display: flex;
   align-items: center;
@@ -452,4 +463,14 @@ onMounted(async () => {
 .invite-btn { margin-right: 4px; }
 .invite-btn .el-icon { margin-right: 3px; }
 .api-doc-btn { margin-right: 4px; }
+.ext-editor-btn {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  padding: 2px 8px;
+  border-radius: 4px;
+  user-select: none;
+  white-space: nowrap;
+}
+.ext-editor-btn:hover { color: var(--el-color-primary); background: var(--el-fill-color-light); }
 </style>

@@ -58,6 +58,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'subnets', name: 'Subnets', component: () => import('../views/network/SubnetList.vue'), meta: { title: 'route.subnetList' } },
 
       // Logs & Monitoring
+      { path: 'extension-fields', name: 'ExtensionFields', component: () => import('../components/ExtensionFieldEditor.vue'), meta: { title: 'route.extensionFields' } },
       { path: 'audit', name: 'AuditLogs', component: () => import('../views/AuditLogs.vue'), meta: { title: 'route.audit' } },
       { path: 'events', name: 'Events', component: () => import('../views/EventLoop.vue'), meta: { title: 'route.events' } },
 
