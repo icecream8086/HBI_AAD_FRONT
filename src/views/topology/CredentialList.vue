@@ -1,71 +1,197 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('topology.credentialTitle') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('topology.createCredential') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('topology.createCredential') }}
+      </el-button>
     </div>
 
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('topology.platform')">
-          <el-select v-model="filter.platform" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
-            <el-option label="alibaba" value="alibaba" /><el-option label="aws" value="aws" /><el-option label="podman" value="podman" /><el-option label="stub" value="stub" />
+          <el-select
+            v-model="filter.platform"
+            clearable
+            :placeholder="$t('table.selectPlaceholder')"
+            style="width:120px"
+            @change="fetchData"
+          >
+            <el-option
+              label="alibaba"
+              value="alibaba"
+            /><el-option
+              label="aws"
+              value="aws"
+            /><el-option
+              label="podman"
+              value="podman"
+            /><el-option
+              label="stub"
+              value="stub"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="creds" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('topology.credentialName')" min-width="140" />
-      <el-table-column :label="$t('topology.credentialType')" width="100">
+    <el-table
+      v-loading="loading"
+      :data="creds"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('topology.credentialName')"
+        min-width="140"
+      />
+      <el-table-column
+        :label="$t('topology.credentialType')"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="typeTag(row.type)" size="small">{{ typeLabel(row.type) }}</el-tag>
+          <el-tag
+            :type="typeTag(row.type)"
+            size="small"
+          >
+            {{ typeLabel(row.type) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="platform" :label="$t('topology.platform')" width="80">
-        <template #default="{ row }"><el-tag size="small">{{ row.platform }}</el-tag></template>
-      </el-table-column>
-      <el-table-column :label="$t('topology.accessKeyId')" width="180" v-if="anyAksk">
-        <template #default="{ row }">{{ row.type === 'aksk' ? row.accessKeyId : '-' }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('topology.username')" width="140" v-if="anyPassword">
-        <template #default="{ row }">{{ row.type === 'password' ? row.username : '-' }}</template>
-      </el-table-column>
-      <el-table-column prop="status" :label="$t('topology.status')" width="70">
+      <el-table-column
+        prop="platform"
+        :label="$t('topology.platform')"
+        width="80"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.status==='active'?'success':'info'" size="small">{{ row.status }}</el-tag>
+          <el-tag size="small">
+            {{ row.platform }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="150">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column
+        v-if="anyAksk"
+        :label="$t('topology.accessKeyId')"
+        width="180"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          {{ row.type === 'aksk' ? row.accessKeyId : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        v-if="anyPassword"
+        :label="$t('topology.username')"
+        width="140"
+      >
+        <template #default="{ row }">
+          {{ row.type === 'password' ? row.username : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="status"
+        :label="$t('topology.status')"
+        width="70"
+      >
+        <template #default="{ row }">
+          <el-tag
+            :type="statusTagType(row.status, colByProp('status'))"
+            size="small"
+          >
+            {{ row.status }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="150"
+      >
+        <template #default="{ row }">
+          {{ fmtCell(row.createdAt, colByProp('createdAt')) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('topology.editCredential') : $t('topology.createCredential')" width="550px" destroy-on-close>
-      <el-form :model="form" label-width="140px">
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit ? $t('topology.editCredential') : $t('topology.createCredential')"
+      width="550px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="140px"
+      >
         <el-form-item :label="$t('topology.credentialName')">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item :label="$t('topology.credentialType')" required>
-          <el-radio-group v-model="form.type" :disabled="dialog.isEdit">
-            <el-radio-button value="aksk">AK/SK</el-radio-button>
-            <el-radio-button value="token">Token</el-radio-button>
-            <el-radio-button value="password">{{ $t('topology.password') }}</el-radio-button>
+        <el-form-item
+          :label="$t('topology.credentialType')"
+          required
+        >
+          <el-radio-group
+            v-model="form.type"
+            :disabled="dialog.isEdit"
+          >
+            <el-radio-button value="aksk">
+              AK/SK
+            </el-radio-button>
+            <el-radio-button value="token">
+              Token
+            </el-radio-button>
+            <el-radio-button value="password">
+              {{ $t('topology.password') }}
+            </el-radio-button>
           </el-radio-group>
         </el-form-item>
         <el-form-item :label="$t('topology.platform')">
-          <el-select v-model="form.platform" style="width:100%">
-            <el-option v-for="p in ['alibaba','aws','podman','stub']" :key="p" :label="p" :value="p" />
+          <el-select
+            v-model="form.platform"
+            style="width:100%"
+          >
+            <el-option
+              v-for="p in ['alibaba','aws','podman','stub']"
+              :key="p"
+              :label="p"
+              :value="p"
+            />
           </el-select>
         </el-form-item>
 
@@ -75,14 +201,22 @@
             <el-input v-model="form.accessKeyId" />
           </el-form-item>
           <el-form-item :label="$t('topology.accessKeySecret')">
-            <el-input v-model="form.accessKeySecret" type="textarea" :rows="2" />
+            <el-input
+              v-model="form.accessKeySecret"
+              type="textarea"
+              :rows="2"
+            />
           </el-form-item>
         </template>
 
         <!-- Token field -->
         <template v-if="form.type === 'token'">
           <el-form-item :label="$t('topology.token')">
-            <el-input v-model="form.token" type="textarea" :rows="2" />
+            <el-input
+              v-model="form.token"
+              type="textarea"
+              :rows="2"
+            />
           </el-form-item>
         </template>
 
@@ -92,19 +226,42 @@
             <el-input v-model="form.username" />
           </el-form-item>
           <el-form-item :label="$t('topology.password')">
-            <el-input v-model="form.password" type="textarea" :rows="2" />
+            <el-input
+              v-model="form.password"
+              type="textarea"
+              :rows="2"
+            />
           </el-form-item>
         </template>
 
         <el-form-item :label="$t('topology.instanceTitle')">
-          <el-select v-model="form.instanceId" filterable clearable placeholder="Optional" style="width:100%">
-            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+          <el-select
+            v-model="form.instanceId"
+            filterable
+            clearable
+            placeholder="Optional"
+            style="width:100%"
+          >
+            <el-option
+              v-for="inst in instances"
+              :key="inst.id"
+              :label="`${inst.name} (${inst.platform}/${inst.region})`"
+              :value="inst.id"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -116,9 +273,12 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
 import { useReferenceCache } from '../../composables/useReferenceCache'
+import { credentialColumns } from '../../constants/field-descriptors'
+import { useEntityColumns } from '../../composables/useEntityColumns'
 
 const { t } = useI18n()
 const refCache = useReferenceCache()
+const { fmtCell, statusTagType, colByProp } = useEntityColumns(credentialColumns)
 
 const loading = ref(false)
 const saving = ref(false)
@@ -143,8 +303,6 @@ function typeTag(t: CredentialType): 'primary' | 'warning' | '' {
   if (t === 'token') return 'warning'
   return ''
 }
-
-function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 function resetForm() {
   form.name = ''; form.type = 'aksk'; form.platform = ''

@@ -4,9 +4,15 @@
     <el-row :gutter="16">
       <el-col :span="8">
         <el-card>
-          <template #header>{{ $t('profile.avatar') }}</template>
+          <template #header>
+            {{ $t('profile.avatar') }}
+          </template>
           <div class="avatar-section">
-            <el-avatar :size="120" :src="avatarBlob" class="profile-avatar">
+            <el-avatar
+              :size="120"
+              :src="avatarBlob"
+              class="profile-avatar"
+            >
               {{ (user?.name || user?.email || 'U')[0].toUpperCase() }}
             </el-avatar>
             <div class="avatar-actions">
@@ -15,11 +21,26 @@
                 :http-request="handleUpload"
                 accept="image/jpeg,image/png,image/webp,image/gif"
               >
-                <el-button size="small" type="primary">{{ $t('profile.uploadAvatar') }}</el-button>
+                <el-button
+                  size="small"
+                  type="primary"
+                >
+                  {{ $t('profile.uploadAvatar') }}
+                </el-button>
               </el-upload>
-              <el-button v-if="hasAvatar" size="small" type="danger" @click="handleDelete" :loading="deleting">{{ $t('profile.deleteAvatar') }}</el-button>
+              <el-button
+                v-if="hasAvatar"
+                size="small"
+                type="danger"
+                :loading="deleting"
+                @click="handleDelete"
+              >
+                {{ $t('profile.deleteAvatar') }}
+              </el-button>
             </div>
-            <p class="hint">{{ $t('profile.avatarHint') }}</p>
+            <p class="hint">
+              {{ $t('profile.avatarHint') }}
+            </p>
           </div>
         </el-card>
       </el-col>
@@ -27,42 +48,90 @@
         <el-card v-if="user">
           <template #header>
             <span>{{ $t('profile.userInfo') }}</span>
-            <el-button size="small" style="float:right" @click="openEdit">{{ $t('profile.editProfile') }}</el-button>
+            <el-button
+              size="small"
+              style="float:right"
+              @click="openEdit"
+            >
+              {{ $t('profile.editProfile') }}
+            </el-button>
           </template>
-          <el-descriptions :column="1" border>
-            <el-descriptions-item :label="$t('profile.name')">{{ user.name }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('profile.email')">{{ user.email }}</el-descriptions-item>
+          <el-descriptions
+            :column="1"
+            border
+          >
+            <el-descriptions-item :label="$t('profile.name')">
+              {{ user.name }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('profile.email')">
+              {{ user.email }}
+            </el-descriptions-item>
             <el-descriptions-item :label="$t('profile.role')">
-              <el-tag :type="roleTag">{{ user.role }}</el-tag>
+              <el-tag :type="roleTag">
+                {{ user.role }}
+              </el-tag>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('profile.ed25519Key')">
-              <el-tag :type="user.privateKeyEd25519 ? 'success' : 'info'" size="small">
+              <el-tag
+                :type="user.privateKeyEd25519 ? 'success' : 'info'"
+                size="small"
+              >
                 {{ user.privateKeyEd25519 ? $t('profile.keySet') : $t('profile.keyNotSet') }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item :label="$t('table.createdAt')">{{ fmt(user.createdAt) }}</el-descriptions-item>
+            <el-descriptions-item :label="$t('table.createdAt')">
+              {{ fmt(user.createdAt) }}
+            </el-descriptions-item>
           </el-descriptions>
         </el-card>
-        <el-empty v-else :description="$t('dashboard.notLoggedIn')" />
+        <el-empty
+          v-else
+          :description="$t('dashboard.notLoggedIn')"
+        />
       </el-col>
     </el-row>
 
-    <el-dialog v-model="editDlg.show" :title="$t('profile.editTitle')" width="500px">
-      <el-form :model="editForm" :label-width="locale === 'en' ? '140px' : '100px'">
+    <el-dialog
+      v-model="editDlg.show"
+      :title="$t('profile.editTitle')"
+      width="500px"
+    >
+      <el-form
+        :model="editForm"
+        :label-width="locale === 'en' ? '140px' : '100px'"
+      >
         <el-form-item :label="$t('profile.name')">
           <el-input v-model="editForm.name" />
         </el-form-item>
         <el-form-item :label="$t('profile.email')">
-          <el-input :model-value="user?.email" disabled />
+          <el-input
+            :model-value="user?.email"
+            disabled
+          />
         </el-form-item>
         <el-form-item :label="$t('profile.ed25519Key')">
-          <el-input v-model="editForm.privateKey" type="textarea" :rows="2" :placeholder="$t('profile.ed25519Placeholder')" />
-          <p class="form-hint">{{ $t('profile.ed25519Hint') }}</p>
+          <el-input
+            v-model="editForm.privateKey"
+            type="textarea"
+            :rows="2"
+            :placeholder="$t('profile.ed25519Placeholder')"
+          />
+          <p class="form-hint">
+            {{ $t('profile.ed25519Hint') }}
+          </p>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editDlg.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ $t('table.save') }}</el-button>
+        <el-button @click="editDlg.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ $t('table.save') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -132,8 +201,6 @@ function openEdit() {
   editForm.privateKey = user.value.privateKeyEd25519 || ''
   editDlg.show = true
 }
-
-const AVATAR_MAX = 1048576
 
 async function handleUpload(options: any) {
   const uid = user.value?.id

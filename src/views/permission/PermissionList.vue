@@ -2,11 +2,23 @@
   <div>
     <h2>{{ $t('permission.title') }}</h2>
     <el-row :gutter="16">
-      <el-col v-for="item in items" :key="item.path" :span="6">
-        <el-card shadow="hover" class="nav-card" @click="$router.push(item.path)">
+      <el-col
+        v-for="item in items"
+        :key="item.path"
+        :span="6"
+      >
+        <el-card
+          shadow="hover"
+          class="nav-card"
+          @click="$router.push(item.path)"
+        >
           <div class="nav-card-content">
-            <div class="nav-card-title">{{ item.title }}</div>
-            <div class="nav-card-desc">{{ item.desc }}</div>
+            <div class="nav-card-title">
+              {{ item.title }}
+            </div>
+            <div class="nav-card-desc">
+              {{ item.desc }}
+            </div>
           </div>
         </el-card>
       </el-col>

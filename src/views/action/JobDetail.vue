@@ -1,67 +1,163 @@
 <template>
   <div v-loading="loading">
-    <el-button text @click="$router.push(`/actions/runs/${runId}`)" class="back-btn">{{ $t('action.backToRun') }}</el-button>
+    <el-button
+      text
+      class="back-btn"
+      @click="$router.push(`/actions/runs/${runId}`)"
+    >
+      {{ $t('action.backToRun') }}
+    </el-button>
 
-    <div v-if="job" class="page-head">
+    <div
+      v-if="job"
+      class="page-head"
+    >
       <h2>Job: {{ job.jobName }}</h2>
-      <el-tag :type="statusType(job.status)" size="large">{{ job.status }}</el-tag>
+      <el-tag
+        :type="statusType(job.status)"
+        size="large"
+      >
+        {{ job.status }}
+      </el-tag>
     </div>
 
-    <el-card v-if="job" class="section">
-      <template #header><strong>Job Info</strong></template>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item :label="$t('action.jobName')">{{ job.jobName }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('action.jobStatus')">
-          <el-tag :type="statusType(job.status)" size="small">{{ job.status }}</el-tag>
+    <el-card
+      v-if="job"
+      class="section"
+    >
+      <template #header>
+        <strong>Job Info</strong>
+      </template>
+      <el-descriptions
+        :column="2"
+        border
+      >
+        <el-descriptions-item :label="$t('action.jobName')">
+          {{ job.jobName }}
         </el-descriptions-item>
-        <el-descriptions-item v-if="job.sandboxId" label="Sandbox ID">{{ job.sandboxId }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('action.runStartedAt')">{{ fmt(job.startedAt) }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('action.runCompletedAt')">{{ fmt(job.completedAt) }}</el-descriptions-item>
-        <el-descriptions-item v-if="job.error" :label="$t('action.runError')" :span="2">
+        <el-descriptions-item :label="$t('action.jobStatus')">
+          <el-tag
+            :type="statusType(job.status)"
+            size="small"
+          >
+            {{ job.status }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="job.sandboxId"
+          label="Sandbox ID"
+        >
+          {{ job.sandboxId }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('action.runStartedAt')">
+          {{ fmt(job.startedAt) }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('action.runCompletedAt')">
+          {{ fmt(job.completedAt) }}
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="job.error"
+          :label="$t('action.runError')"
+          :span="2"
+        >
           <span class="error-text">{{ job.error }}</span>
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
 
     <!-- Steps -->
-    <el-card v-if="job" class="section">
-      <template #header><strong>Steps ({{ job.stepRuns?.length || 0 }})</strong></template>
+    <el-card
+      v-if="job"
+      class="section"
+    >
+      <template #header>
+        <strong>Steps ({{ job.stepRuns?.length || 0 }})</strong>
+      </template>
       <div v-if="job.stepRuns?.length">
-        <el-table :data="job.stepRuns" size="small">
-          <el-table-column prop="name" :label="$t('action.stepName')" min-width="140" />
-          <el-table-column :label="$t('action.stepStatus')" width="100">
+        <el-table
+          :data="job.stepRuns"
+          size="small"
+        >
+          <el-table-column
+            prop="name"
+            :label="$t('action.stepName')"
+            min-width="140"
+          />
+          <el-table-column
+            :label="$t('action.stepStatus')"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
+              <el-tag
+                :type="statusType(row.status)"
+                size="small"
+              >
+                {{ row.status }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('action.stepExitCode')" width="100">
-            <template #default="{ row }">{{ row.exitCode ?? '-' }}</template>
-          </el-table-column>
-          <el-table-column :label="$t('action.stepDuration')" width="120">
+          <el-table-column
+            :label="$t('action.stepExitCode')"
+            width="100"
+          >
             <template #default="{ row }">
-              <template v-if="row.startedAt && row.completedAt">{{ ((row.completedAt - row.startedAt) / 1000).toFixed(1) }}s</template>
+              {{ row.exitCode ?? '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('action.stepDuration')"
+            width="120"
+          >
+            <template #default="{ row }">
+              <template v-if="row.startedAt && row.completedAt">
+                {{ ((row.completedAt - row.startedAt) / 1000).toFixed(1) }}s
+              </template>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('table.actions')" width="100">
+          <el-table-column
+            :label="$t('table.actions')"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-button size="small" @click="fetchLogs(row.name)">{{ $t('action.jobLogs') }}</el-button>
+              <el-button
+                size="small"
+                @click="fetchLogs(row.name)"
+              >
+                {{ $t('action.jobLogs') }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
-      <div v-else class="dim">-</div>
+      <div
+        v-else
+        class="dim"
+      >
+        -
+      </div>
     </el-card>
 
     <!-- Logs -->
-    <el-card v-if="logText" class="section">
+    <el-card
+      v-if="logText"
+      class="section"
+    >
       <template #header>
         <div class="card-header-row">
           <strong>{{ $t('action.logText') }} — {{ currentStep }}</strong>
-          <el-button size="small" @click="logText = ''">{{ $t('table.cancel') }}</el-button>
+          <el-button
+            size="small"
+            @click="logText = ''"
+          >
+            {{ $t('table.cancel') }}
+          </el-button>
         </div>
       </template>
-      <pre class="log-output" v-text="logText || $t('action.jobLogsEmpty')"></pre>
+      <pre
+        class="log-output"
+        v-text="logText || $t('action.jobLogsEmpty')"
+      />
     </el-card>
   </div>
 </template>
@@ -72,6 +168,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { api } from '../../api'
+import { type StatusTagMap, lookup } from '../../utils/codec'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -85,10 +182,15 @@ const currentStep = ref('')
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
-function statusType(s: string) {
-  const m: Record<string, string> = { Success: 'success', Failure: 'danger', Running: 'primary', Queued: 'info', Skipped: 'warning', Cancelled: 'warning' }
-  return m[s] || 'info'
+const jobStatusTags: StatusTagMap<JobRunStatus> = {
+  Success: 'success',
+  Failure: 'danger',
+  Running: 'primary',
+  Queued: 'info',
+  Skipped: 'warning',
+  Cancelled: 'warning',
 }
+function statusType(s: string) { return lookup(jobStatusTags, s, 'info') }
 
 async function fetchLogs(step: string) {
   currentStep.value = step

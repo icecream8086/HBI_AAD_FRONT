@@ -1,31 +1,83 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('userTemplate.title') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('userTemplate.create') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('userTemplate.create') }}
+      </el-button>
     </div>
 
-    <el-table :data="items" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('userTemplate.name')" min-width="140" />
-      <el-table-column prop="description" :label="$t('userTemplate.description')" min-width="200" show-overflow-tooltip />
-      <el-table-column :label="$t('userTemplate.defaultGroupIds')" width="120">
+    <el-table
+      v-loading="loading"
+      :data="items"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('userTemplate.name')"
+        min-width="140"
+      />
+      <el-table-column
+        prop="description"
+        :label="$t('userTemplate.description')"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        :label="$t('userTemplate.defaultGroupIds')"
+        width="120"
+      >
         <template #default="{ row }">
           <span>{{ (row.defaultGroupIds?.length ?? 0) }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('userTemplate.defaultPermGroupIds')" width="160">
+      <el-table-column
+        :label="$t('userTemplate.defaultPermGroupIds')"
+        width="160"
+      >
         <template #default="{ row }">
           <span>{{ (row.defaultPermGroupIds?.length ?? 0) }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="150">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="150"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          {{ fmt(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -42,33 +94,87 @@
       @current-change="fetchData"
     />
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('userTemplate.edit') : $t('userTemplate.create')" width="600px" destroy-on-close>
-      <el-form :model="form" label-width="150px">
-        <el-form-item :label="$t('userTemplate.name')" required>
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit ? $t('userTemplate.edit') : $t('userTemplate.create')"
+      width="600px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="150px"
+      >
+        <el-form-item
+          :label="$t('userTemplate.name')"
+          required
+        >
           <el-input v-model="form.name" />
         </el-form-item>
         <el-form-item :label="$t('userTemplate.description')">
-          <el-input v-model="form.description" type="textarea" :rows="3" />
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="3"
+          />
         </el-form-item>
         <el-form-item :label="$t('userTemplate.defaultGroupIds')">
-          <el-select v-model="form.defaultGroupIds" multiple filterable style="width:100%">
-            <el-option v-for="g in userGroups" :key="g.id" :label="g.name" :value="g.id" />
+          <el-select
+            v-model="form.defaultGroupIds"
+            multiple
+            filterable
+            style="width:100%"
+          >
+            <el-option
+              v-for="g in userGroups"
+              :key="g.id"
+              :label="g.name"
+              :value="g.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('userTemplate.defaultPermGroupIds')">
-          <el-select v-model="form.defaultPermGroupIds" multiple filterable style="width:100%">
-            <el-option v-for="g in permGroups" :key="g.id" :label="g.name" :value="g.id" />
+          <el-select
+            v-model="form.defaultPermGroupIds"
+            multiple
+            filterable
+            style="width:100%"
+          >
+            <el-option
+              v-for="g in permGroups"
+              :key="g.id"
+              :label="g.name"
+              :value="g.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('userTemplate.dependsOn')">
-          <el-select v-model="form.dependsOn" multiple filterable :placeholder="$t('userTemplate.dependsPlaceholder')" style="width:100%">
-            <el-option v-for="t in filterTemplates" :key="t.id" :label="t.name" :value="t.id" />
+          <el-select
+            v-model="form.dependsOn"
+            multiple
+            filterable
+            :placeholder="$t('userTemplate.dependsPlaceholder')"
+            style="width:100%"
+          >
+            <el-option
+              v-for="tmpl in filterTemplates"
+              :key="tmpl.id"
+              :label="tmpl.name"
+              :value="tmpl.id"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

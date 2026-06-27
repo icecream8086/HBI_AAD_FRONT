@@ -1,160 +1,478 @@
 <template>
   <div v-loading="loading">
-    <el-button text @click="$router.push('/sandboxes')" class="back">{{ $t('sandbox.backToList') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/sandboxes')"
+    >
+      {{ $t('sandbox.backToList') }}
+    </el-button>
 
     <div v-if="sandbox">
       <div class="page-head">
         <div>
           <h2>{{ sandbox.config?.name || sandbox.name || $t('sandbox.title') }}</h2>
           <div class="head-meta">
-            <el-tag :type="statusType(sandbox.status)" effect="dark" size="large">{{ sandbox.status }}</el-tag>
-            <el-tag v-if="sandbox.config?.spotStrategy" type="warning" size="small" effect="plain">{{ sandbox.config.spotStrategy }}</el-tag>
-            <el-tag v-if="sandbox.config?.restartPolicy" size="small" effect="plain">{{ sandbox.config.restartPolicy }}</el-tag>
+            <el-tag
+              :type="statusType(sandbox.status)"
+              effect="dark"
+              size="large"
+            >
+              {{ sandbox.status }}
+            </el-tag>
+            <el-tag
+              v-if="sandbox.config?.spotStrategy"
+              type="warning"
+              size="small"
+              effect="plain"
+            >
+              {{ sandbox.config.spotStrategy }}
+            </el-tag>
+            <el-tag
+              v-if="sandbox.config?.restartPolicy"
+              size="small"
+              effect="plain"
+            >
+              {{ sandbox.config.restartPolicy }}
+            </el-tag>
           </div>
-          <p v-if="sandbox.config?.description" class="head-desc">{{ sandbox.config.description }}</p>
+          <p
+            v-if="sandbox.config?.description"
+            class="head-desc"
+          >
+            {{ sandbox.config.description }}
+          </p>
         </div>
         <div class="actions">
-          <el-button v-if="sandbox.status==='Stopped'" type="success" @click="handleStart" :loading="starting">{{ $t('table.start') }}</el-button>
-          <el-button :type="sandbox.status==='Running'?'warning':''" @click="handleStop" :disabled="sandbox.status!=='Running'">{{ $t('table.stop') }}</el-button>
-          <el-button type="danger" @click="handleDelete">{{ $t('table.delete') }}</el-button>
-          <el-button @click="handleSync">{{ $t('sandbox.sync') }}</el-button>
-          <el-button @click="fetchHealth">{{ $t('sandbox.healthCheck') }}</el-button>
+          <el-button
+            v-if="sandbox.status==='Stopped'"
+            type="success"
+            :loading="starting"
+            @click="handleStart"
+          >
+            {{ $t('table.start') }}
+          </el-button>
+          <el-button
+            :type="sandbox.status==='Running'?'warning':''"
+            :disabled="sandbox.status!=='Running'"
+            @click="handleStop"
+          >
+            {{ $t('table.stop') }}
+          </el-button>
+          <el-button
+            type="danger"
+            @click="handleDelete"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
+          <el-button @click="handleSync">
+            {{ $t('sandbox.sync') }}
+          </el-button>
+          <el-button @click="fetchHealth">
+            {{ $t('sandbox.healthCheck') }}
+          </el-button>
         </div>
       </div>
 
       <!-- Resource spec overview -->
-      <el-card class="section" v-if="sandbox.config?.resourceSpec">
-        <template #header>{{ $t('table.resources') }}</template>
-        <el-descriptions :column="5" border size="small">
-          <el-descriptions-item label="CPU">{{ sandbox.config.resourceSpec.cpu }} cores</el-descriptions-item>
-          <el-descriptions-item label="Memory">{{ sandbox.config.resourceSpec.memory }} Mi</el-descriptions-item>
-          <el-descriptions-item label="GPU">
-            <template v-if="sandbox.config.resourceSpec.gpu">{{ sandbox.config.resourceSpec.gpu }}×{{ sandbox.config.resourceSpec.gpuType || 'GPU' }}</template>
-            <template v-else>-</template>
+      <el-card
+        v-if="sandbox.config?.resourceSpec"
+        class="section"
+      >
+        <template #header>
+          {{ $t('table.resources') }}
+        </template>
+        <el-descriptions
+          :column="5"
+          border
+          size="small"
+        >
+          <el-descriptions-item label="CPU">
+            {{ sandbox.config.resourceSpec.cpu }} cores
           </el-descriptions-item>
-          <el-descriptions-item label="Health Retries">{{ sandbox.config.healthMaxRetries ?? 3 }}</el-descriptions-item>
-          <el-descriptions-item label="Version"><code>{{ sandbox.version?.slice(0,8) || '-' }}</code></el-descriptions-item>
+          <el-descriptions-item label="Memory">
+            {{ sandbox.config.resourceSpec.memory }} Mi
+          </el-descriptions-item>
+          <el-descriptions-item label="GPU">
+            <template v-if="sandbox.config.resourceSpec.gpu">
+              {{ sandbox.config.resourceSpec.gpu }}×{{ sandbox.config.resourceSpec.gpuType || 'GPU' }}
+            </template>
+            <template v-else>
+              -
+            </template>
+          </el-descriptions-item>
+          <el-descriptions-item label="Health Retries">
+            {{ sandbox.config.healthMaxRetries ?? 3 }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Version">
+            <code>{{ sandbox.version?.slice(0,8) || '-' }}</code>
+          </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
       <!-- Basic info -->
       <el-card class="section">
-        <template #header>{{ $t('sandbox.basicInfo') || 'Basic Info' }}</template>
-        <el-descriptions :column="3" border size="small">
-          <el-descriptions-item label="ID" :span="3"><code>{{ sandbox.id }}</code></el-descriptions-item>
-          <el-descriptions-item label="Provider">{{ sandbox.providerId || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Region">{{ sandbox.config?.region || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Zone">{{ sandbox.providerIdentity?.zoneId || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Platform">{{ sandbox.providerIdentity?.platform || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Instance">{{ sandbox.providerIdentity?.instanceId || sandbox.config?.instanceId || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Credential"><code>{{ (sandbox.providerIdentity?.credentialRef || '').slice(0,12) }}...</code></el-descriptions-item>
-          <el-descriptions-item :label="$t('table.createdAt')">{{ fmt(sandbox.createdAt) }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('table.updatedAt')">{{ fmt(sandbox.updatedAt) }}</el-descriptions-item>
-          <el-descriptions-item label="Creator"><code>{{ (sandbox.creatorId || sandbox.config?.creatorId || '').slice(0,8) }}...</code></el-descriptions-item>
+        <template #header>
+          {{ $t('sandbox.basicInfo') || 'Basic Info' }}
+        </template>
+        <el-descriptions
+          :column="3"
+          border
+          size="small"
+        >
+          <el-descriptions-item
+            label="ID"
+            :span="3"
+          >
+            <code>{{ sandbox.id }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item label="Provider">
+            {{ sandbox.providerId || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Region">
+            {{ sandbox.config?.region || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Zone">
+            {{ sandbox.providerIdentity?.zoneId || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Platform">
+            {{ sandbox.providerIdentity?.platform || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Instance">
+            {{ sandbox.providerIdentity?.instanceId || sandbox.config?.instanceId || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Credential">
+            <code>{{ (sandbox.providerIdentity?.credentialRef || '').slice(0,12) }}...</code>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('table.createdAt')">
+            {{ fmt(sandbox.createdAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('table.updatedAt')">
+            {{ fmt(sandbox.updatedAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Creator">
+            <code>{{ (sandbox.creatorId || sandbox.config?.creatorId || '').slice(0,8) }}...</code>
+          </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
       <!-- Network -->
       <el-card class="section">
-        <template #header>{{ $t('table.network') }}</template>
-        <el-descriptions :column="4" border size="small">
-          <el-descriptions-item v-if="sandbox.network?.publicIp" label="Public IP"><code>{{ sandbox.network.publicIp }}</code></el-descriptions-item>
-          <el-descriptions-item v-if="sandbox.network?.privateIp" label="Private IP"><code>{{ sandbox.network.privateIp }}</code></el-descriptions-item>
-          <el-descriptions-item v-if="sandbox.network?.vpcId" label="VPC"><code>{{ sandbox.network.vpcId }}</code></el-descriptions-item>
-          <el-descriptions-item v-if="sandbox.network?.subnetId" label="Subnet"><code>{{ sandbox.network.subnetId }}</code></el-descriptions-item>
-          <el-descriptions-item v-if="sandbox.network?.securityGroupId" label="Security Group"><code>{{ sandbox.network.securityGroupId }}</code></el-descriptions-item>
-          <el-descriptions-item v-if="sandbox.network?.eniId" label="ENI"><code>{{ sandbox.network.eniId }}</code></el-descriptions-item>
-          <el-descriptions-item v-if="sandbox.config?.network?.allocatePublicIp !== undefined" label="Public IP">
-            <el-tag :type="sandbox.config.network.allocatePublicIp ? 'success' : 'info'" size="small">{{ sandbox.config.network.allocatePublicIp ? 'Yes' : 'No' }}</el-tag>
-            <span v-if="sandbox.config.network.publicIpBandwidth" style="margin-left:4px">{{ sandbox.config.network.publicIpBandwidth }} Mbps</span>
+        <template #header>
+          {{ $t('table.network') }}
+        </template>
+        <el-descriptions
+          :column="4"
+          border
+          size="small"
+        >
+          <el-descriptions-item
+            v-if="sandbox.network?.publicIp"
+            label="Public IP"
+          >
+            <code>{{ sandbox.network.publicIp }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="sandbox.network?.privateIp"
+            label="Private IP"
+          >
+            <code>{{ sandbox.network.privateIp }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="sandbox.network?.vpcId"
+            label="VPC"
+          >
+            <code>{{ sandbox.network.vpcId }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="sandbox.network?.subnetId"
+            label="Subnet"
+          >
+            <code>{{ sandbox.network.subnetId }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="sandbox.network?.securityGroupId"
+            label="Security Group"
+          >
+            <code>{{ sandbox.network.securityGroupId }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="sandbox.network?.eniId"
+            label="ENI"
+          >
+            <code>{{ sandbox.network.eniId }}</code>
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="sandbox.config?.network?.allocatePublicIp !== undefined"
+            label="Public IP"
+          >
+            <el-tag
+              :type="sandbox.config.network.allocatePublicIp ? 'success' : 'info'"
+              size="small"
+            >
+              {{ sandbox.config.network.allocatePublicIp ? 'Yes' : 'No' }}
+            </el-tag>
+            <span
+              v-if="sandbox.config.network.publicIpBandwidth"
+              style="margin-left:4px"
+            >{{ sandbox.config.network.publicIpBandwidth }} Mbps</span>
           </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
       <!-- Provider overrides -->
-      <el-card class="section" v-if="sandbox.config?.providerOverrides">
-        <template #header>Provider Overrides</template>
-        <div v-for="(override, platform) in sandbox.config.providerOverrides" :key="platform as string">
-          <h4 style="margin: 0 0 8px 0">{{ platform }}</h4>
-          <el-descriptions :column="4" border size="small">
-            <el-descriptions-item v-for="(v, k) in override as Record<string, unknown>" :key="k" :label="k as string">{{ v }}</el-descriptions-item>
+      <el-card
+        v-if="sandbox.config?.providerOverrides"
+        class="section"
+      >
+        <template #header>
+          Provider Overrides
+        </template>
+        <div
+          v-for="(override, platform) in sandbox.config.providerOverrides"
+          :key="platform as string"
+        >
+          <h4 style="margin: 0 0 8px 0">
+            {{ platform }}
+          </h4>
+          <el-descriptions
+            :column="4"
+            border
+            size="small"
+          >
+            <el-descriptions-item
+              v-for="(v, k) in override as Record<string, unknown>"
+              :key="k"
+              :label="k as string"
+            >
+              {{ v }}
+            </el-descriptions-item>
           </el-descriptions>
         </div>
       </el-card>
 
       <!-- Tags -->
-      <el-card class="section" v-if="hasTags">
-        <template #header>{{ $t('table.tags') }}</template>
+      <el-card
+        v-if="hasTags"
+        class="section"
+      >
+        <template #header>
+          {{ $t('table.tags') }}
+        </template>
         <template v-if="sandbox.config?.tags?.length">
-          <el-tag v-for="(t, i) in sandbox.config.tags" :key="i" size="small" style="margin-right:6px;margin-bottom:4px">{{ t.key }}={{ t.value }}</el-tag>
+          <el-tag
+            v-for="(tag, i) in sandbox.config.tags"
+            :key="i"
+            size="small"
+            style="margin-right:6px;margin-bottom:4px"
+          >
+            {{ tag.key }}={{ tag.value }}
+          </el-tag>
         </template>
         <template v-else-if="sandbox.config?.labels">
-          <el-tag v-for="(v, k) in sandbox.config.labels" :key="k" size="small" style="margin-right:6px;margin-bottom:4px">{{ k }}={{ v }}</el-tag>
+          <el-tag
+            v-for="(v, k) in sandbox.config.labels"
+            :key="k"
+            size="small"
+            style="margin-right:6px;margin-bottom:4px"
+          >
+            {{ k }}={{ v }}
+          </el-tag>
         </template>
         <span v-if="sandbox.tags?.length">
-          <el-tag v-for="(t, i) in sandbox.tags" :key="i" size="small" style="margin-right:6px;margin-bottom:4px">{{ typeof t === 'string' ? t : `${(t as any).key}=${(t as any).value}` }}</el-tag>
+          <el-tag
+            v-for="(tag, i) in sandbox.tags"
+            :key="i"
+            size="small"
+            style="margin-right:6px;margin-bottom:4px"
+          >{{ typeof tag === 'string' ? tag : `${(tag as any).key}=${(tag as any).value}` }}</el-tag>
         </span>
       </el-card>
 
       <!-- Runtime Containers -->
       <el-card class="section">
-        <template #header>{{ $t('sandbox.containerLabel') }} ({{ sandbox.containers?.length || 0 }})</template>
-        <div v-for="(c, ci) in sandbox.containers || []" :key="ci" class="cont-box">
+        <template #header>
+          {{ $t('sandbox.containerLabel') }} ({{ sandbox.containers?.length || 0 }})
+        </template>
+        <div
+          v-for="(c, ci) in sandbox.containers || []"
+          :key="ci"
+          class="cont-box"
+        >
           <h4>{{ c.name || `${$t('sandbox.containerLabel')} ${ci+1}` }}</h4>
-          <el-descriptions :column="4" border size="small">
-            <el-descriptions-item :label="$t('table.image')" :span="2"><code>{{ c.image || '-' }}</code></el-descriptions-item>
-            <el-descriptions-item :label="$t('table.status')">
-              <el-tag :type="ctStatusType(c)" size="small">{{ ctStatus(c) }}</el-tag>
-              <el-tag v-if="c.state?.ready" type="success" size="small" effect="plain" style="margin-left:4px">{{ $t('sandbox.ready') }}</el-tag>
+          <el-descriptions
+            :column="4"
+            border
+            size="small"
+          >
+            <el-descriptions-item
+              :label="$t('table.image')"
+              :span="2"
+            >
+              <code>{{ c.image || '-' }}</code>
             </el-descriptions-item>
-            <el-descriptions-item :label="$t('sandbox.cpuMem')">CPU: {{ c.cpu ?? '-' }} / Mem: {{ c.memory ?? '-' }}<span v-if="c.gpu" style="margin-left:6px">GPU: {{ c.gpu }}{{ c.gpuType ? '×'+c.gpuType : '' }}</span></el-descriptions-item>
+            <el-descriptions-item :label="$t('table.status')">
+              <el-tag
+                :type="ctStatusType(c)"
+                size="small"
+              >
+                {{ ctStatus(c) }}
+              </el-tag>
+              <el-tag
+                v-if="c.state?.ready"
+                type="success"
+                size="small"
+                effect="plain"
+                style="margin-left:4px"
+              >
+                {{ $t('sandbox.ready') }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('sandbox.cpuMem')">
+              CPU: {{ c.cpu ?? '-' }} / Mem: {{ c.memory ?? '-' }}<span
+                v-if="c.gpu"
+                style="margin-left:6px"
+              >GPU: {{ c.gpu }}{{ c.gpuType ? '×'+c.gpuType : '' }}</span>
+            </el-descriptions-item>
           </el-descriptions>
-          <div v-if="c.state?.startTime" class="sub">{{ $t('sandbox.startTime') }}: {{ fmtStr(c.state.startTime) }}</div>
-          <div v-if="c.health?.status" class="sub">
+          <div
+            v-if="c.state?.startTime"
+            class="sub"
+          >
+            {{ $t('sandbox.startTime') }}: {{ fmtStr(c.state.startTime) }}
+          </div>
+          <div
+            v-if="c.health?.status"
+            class="sub"
+          >
             <strong>Health:</strong>
-            <el-tag :type="c.health.status==='healthy'?'success':'warning'" size="small">{{ c.health.status }}</el-tag>
-            <span v-if="c.health.message" class="muted"> {{ c.health.message }}</span>
+            <el-tag
+              :type="c.health.status==='healthy'?'success':'warning'"
+              size="small"
+            >
+              {{ c.health.status }}
+            </el-tag>
+            <span
+              v-if="c.health.message"
+              class="muted"
+            > {{ c.health.message }}</span>
           </div>
         </div>
-        <el-empty v-if="!sandbox.containers?.length" :description="$t('sandbox.noContainers')" :image-size="50" />
+        <el-empty
+          v-if="!sandbox.containers?.length"
+          :description="$t('sandbox.noContainers')"
+          :image-size="50"
+        />
       </el-card>
 
       <!-- Config Containers (desired spec) -->
-      <el-card class="section" v-if="sandbox.config?.containers?.length">
-        <template #header>{{ $t('sandbox.configContainers') }} ({{ sandbox.config.containers.length }})</template>
-        <div v-for="(c, ci) in sandbox.config.containers" :key="ci" class="cont-box">
+      <el-card
+        v-if="sandbox.config?.containers?.length"
+        class="section"
+      >
+        <template #header>
+          {{ $t('sandbox.configContainers') }} ({{ sandbox.config.containers.length }})
+        </template>
+        <div
+          v-for="(c, ci) in sandbox.config.containers"
+          :key="ci"
+          class="cont-box"
+        >
           <h4>{{ c.name || `${$t('sandbox.containerLabel')} ${ci+1}` }}</h4>
-          <el-descriptions :column="4" border size="small">
-            <el-descriptions-item :label="$t('table.image')" :span="2"><code>{{ c.image }}</code></el-descriptions-item>
-            <el-descriptions-item :label="$t('table.command')" :span="2">{{ c.command?.join(' ') || '-' }}</el-descriptions-item>
+          <el-descriptions
+            :column="4"
+            border
+            size="small"
+          >
+            <el-descriptions-item
+              :label="$t('table.image')"
+              :span="2"
+            >
+              <code>{{ c.image }}</code>
+            </el-descriptions-item>
+            <el-descriptions-item
+              :label="$t('table.command')"
+              :span="2"
+            >
+              {{ c.command?.join(' ') || '-' }}
+            </el-descriptions-item>
           </el-descriptions>
-          <div v-if="c.ports?.length" class="sub">
+          <div
+            v-if="c.ports?.length"
+            class="sub"
+          >
             <strong>{{ $t('table.port') }}:</strong>
-            <el-tag v-for="(p, pi) in c.ports" :key="pi" size="small" style="margin-right:4px">{{ p.containerPort || p.container }}{{ p.protocol ? '/'+p.protocol : '' }}{{ p.hostPort ? '→'+p.hostPort : '' }}</el-tag>
+            <el-tag
+              v-for="(p, pi) in c.ports"
+              :key="pi"
+              size="small"
+              style="margin-right:4px"
+            >
+              {{ p.containerPort || p.container }}{{ p.protocol ? '/'+p.protocol : '' }}{{ p.hostPort ? '→'+p.hostPort : '' }}
+            </el-tag>
           </div>
-          <div v-if="c.resources?.limits" class="sub">
+          <div
+            v-if="c.resources?.limits"
+            class="sub"
+          >
             <strong>{{ $t('table.resources') }}:</strong>
             <span v-if="c.resources.limits.cpu">{{ c.resources.limits.cpu }}{{ $t('sandbox.cores') }} </span>
             <span v-if="c.resources.limits.memory">{{ c.resources.limits.memory }}Mi</span>
             <span v-else>-</span>
           </div>
-          <div v-if="c.env?.length" class="sub">
+          <div
+            v-if="c.env?.length"
+            class="sub"
+          >
             <strong>{{ $t('table.env') }}:</strong>
-            <el-tag v-for="(e, ei) in c.env" :key="ei" size="small" style="margin-right:4px">{{ e.name }}={{ e.value || e.valueFrom || '' }}</el-tag>
+            <el-tag
+              v-for="(e, ei) in c.env"
+              :key="ei"
+              size="small"
+              style="margin-right:4px"
+            >
+              {{ e.name }}={{ e.value || e.valueFrom || '' }}
+            </el-tag>
           </div>
-          <div v-else-if="c.env && typeof c.env === 'object' && !Array.isArray(c.env)" class="sub">
+          <div
+            v-else-if="c.env && typeof c.env === 'object' && !Array.isArray(c.env)"
+            class="sub"
+          >
             <strong>{{ $t('table.env') }}:</strong>
-            <el-tag v-for="(v,k) in c.env" :key="k" size="small" style="margin-right:4px">{{ k }}={{ v }}</el-tag>
+            <el-tag
+              v-for="(v,k) in c.env"
+              :key="k"
+              size="small"
+              style="margin-right:4px"
+            >
+              {{ k }}={{ v }}
+            </el-tag>
           </div>
-          <div v-if="c.volumeMounts?.length" class="sub">
+          <div
+            v-if="c.volumeMounts?.length"
+            class="sub"
+          >
             <strong>{{ $t('table.volume') }}:</strong>
-            <el-tag v-for="(vl, vi) in c.volumeMounts" :key="vi" size="small" style="margin-right:4px">{{ vl.volumeId || vl.mountPath }}{{ vl.mountPath ? '→'+vl.mountPath : '' }}</el-tag>
+            <el-tag
+              v-for="(vl, vi) in c.volumeMounts"
+              :key="vi"
+              size="small"
+              style="margin-right:4px"
+            >
+              {{ vl.volumeId || vl.mountPath }}{{ vl.mountPath ? '→'+vl.mountPath : '' }}
+            </el-tag>
           </div>
-          <div v-if="c.livenessProbe" class="sub">
+          <div
+            v-if="c.livenessProbe"
+            class="sub"
+          >
             <strong>{{ $t('sandbox.livenessProbe') }}:</strong> <code>{{ fmtCmd(c.livenessProbe.exec?.command) }}</code>
             <span class="muted"> {{ $t('table.delay') }}{{ c.livenessProbe.initialDelaySeconds }}s/{{ $t('table.interval') }}{{ c.livenessProbe.periodSeconds }}s</span>
           </div>
-          <div v-if="c.readinessProbe" class="sub">
+          <div
+            v-if="c.readinessProbe"
+            class="sub"
+          >
             <strong>{{ $t('sandbox.readinessProbe') }}:</strong> <code>{{ fmtCmd(c.readinessProbe.exec?.command) }}</code>
             <span class="muted"> {{ $t('table.interval') }}{{ c.readinessProbe.periodSeconds }}s/{{ $t('table.delay') }}{{ c.readinessProbe.initialDelaySeconds }}s</span>
           </div>
@@ -163,13 +481,52 @@
 
       <!-- Events -->
       <el-card class="section">
-        <template #header>{{ $t('sandbox.events') }} ({{ sandbox.events?.length || 0 }})</template>
-        <el-table :data="sandbox.events || []" :empty-text="$t('sandbox.noEvents')" size="small">
-          <el-table-column :label="$t('sandbox.time')" width="180"><template #default="{ row }">{{ fmtEventTime(row) }}</template></el-table-column>
-          <el-table-column :label="$t('sandbox.type')" width="80"><template #default="{ row }"><el-tag :type="row.type==='Warning'?'warning':'info'" size="small">{{ row.type }}</el-tag></template></el-table-column>
-          <el-table-column prop="reason" :label="$t('sandbox.reason')" width="140" />
-          <el-table-column prop="message" :label="$t('sandbox.message')" />
-          <el-table-column :label="$t('sandbox.count')" width="70"><template #default="{ row }">{{ row.count ?? 1 }}</template></el-table-column>
+        <template #header>
+          {{ $t('sandbox.events') }} ({{ sandbox.events?.length || 0 }})
+        </template>
+        <el-table
+          :data="sandbox.events || []"
+          :empty-text="$t('sandbox.noEvents')"
+          size="small"
+        >
+          <el-table-column
+            :label="$t('sandbox.time')"
+            width="180"
+          >
+            <template #default="{ row }">
+              {{ fmtEventTime(row) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('sandbox.type')"
+            width="80"
+          >
+            <template #default="{ row }">
+              <el-tag
+                :type="row.type==='Warning'?'warning':'info'"
+                size="small"
+              >
+                {{ row.type }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="reason"
+            :label="$t('sandbox.reason')"
+            width="140"
+          />
+          <el-table-column
+            prop="message"
+            :label="$t('sandbox.message')"
+          />
+          <el-table-column
+            :label="$t('sandbox.count')"
+            width="70"
+          >
+            <template #default="{ row }">
+              {{ row.count ?? 1 }}
+            </template>
+          </el-table-column>
         </el-table>
       </el-card>
 
@@ -177,62 +534,174 @@
       <el-card class="section">
         <template #header>
           <span>{{ $t('sandbox.logs') }}</span>
-          <span v-if="logActive" class="log-count">{{ logLines.length }} lines</span>
+          <span
+            v-if="logActive"
+            class="log-count"
+          >{{ logLines.length }} lines</span>
 
           <!-- Stream mode status -->
           <template v-if="logMode === 'stream'">
-            <el-tag v-if="wsStatus === 'connected'" type="success" size="small" effect="plain" style="margin-left:6px">{{ $t('sandbox.logConnected') }}</el-tag>
-            <el-tag v-else-if="wsStatus === 'closed' || wsStatus === 'error'" type="info" size="small" effect="plain" style="margin-left:6px">
+            <el-tag
+              v-if="wsStatus === 'connected'"
+              type="success"
+              size="small"
+              effect="plain"
+              style="margin-left:6px"
+            >
+              {{ $t('sandbox.logConnected') }}
+            </el-tag>
+            <el-tag
+              v-else-if="wsStatus === 'closed' || wsStatus === 'error'"
+              type="info"
+              size="small"
+              effect="plain"
+              style="margin-left:6px"
+            >
               {{ wsStatus === 'error' ? $t('sandbox.logError') : $t('sandbox.logDisconnected') }}
             </el-tag>
           </template>
           <template v-else>
-            <span v-if="logLastFetch && logActive" class="log-fetch-time">Fetched {{ logLastFetch }}</span>
-            <el-tag v-if="logFetchError" type="danger" size="small" effect="plain" style="margin-left:6px">{{ logFetchError }}</el-tag>
+            <span
+              v-if="logLastFetch && logActive"
+              class="log-fetch-time"
+            >Fetched {{ logLastFetch }}</span>
+            <el-tag
+              v-if="logFetchError"
+              type="danger"
+              size="small"
+              effect="plain"
+              style="margin-left:6px"
+            >
+              {{ logFetchError }}
+            </el-tag>
           </template>
 
           <!-- Log mode badge -->
-          <el-tag size="small" effect="plain" style="margin-left:6px" :type="logMode === 'stream' ? '' : 'warning'">{{ logMode === 'stream' ? 'WebSocket' : 'HTTP Poll' }}</el-tag>
+          <el-tag
+            size="small"
+            effect="plain"
+            style="margin-left:6px"
+            :type="logMode === 'stream' ? '' : 'warning'"
+          >
+            {{ logMode === 'stream' ? 'WebSocket' : 'HTTP Poll' }}
+          </el-tag>
 
           <div class="log-actions">
             <span class="log-toolbar">
               <!-- Stream controls -->
               <template v-if="logMode === 'stream' && ws">
-                <el-checkbox v-model="logFollow" size="small" style="margin-right:8px">{{ $t('sandbox.logFollow') }}</el-checkbox>
+                <el-checkbox
+                  v-model="logFollow"
+                  size="small"
+                  style="margin-right:8px"
+                >{{ $t('sandbox.logFollow') }}</el-checkbox>
               </template>
               <!-- Snapshot controls -->
               <template v-if="logMode === 'snapshot' && logActive">
-                <el-select v-model="logPollInterval" size="small" style="width:80px;margin-right:8px" @change="restartPollLogs">
-                  <el-option :value="0" label="Manual" />
-                  <el-option :value="3000" label="3s" />
-                  <el-option :value="5000" label="5s" />
-                  <el-option :value="10000" label="10s" />
+                <el-select
+                  v-model="logPollInterval"
+                  size="small"
+                  style="width:80px;margin-right:8px"
+                  @change="restartPollLogs"
+                >
+                  <el-option
+                    :value="0"
+                    label="Manual"
+                  />
+                  <el-option
+                    :value="3000"
+                    label="3s"
+                  />
+                  <el-option
+                    :value="5000"
+                    label="5s"
+                  />
+                  <el-option
+                    :value="10000"
+                    label="10s"
+                  />
                 </el-select>
               </template>
               <!-- Common controls -->
-              <el-select v-model="logTail" size="small" style="width:80px;margin-right:8px" @change="reopenLogs">
-                <el-option :value="200" label="200" />
-                <el-option :value="500" label="500" />
-                <el-option :value="1000" label="1000" />
+              <el-select
+                v-model="logTail"
+                size="small"
+                style="width:80px;margin-right:8px"
+                @change="reopenLogs"
+              >
+                <el-option
+                  :value="200"
+                  label="200"
+                />
+                <el-option
+                  :value="500"
+                  label="500"
+                />
+                <el-option
+                  :value="1000"
+                  label="1000"
+                />
               </el-select>
-              <el-button size="small" text @click="logLines=[]">{{ $t('sandbox.logClear') }}</el-button>
+              <el-button
+                size="small"
+                text
+                @click="logLines=[]"
+              >{{ $t('sandbox.logClear') }}</el-button>
             </span>
             <!-- Snapshot: manual fetch button -->
-            <el-button v-if="logMode === 'snapshot' && logActive" size="small" style="margin-left:4px" @click="fetchLogs" :loading="logFetching">Refresh</el-button>
-            <el-button size="small" style="margin-left:4px" @click="toggleLogs">{{ logActive ? $t('sandbox.logClose') : $t('sandbox.logOpen') }}</el-button>
+            <el-button
+              v-if="logMode === 'snapshot' && logActive"
+              size="small"
+              style="margin-left:4px"
+              :loading="logFetching"
+              @click="fetchLogs"
+            >
+              Refresh
+            </el-button>
+            <el-button
+              size="small"
+              style="margin-left:4px"
+              @click="toggleLogs"
+            >
+              {{ logActive ? $t('sandbox.logClose') : $t('sandbox.logOpen') }}
+            </el-button>
           </div>
         </template>
-        <div v-if="logActive" class="log-viewer" ref="logRef" @scroll="onLogScroll">
-          <div v-for="(line, i) in logLines" :key="i" class="log-line" :class="line.cls">{{ line.text }}</div>
-          <div v-if="!logLines.length" class="log-placeholder">{{ logFetching ? 'Loading...' : $t('sandbox.logWaiting') }}</div>
+        <div
+          v-if="logActive"
+          ref="logRef"
+          class="log-viewer"
+          @scroll="onLogScroll"
+        >
+          <div
+            v-for="(line, i) in logLines"
+            :key="i"
+            class="log-line"
+            :class="line.cls"
+          >
+            {{ line.text }}
+          </div>
+          <div
+            v-if="!logLines.length"
+            class="log-placeholder"
+          >
+            {{ logFetching ? 'Loading...' : $t('sandbox.logWaiting') }}
+          </div>
         </div>
-        <div v-else class="log-viewer log-placeholder" style="min-height:80px">
+        <div
+          v-else
+          class="log-viewer log-placeholder"
+          style="min-height:80px"
+        >
           {{ $t('sandbox.logHint') }}
         </div>
       </el-card>
     </div>
 
-    <el-empty v-else-if="!loading" :description="$t('sandbox.notFound')" />
+    <el-empty
+      v-else-if="!loading"
+      :description="$t('sandbox.notFound')"
+    />
   </div>
 </template>
 
@@ -242,6 +711,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
+import { type StatusTagMap, lookup } from '../../utils/codec'
 
 const route = useRoute()
 const router = useRouter()
@@ -417,10 +887,16 @@ function ctStatusType(c: any): string {
   const s = ctStatus(c).toLowerCase()
   return s.includes('running') ? 'success' : s.includes('wait') || s.includes('pending') ? 'warning' : 'info'
 }
-function statusType(s: string) {
-  const m: Record<string, string> = { Running: 'success', Pending: 'warning', Failed: 'danger', Stopped: 'info', Terminated: 'info', Deleted: 'info' }
-  return m[s] || 'info'
+const sandboxStatusTags: StatusTagMap<SandboxStatus> = {
+  Running: 'success',
+  Pending: 'warning',
+  Scheduling: 'warning',
+  Failed: 'danger',
+  Stopped: 'info',
+  Terminated: 'info',
+  Deleted: 'info',
 }
+function statusType(s: string) { return lookup(sandboxStatusTags, s, 'info') }
 function fmt(ts: number | undefined) { return ts ? new Date(ts).toLocaleString() : '-' }
 function fmtStr(s: string | undefined) { return s ? new Date(s).toLocaleString() : '-' }
 function fmtEventTime(e: any): string {
@@ -430,11 +906,6 @@ function fmtEventTime(e: any): string {
 }
 function fmtCmd(cmd: string[] | undefined): string {
   return cmd?.join(' ') || '-'
-}
-function fmtNetwork(net: any): string {
-  if (!net) return '-'
-  const o = typeof net === 'string' ? (() => { try { return JSON.parse(net) } catch { return null } })() : net
-  return o?.externalIp || o?.eipAddress || o?.publicIp || o?.privateIp || o?.internalIp || o?.ip || JSON.stringify(o)
 }
 
 async function load() {

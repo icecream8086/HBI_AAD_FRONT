@@ -2,56 +2,141 @@
   <div>
     <div class="page-head">
       <h2>{{ $t('action.orgTitle') }}</h2>
-      <el-button type="primary" @click="openCreateOrg">{{ $t('action.createOrg') }}</el-button>
+      <el-button
+        type="primary"
+        @click="openCreateOrg"
+      >
+        {{ $t('action.createOrg') }}
+      </el-button>
     </div>
 
     <template v-if="orgs.length">
-    <el-card v-for="org in orgs" :key="org.id" class="org-card">
-      <template #header>
-        <div class="org-header">
-          <strong>{{ org.name }}</strong>
-          <div class="org-actions">
-            <el-button size="small" @click="openCreateProject(org.id)">{{ $t('action.createProject') }}</el-button>
+      <el-card
+        v-for="org in orgs"
+        :key="org.id"
+        class="org-card"
+      >
+        <template #header>
+          <div class="org-header">
+            <strong>{{ org.name }}</strong>
+            <div class="org-actions">
+              <el-button
+                size="small"
+                @click="openCreateProject(org.id)"
+              >
+                {{ $t('action.createProject') }}
+              </el-button>
+            </div>
           </div>
+        </template>
+        <div v-if="projects[org.id]?.length">
+          <el-table
+            :data="projects[org.id]"
+            size="small"
+          >
+            <el-table-column
+              prop="name"
+              :label="$t('action.projectName')"
+              min-width="140"
+            />
+            <el-table-column
+              prop="id"
+              label="ID"
+              width="200"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              :label="$t('table.createdAt')"
+              width="170"
+            >
+              <template #default="{ row }">
+                {{ fmt(row.createdAt) }}
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
-      </template>
-      <div v-if="projects[org.id]?.length">
-        <el-table :data="projects[org.id]" size="small">
-          <el-table-column prop="name" :label="$t('action.projectName')" min-width="140" />
-          <el-table-column prop="id" label="ID" width="200" show-overflow-tooltip />
-          <el-table-column :label="$t('table.createdAt')" width="170">
-            <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-          </el-table-column>
-        </el-table>
-      </div>
-      <div v-else class="dim">{{ $t('action.noProjects') }}</div>
-    </el-card>
+        <div
+          v-else
+          class="dim"
+        >
+          {{ $t('action.noProjects') }}
+        </div>
+      </el-card>
     </template>
-    <div v-if="!loading && !orgs.length" class="empty-state">{{ $t('action.noOrgs') }}</div>
+    <div
+      v-if="!loading && !orgs.length"
+      class="empty-state"
+    >
+      {{ $t('action.noOrgs') }}
+    </div>
 
     <!-- Create Org Dialog -->
-    <el-dialog v-model="orgDlg.show" :title="$t('action.createOrgTitle')" width="400px" destroy-on-close>
-      <el-form :model="orgDlg.form" label-width="80px">
-        <el-form-item :label="$t('action.orgName')" required>
-          <el-input v-model="orgDlg.form.name" placeholder="My Organization" />
+    <el-dialog
+      v-model="orgDlg.show"
+      :title="$t('action.createOrgTitle')"
+      width="400px"
+      destroy-on-close
+    >
+      <el-form
+        :model="orgDlg.form"
+        label-width="80px"
+      >
+        <el-form-item
+          :label="$t('action.orgName')"
+          required
+        >
+          <el-input
+            v-model="orgDlg.form.name"
+            placeholder="My Organization"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="orgDlg.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="orgDlg.saving" @click="handleCreateOrg">{{ $t('table.create') }}</el-button>
+        <el-button @click="orgDlg.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="orgDlg.saving"
+          @click="handleCreateOrg"
+        >
+          {{ $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
 
     <!-- Create Project Dialog -->
-    <el-dialog v-model="projectDlg.show" :title="$t('action.createProjectTitle')" width="400px" destroy-on-close>
-      <el-form :model="projectDlg.form" label-width="80px">
-        <el-form-item :label="$t('action.projectName')" required>
-          <el-input v-model="projectDlg.form.name" placeholder="My Project" />
+    <el-dialog
+      v-model="projectDlg.show"
+      :title="$t('action.createProjectTitle')"
+      width="400px"
+      destroy-on-close
+    >
+      <el-form
+        :model="projectDlg.form"
+        label-width="80px"
+      >
+        <el-form-item
+          :label="$t('action.projectName')"
+          required
+        >
+          <el-input
+            v-model="projectDlg.form.name"
+            placeholder="My Project"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="projectDlg.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="projectDlg.saving" @click="handleCreateProject">{{ $t('table.create') }}</el-button>
+        <el-button @click="projectDlg.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="projectDlg.saving"
+          @click="handleCreateProject"
+        >
+          {{ $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

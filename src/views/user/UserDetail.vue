@@ -1,30 +1,65 @@
 <template>
   <div v-loading="loading">
-    <el-button text @click="$router.push('/users')" class="back">{{ $t('user.back') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/users')"
+    >
+      {{ $t('user.back') }}
+    </el-button>
 
     <div v-if="user">
       <h2>{{ user.name }}</h2>
 
-      <el-form label-width="120px" style="max-width:600px">
+      <el-form
+        label-width="120px"
+        style="max-width:600px"
+      >
         <el-form-item label="ID">
-          <el-input :model-value="user.id" disabled />
+          <el-input
+            :model-value="user.id"
+            disabled
+          />
         </el-form-item>
         <el-form-item :label="$t('user.name')">
           <el-input v-model="form.name" />
         </el-form-item>
         <el-form-item :label="$t('user.email')">
-          <el-input :model-value="user.email" disabled />
+          <el-input
+            :model-value="user.email"
+            disabled
+          />
         </el-form-item>
         <el-form-item :label="$t('user.role')">
           <el-select v-model="form.role">
-            <el-option label="Viewer" value="Viewer" />
-            <el-option label="Operator" value="Operator" />
-            <el-option label="Root" value="root" />
+            <el-option
+              label="Viewer"
+              value="Viewer"
+            />
+            <el-option
+              label="Operator"
+              value="Operator"
+            />
+            <el-option
+              label="Root"
+              value="root"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="saving" @click="handleSave">{{ $t('user.save') }}</el-button>
-          <el-button @click="handleRefresh" :disabled="refreshing">{{ $t('user.refreshCache') }}{{ refreshing ? $t('user.refreshing') : '' }}</el-button>
+          <el-button
+            type="primary"
+            :loading="saving"
+            @click="handleSave"
+          >
+            {{ $t('user.save') }}
+          </el-button>
+          <el-button
+            :disabled="refreshing"
+            @click="handleRefresh"
+          >
+            {{ $t('user.refreshCache') }}{{ refreshing ? $t('user.refreshing') : '' }}
+          </el-button>
         </el-form-item>
       </el-form>
 
@@ -32,13 +67,30 @@
       <el-card class="section">
         <template #header>
           <span>{{ $t('user.loginPolicy') }}</span>
-          <el-button size="small" style="float:right;margin-left:6px" @click="fetchPolicy">{{ $t('user.refresh') }}</el-button>
-          <el-button size="small" style="float:right" @click="openPolicyEdit">{{ $t('user.editPolicy') }}</el-button>
+          <el-button
+            size="small"
+            style="float:right;margin-left:6px"
+            @click="fetchPolicy"
+          >
+            {{ $t('user.refresh') }}
+          </el-button>
+          <el-button
+            size="small"
+            style="float:right"
+            @click="openPolicyEdit"
+          >
+            {{ $t('user.editPolicy') }}
+          </el-button>
         </template>
         <div v-if="policy">
-          <el-descriptions :column="2" border>
+          <el-descriptions
+            :column="2"
+            border
+          >
             <el-descriptions-item :label="$t('user.enabled')">
-              <el-tag :type="policy.enabled?'success':'danger'">{{ policy.enabled ? '是' : '否' }}</el-tag>
+              <el-tag :type="policy.enabled?'success':'danger'">
+                {{ policy.enabled ? '是' : '否' }}
+              </el-tag>
             </el-descriptions-item>
             <el-descriptions-item :label="$t('user.timeLimit')">
               {{ policy.timeRanges?.length ? policy.timeRanges.map((t:any)=>`${t.start}-${t.end}`).join('; ') : $t('common.none') }}
@@ -48,35 +100,95 @@
             </el-descriptions-item>
           </el-descriptions>
         </div>
-        <el-empty v-else :description="$t('user.noPolicy')" :image-size="60" />
+        <el-empty
+          v-else
+          :description="$t('user.noPolicy')"
+          :image-size="60"
+        />
       </el-card>
 
-      <el-dialog v-model="showPolicyDialog" :title="$t('user.policyTitle')" width="550px">
-        <el-form :model="policyForm" label-width="120px">
+      <el-dialog
+        v-model="showPolicyDialog"
+        :title="$t('user.policyTitle')"
+        width="550px"
+      >
+        <el-form
+          :model="policyForm"
+          label-width="120px"
+        >
           <el-form-item :label="$t('user.enabled')">
             <el-switch v-model="policyForm.enabled" />
           </el-form-item>
           <el-form-item :label="$t('user.ipWhitelist')">
-            <el-select v-model="policyForm.allowedCIDRs" multiple filterable allow-create default-first-option style="width:100%" :placeholder="$t('user.cidrPlaceholder')">
-              <el-option v-for="c in policyForm.allowedCIDRs" :key="c" :label="c" :value="c" />
+            <el-select
+              v-model="policyForm.allowedCIDRs"
+              multiple
+              filterable
+              allow-create
+              default-first-option
+              style="width:100%"
+              :placeholder="$t('user.cidrPlaceholder')"
+            >
+              <el-option
+                v-for="c in policyForm.allowedCIDRs"
+                :key="c"
+                :label="c"
+                :value="c"
+              />
             </el-select>
           </el-form-item>
           <el-form-item :label="$t('user.timeLimit')">
-            <div v-for="(r, i) in policyForm.timeRanges" :key="i" class="range-row">
-              <el-input v-model="r.start" placeholder="09:00" style="width:100px" size="small" />
+            <div
+              v-for="(r, i) in policyForm.timeRanges"
+              :key="i"
+              class="range-row"
+            >
+              <el-input
+                v-model="r.start"
+                placeholder="09:00"
+                style="width:100px"
+                size="small"
+              />
               <span style="margin:0 6px">至</span>
-              <el-input v-model="r.end" placeholder="18:00" style="width:100px" size="small" />
+              <el-input
+                v-model="r.end"
+                placeholder="18:00"
+                style="width:100px"
+                size="small"
+              />
               <span style="margin:0 6px;font-size:12px;color:var(--el-text-color-secondary)">周</span>
               <span style="font-size:12px;color:var(--el-text-color-secondary)">{{ Array.isArray(r.days) ? r.days.join(',') : (r.days || '') }}</span>
-              <el-button type="danger" size="small" @click="policyForm.timeRanges.splice(i,1)" circle>−</el-button>
+              <el-button
+                type="danger"
+                size="small"
+                circle
+                @click="policyForm.timeRanges.splice(i,1)"
+              >
+                −
+              </el-button>
             </div>
-            <el-button size="small" @click="policyForm.timeRanges.push({start:'09:00',end:'18:00',days:[1,2,3,4,5]})">{{ $t('user.addTimeRange') }}</el-button>
-            <p class="hint">{{ $t('user.timeHint') }}</p>
+            <el-button
+              size="small"
+              @click="policyForm.timeRanges.push({start:'09:00',end:'18:00',days:[1,2,3,4,5]})"
+            >
+              {{ $t('user.addTimeRange') }}
+            </el-button>
+            <p class="hint">
+              {{ $t('user.timeHint') }}
+            </p>
           </el-form-item>
         </el-form>
         <template #footer>
-          <el-button @click="showPolicyDialog=false">{{ $t('table.cancel') }}</el-button>
-          <el-button type="primary" :loading="savingPolicy" @click="handleSavePolicy">{{ $t('user.save') }}</el-button>
+          <el-button @click="showPolicyDialog=false">
+            {{ $t('table.cancel') }}
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="savingPolicy"
+            @click="handleSavePolicy"
+          >
+            {{ $t('user.save') }}
+          </el-button>
         </template>
       </el-dialog>
 
@@ -84,62 +196,138 @@
       <el-card class="section">
         <template #header>
           <span>{{ $t('user.userGroups') }} ({{ userGroups.length }})</span>
-          <el-button size="small" style="float:right" @click="showGroupDialog = true">{{ $t('user.manageGroups') }}</el-button>
+          <el-button
+            size="small"
+            style="float:right"
+            @click="showGroupDialog = true"
+          >
+            {{ $t('user.manageGroups') }}
+          </el-button>
         </template>
         <div v-if="userGroups.length">
-          <el-tag v-for="g in userGroups" :key="g.id" style="margin-right:6px;margin-bottom:6px">
+          <el-tag
+            v-for="g in userGroups"
+            :key="g.id"
+            style="margin-right:6px;margin-bottom:6px"
+          >
             {{ g.name }}
           </el-tag>
         </div>
-        <el-empty v-else :description="$t('user.noGroups')" :image-size="50" />
+        <el-empty
+          v-else
+          :description="$t('user.noGroups')"
+          :image-size="50"
+        />
       </el-card>
 
-      <el-dialog v-model="showGroupDialog" :title="$t('user.manageGroupsTitle')" width="500px">
-        <p class="group-hint">{{ $t('user.groupHint') }}</p>
+      <el-dialog
+        v-model="showGroupDialog"
+        :title="$t('user.manageGroupsTitle')"
+        width="500px"
+      >
+        <p class="group-hint">
+          {{ $t('user.groupHint') }}
+        </p>
         <el-checkbox-group v-model="selectedGroupIds">
-          <div v-for="g in allGroups" :key="g.id" class="group-item">
-            <el-checkbox :value="g.id" :label="`${g.name} (${(g.memberIds?.length||0)} 人)`" />
+          <div
+            v-for="g in allGroups"
+            :key="g.id"
+            class="group-item"
+          >
+            <el-checkbox
+              :value="g.id"
+              :label="`${g.name} (${(g.memberIds?.length||0)} 人)`"
+            />
           </div>
         </el-checkbox-group>
         <template #footer>
-          <el-button @click="showGroupDialog=false">{{ $t('table.cancel') }}</el-button>
-          <el-button type="primary" :loading="savingGroups" @click="handleSaveGroups">{{ $t('user.save') }}</el-button>
+          <el-button @click="showGroupDialog=false">
+            {{ $t('table.cancel') }}
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="savingGroups"
+            @click="handleSaveGroups"
+          >
+            {{ $t('user.save') }}
+          </el-button>
         </template>
       </el-dialog>
 
       <!-- Public Key -->
       <el-card class="section">
-        <template #header>{{ $t('user.ed25519Key') }}</template>
+        <template #header>
+          {{ $t('user.ed25519Key') }}
+        </template>
         <div v-if="publicKey !== null">
           <code style="word-break:break-all">{{ publicKey }}</code>
         </div>
-        <el-empty v-else :description="$t('user.noPublicKey')" :image-size="60" />
+        <el-empty
+          v-else
+          :description="$t('user.noPublicKey')"
+          :image-size="60"
+        />
       </el-card>
 
       <!-- User Caps -->
       <el-card class="section">
         <template #header>
           <span>{{ $t('user.userCaps') }}</span>
-          <el-button size="small" style="float:right" @click="openCapsEdit">{{ $t('table.edit') }}</el-button>
+          <el-button
+            size="small"
+            style="float:right"
+            @click="openCapsEdit"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
         </template>
         <div v-if="userCaps && Object.keys(userCaps).length">
-          <el-tag v-for="(v, k) in userCaps" :key="k" :type="v ? 'success' : 'danger'" style="margin:0 6px 6px 0">
+          <el-tag
+            v-for="(v, k) in userCaps"
+            :key="k"
+            :type="v ? 'success' : 'danger'"
+            style="margin:0 6px 6px 0"
+          >
             {{ k }}: {{ v ? $t('common.yes') : $t('common.no') }}
           </el-tag>
         </div>
-        <el-empty v-else :description="$t('user.noCaps')" :image-size="50" />
+        <el-empty
+          v-else
+          :description="$t('user.noCaps')"
+          :image-size="50"
+        />
       </el-card>
 
-      <el-dialog v-model="showCapsDialog" :title="$t('user.editCaps')" width="400px">
+      <el-dialog
+        v-model="showCapsDialog"
+        :title="$t('user.editCaps')"
+        width="400px"
+      >
         <el-form label-width="100px">
-          <el-form-item v-for="(v, k) in capsForm" :key="k" :label="k">
+          <el-form-item
+            v-for="(v, k) in capsForm"
+            :key="k"
+            :label="k"
+          >
             <el-switch v-model="capsForm[k]" />
           </el-form-item>
-          <el-empty v-if="!Object.keys(capsForm).length" :description="$t('user.noCaps')" :image-size="40" />
+          <el-empty
+            v-if="!Object.keys(capsForm).length"
+            :description="$t('user.noCaps')"
+            :image-size="40"
+          />
         </el-form>
         <template #footer>
-          <el-button @click="showCapsDialog=false">{{ $t('table.cancel') }}</el-button>
-          <el-button type="primary" :loading="savingCaps" @click="handleSaveCaps">{{ $t('user.save') }}</el-button>
+          <el-button @click="showCapsDialog=false">
+            {{ $t('table.cancel') }}
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="savingCaps"
+            @click="handleSaveCaps"
+          >
+            {{ $t('user.save') }}
+          </el-button>
         </template>
       </el-dialog>
 
@@ -147,25 +335,56 @@
       <el-card class="section">
         <template #header>
           <span>{{ $t('user.supplementaryGroups') }}</span>
-          <el-button size="small" style="float:right" @click="showSuppGroupDialog = true">{{ $t('user.addSupplementaryGroup') }}</el-button>
+          <el-button
+            size="small"
+            style="float:right"
+            @click="showSuppGroupDialog = true"
+          >
+            {{ $t('user.addSupplementaryGroup') }}
+          </el-button>
         </template>
         <div v-if="suppGroups.length">
-          <el-tag v-for="gid in suppGroups" :key="gid" closable style="margin:0 6px 6px 0" @close="handleRemoveSuppGroup(gid)">
+          <el-tag
+            v-for="gid in suppGroups"
+            :key="gid"
+            closable
+            style="margin:0 6px 6px 0"
+            @close="handleRemoveSuppGroup(gid)"
+          >
             {{ gid }}
           </el-tag>
         </div>
-        <el-empty v-else :description="$t('user.noSupplementaryGroups')" :image-size="50" />
+        <el-empty
+          v-else
+          :description="$t('user.noSupplementaryGroups')"
+          :image-size="50"
+        />
       </el-card>
 
-      <el-dialog v-model="showSuppGroupDialog" :title="$t('user.addSupplementaryGroup')" width="400px">
+      <el-dialog
+        v-model="showSuppGroupDialog"
+        :title="$t('user.addSupplementaryGroup')"
+        width="400px"
+      >
         <el-form label-width="80px">
           <el-form-item :label="$t('user.supplementaryGid')">
-            <el-input v-model="newSuppGid" placeholder="GID" />
+            <el-input
+              v-model="newSuppGid"
+              placeholder="GID"
+            />
           </el-form-item>
         </el-form>
         <template #footer>
-          <el-button @click="showSuppGroupDialog=false">{{ $t('table.cancel') }}</el-button>
-          <el-button type="primary" :loading="savingSuppGroup" @click="handleAddSuppGroup">{{ $t('table.create') }}</el-button>
+          <el-button @click="showSuppGroupDialog=false">
+            {{ $t('table.cancel') }}
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="savingSuppGroup"
+            @click="handleAddSuppGroup"
+          >
+            {{ $t('table.create') }}
+          </el-button>
         </template>
       </el-dialog>
 
@@ -174,20 +393,48 @@
         <template #header>
           <span>{{ $t('user.sessions') }} ({{ sessions.length }})</span>
         </template>
-        <el-table v-if="sessions.length" :data="sessions" size="small">
-          <el-table-column prop="id" label="Token" width="200">
-            <template #default="{ row }">{{ (row.id || row.token || '').slice(0, 16) }}…</template>
-          </el-table-column>
-          <el-table-column label="Created" width="160">
-            <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-          </el-table-column>
-          <el-table-column :label="$t('table.actions')" width="100">
+        <el-table
+          v-if="sessions.length"
+          :data="sessions"
+          size="small"
+        >
+          <el-table-column
+            prop="id"
+            label="Token"
+            width="200"
+          >
             <template #default="{ row }">
-              <el-button size="small" type="danger" @click="handleRevokeSession(row)">{{ $t('user.sessionRevoke') }}</el-button>
+              {{ (row.id || row.token || '').slice(0, 16) }}…
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Created"
+            width="160"
+          >
+            <template #default="{ row }">
+              {{ fmt(row.createdAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('table.actions')"
+            width="100"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                type="danger"
+                @click="handleRevokeSession(row)"
+              >
+                {{ $t('user.sessionRevoke') }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
-        <el-empty v-else :description="$t('user.noSessions')" :image-size="50" />
+        <el-empty
+          v-else
+          :description="$t('user.noSessions')"
+          :image-size="50"
+        />
       </el-card>
     </div>
   </div>
@@ -312,7 +559,7 @@ const sessions = ref<any[]>([])
 async function fetchSessions() {
   try {
     const res = await api.users.sessions.list({ userId: route.params.id as string })
-    sessions.value = Array.isArray(res) ? res : (res as any)?.items ?? []
+    sessions.value = Array.isArray(res) ? res : (res.items ?? []) as any[]
   } catch { sessions.value = [] }
 }
 

@@ -26,7 +26,7 @@ module.exports = {
       },
     },
     {
-      files: ['src/api/generated/**'],
+      files: ['src/api/generated/**', 'src/api/index-generated.ts'],
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
       },
@@ -34,7 +34,13 @@ module.exports = {
     {
       files: ['src/views/**/*.vue'],
       rules: {
-        '@typescript-eslint/no-explicit-any': 'warn',
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+    {
+      files: ['tests/**', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
       },
     },
   ],

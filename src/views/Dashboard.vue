@@ -3,14 +3,39 @@
     <h2>{{ $t('page.dashboard') }}</h2>
 
     <!-- Stat cards -->
-    <el-row :gutter="16" class="stat-cards">
-      <el-col :span="6" v-for="card in statCards" :key="card.label">
-        <el-card shadow="hover" :body-style="{ padding: '20px' }">
+    <el-row
+      :gutter="16"
+      class="stat-cards"
+    >
+      <el-col
+        v-for="card in statCards"
+        :key="card.label"
+        :span="6"
+      >
+        <el-card
+          shadow="hover"
+          :body-style="{ padding: '20px' }"
+        >
           <div class="stat-card">
-            <div class="stat-label">{{ card.label }}</div>
-            <div class="stat-value">{{ card.value }}</div>
-            <div class="stat-tags" v-if="card.breakdown">
-              <el-tag v-for="b in card.breakdown" :key="b.label" :type="b.type" size="small" effect="plain">{{ b.label }} {{ b.count }}</el-tag>
+            <div class="stat-label">
+              {{ card.label }}
+            </div>
+            <div class="stat-value">
+              {{ card.value }}
+            </div>
+            <div
+              v-if="card.breakdown"
+              class="stat-tags"
+            >
+              <el-tag
+                v-for="b in card.breakdown"
+                :key="b.label"
+                :type="b.type"
+                size="small"
+                effect="plain"
+              >
+                {{ b.label }} {{ b.count }}
+              </el-tag>
             </div>
           </div>
         </el-card>
@@ -18,34 +43,82 @@
     </el-row>
 
     <!-- Resource summary -->
-    <el-row :gutter="16" class="row-section" v-if="resourceSummary">
+    <el-row
+      v-if="resourceSummary"
+      :gutter="16"
+      class="row-section"
+    >
       <el-col :span="24">
         <el-card>
-          <template #header>{{ $t('dashboard.resourceSummary') || 'Resource Summary' }}</template>
-          <el-descriptions :column="6" border size="small">
-            <el-descriptions-item label="CPU">{{ resourceSummary.totalCpu }} cores</el-descriptions-item>
-            <el-descriptions-item label="Memory">{{ resourceSummary.totalMem }} Mi</el-descriptions-item>
-            <el-descriptions-item label="GPU">{{ resourceSummary.totalGpu || 0 }}</el-descriptions-item>
-            <el-descriptions-item label="Containers">{{ resourceSummary.totalContainers }}</el-descriptions-item>
-            <el-descriptions-item label="Instances">{{ resourceSummary.instanceCount }}</el-descriptions-item>
-            <el-descriptions-item label="Regions">{{ resourceSummary.regions.join(', ') || '-' }}</el-descriptions-item>
+          <template #header>
+            {{ $t('dashboard.resourceSummary') || 'Resource Summary' }}
+          </template>
+          <el-descriptions
+            :column="6"
+            border
+            size="small"
+          >
+            <el-descriptions-item label="CPU">
+              {{ resourceSummary.totalCpu }} cores
+            </el-descriptions-item>
+            <el-descriptions-item label="Memory">
+              {{ resourceSummary.totalMem }} Mi
+            </el-descriptions-item>
+            <el-descriptions-item label="GPU">
+              {{ resourceSummary.totalGpu || 0 }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Containers">
+              {{ resourceSummary.totalContainers }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Instances">
+              {{ resourceSummary.instanceCount }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Regions">
+              {{ resourceSummary.regions.join(', ') || '-' }}
+            </el-descriptions-item>
           </el-descriptions>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" class="row-section">
+    <el-row
+      :gutter="16"
+      class="row-section"
+    >
       <!-- Server info -->
       <el-col :span="14">
         <el-card>
-          <template #header>{{ $t('dashboard.serverInfo') }}</template>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item :label="$t('dashboard.name')">{{ info.name || '-' }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('dashboard.version')">{{ info.version || '-' }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('dashboard.platform')">{{ info.platform || '-' }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('dashboard.uptime')">{{ formatUptime(info.uptime) }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('dashboard.features')" :span="2">
-              <el-tag v-for="f in info.features" :key="f" size="small" class="tag">{{ f }}</el-tag>
+          <template #header>
+            {{ $t('dashboard.serverInfo') }}
+          </template>
+          <el-descriptions
+            :column="2"
+            border
+          >
+            <el-descriptions-item :label="$t('dashboard.name')">
+              {{ info.name || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('dashboard.version')">
+              {{ info.version || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('dashboard.platform')">
+              {{ info.platform || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('dashboard.uptime')">
+              {{ formatUptime(info.uptime) }}
+            </el-descriptions-item>
+            <el-descriptions-item
+              :label="$t('dashboard.features')"
+              :span="2"
+            >
+              <el-tag
+                v-for="f in info.features"
+                :key="f"
+                size="small"
+                class="tag"
+              >
+                {{ f }}
+              </el-tag>
               <span v-if="!info.features?.length">-</span>
             </el-descriptions-item>
           </el-descriptions>
@@ -55,9 +128,14 @@
       <!-- Quick actions -->
       <el-col :span="10">
         <el-card>
-          <template #header>{{ $t('dashboard.quickActions') }}</template>
+          <template #header>
+            {{ $t('dashboard.quickActions') }}
+          </template>
           <div class="quick-actions">
-            <el-button type="primary" @click="$router.push('/sandboxes')">
+            <el-button
+              type="primary"
+              @click="$router.push('/sandboxes')"
+            >
               {{ $t('dashboard.manageSandboxes') }}
             </el-button>
             <el-button @click="$router.push('/templates')">
@@ -70,12 +148,24 @@
         </el-card>
 
         <el-card class="user-card">
-          <template #header>{{ $t('dashboard.currentUser') }}</template>
+          <template #header>
+            {{ $t('dashboard.currentUser') }}
+          </template>
           <div v-if="user">
             <p><strong>{{ user.name }}</strong> ({{ user.email }})</p>
-            <el-tag :type="roleTag" size="small">{{ user.role }}</el-tag>
+            <el-tag
+              :type="roleTag"
+              size="small"
+            >
+              {{ user.role }}
+            </el-tag>
           </div>
-          <p v-else class="muted">{{ $t('dashboard.notLoggedIn') }}</p>
+          <p
+            v-else
+            class="muted"
+          >
+            {{ $t('dashboard.notLoggedIn') }}
+          </p>
         </el-card>
       </el-col>
     </el-row>

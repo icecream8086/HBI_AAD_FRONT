@@ -3,70 +3,198 @@
     <h2>{{ $t('event.title') }}</h2>
 
     <!-- Status + Config -->
-    <el-card v-if="status" class="status-card">
-      <el-descriptions :column="3" border>
+    <el-card
+      v-if="status"
+      class="status-card"
+    >
+      <el-descriptions
+        :column="3"
+        border
+      >
         <el-descriptions-item :label="$t('event.status')">
-          <el-tag :type="status.running?'success':'info'" effect="dark" size="large">
+          <el-tag
+            :type="status.running?'success':'info'"
+            effect="dark"
+            size="large"
+          >
             {{ status.running ? (status.paused ? $t('event.paused') : $t('event.running')) : $t('event.stopped') }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('event.uptime')">{{ fmtDur(status.uptimeMs) }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('event.processed')">{{ status.processedCount }} {{ $t('event.count') }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('event.uptime')">
+          {{ fmtDur(status.uptimeMs) }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('event.processed')">
+          {{ status.processedCount }} {{ $t('event.count') }}
+        </el-descriptions-item>
         <el-descriptions-item :label="$t('event.queueBacklog')">
-          <el-tag :type="status.queueSize>0?'warning':'info'" size="large">
+          <el-tag
+            :type="status.queueSize>0?'warning':'info'"
+            size="large"
+          >
             {{ status.queueSize }} {{ $t('event.waiting') }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('event.tickInterval')">{{ status.config.intervalMs }}ms</el-descriptions-item>
-        <el-descriptions-item :label="$t('event.autoStart')">{{ status.config.autoStart ? $t('event.yes') : $t('event.no') }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('event.tickInterval')">
+          {{ status.config.intervalMs }}ms
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('event.autoStart')">
+          {{ status.config.autoStart ? $t('event.yes') : $t('event.no') }}
+        </el-descriptions-item>
       </el-descriptions>
 
       <div class="actions">
-        <el-button v-if="!status.running" type="success" @click="cmd('start')" :loading="busy">{{ $t('event.start') }}</el-button>
-        <el-button v-if="status.running && !status.paused" @click="cmd('pause')" :loading="busy">{{ $t('event.pause') }}</el-button>
-        <el-button v-if="status.paused" @click="cmd('resume')" :loading="busy">{{ $t('event.resume') }}</el-button>
-        <el-button v-if="status.running" type="warning" @click="cmd('stop')" :loading="busy">{{ $t('event.stop') }}</el-button>
-        <el-button @click="fetchStatus">{{ $t('event.refresh') }}</el-button>
-        <el-button size="small" type="info" plain @click="handleTick" :loading="ticking">[dev] 处理积压事件</el-button>
+        <el-button
+          v-if="!status.running"
+          type="success"
+          :loading="busy"
+          @click="cmd('start')"
+        >
+          {{ $t('event.start') }}
+        </el-button>
+        <el-button
+          v-if="status.running && !status.paused"
+          :loading="busy"
+          @click="cmd('pause')"
+        >
+          {{ $t('event.pause') }}
+        </el-button>
+        <el-button
+          v-if="status.paused"
+          :loading="busy"
+          @click="cmd('resume')"
+        >
+          {{ $t('event.resume') }}
+        </el-button>
+        <el-button
+          v-if="status.running"
+          type="warning"
+          :loading="busy"
+          @click="cmd('stop')"
+        >
+          {{ $t('event.stop') }}
+        </el-button>
+        <el-button @click="fetchStatus">
+          {{ $t('event.refresh') }}
+        </el-button>
+        <el-button
+          size="small"
+          type="info"
+          plain
+          :loading="ticking"
+          @click="handleTick"
+        >
+          [dev] 处理积压事件
+        </el-button>
       </div>
 
       <el-divider>{{ $t('event.loopParams') }}</el-divider>
-      <el-form :model="cfgForm" inline class="config-form">
-        <el-form-item :label="$t('event.interval')"><el-input-number v-model="cfgForm.intervalMs" :min="1000" :step="1000" /> ms</el-form-item>
-        <el-form-item :label="$t('event.batchPer')"><el-input-number v-model="cfgForm.batchSize" :min="0" /> {{ $t('event.count') }}</el-form-item>
-        <el-form-item :label="$t('event.queueLimit')"><el-input-number v-model="cfgForm.maxQueueSize" :min="0" /> {{ $t('event.count') }}</el-form-item>
-        <el-form-item><el-button type="primary" @click="handleConfigure" :loading="busy">{{ $t('event.applyParams') }}</el-button></el-form-item>
+      <el-form
+        :model="cfgForm"
+        inline
+        class="config-form"
+      >
+        <el-form-item :label="$t('event.interval')">
+          <el-input-number
+            v-model="cfgForm.intervalMs"
+            :min="1000"
+            :step="1000"
+          /> ms
+        </el-form-item>
+        <el-form-item :label="$t('event.batchPer')">
+          <el-input-number
+            v-model="cfgForm.batchSize"
+            :min="0"
+          /> {{ $t('event.count') }}
+        </el-form-item>
+        <el-form-item :label="$t('event.queueLimit')">
+          <el-input-number
+            v-model="cfgForm.maxQueueSize"
+            :min="0"
+          /> {{ $t('event.count') }}
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="busy"
+            @click="handleConfigure"
+          >
+            {{ $t('event.applyParams') }}
+          </el-button>
+        </el-form-item>
       </el-form>
     </el-card>
-    <el-empty v-else-if="!loading" :description="$t('event.cannotFetch')" :image-size="80" />
+    <el-empty
+      v-else-if="!loading"
+      :description="$t('event.cannotFetch')"
+      :image-size="80"
+    />
 
     <!-- Pending events -->
     <el-card class="section">
       <template #header>
         <span>{{ $t('event.pendingEvents') }}</span>
-        <el-tag v-if="pending.length" size="small" style="margin-left:6px">{{ pending.length }}</el-tag>
+        <el-tag
+          v-if="pending.length"
+          size="small"
+          style="margin-left:6px"
+        >
+          {{ pending.length }}
+        </el-tag>
       </template>
-      <div v-if="pending.length" class="pending-list">
-        <div v-for="evt in pending" :key="evt.id" class="pending-item">
+      <div
+        v-if="pending.length"
+        class="pending-list"
+      >
+        <div
+          v-for="evt in pending"
+          :key="evt.id"
+          class="pending-item"
+        >
           <code class="pending-id">{{ evt.id.slice(0, 16) }}…</code>
-          <el-tag size="small">{{ evt.type }}</el-tag>
+          <el-tag size="small">
+            {{ evt.type }}
+          </el-tag>
         </div>
       </div>
-      <el-empty v-else :description="$t('event.noPending')" :image-size="50" />
+      <el-empty
+        v-else
+        :description="$t('event.noPending')"
+        :image-size="50"
+      />
     </el-card>
 
     <!-- Push event -->
     <el-card class="section">
-      <template #header>{{ $t('event.pushEvent') }}</template>
-      <el-form :model="evtForm" inline @keyup.enter="handleCreate">
+      <template #header>
+        {{ $t('event.pushEvent') }}
+      </template>
+      <el-form
+        :model="evtForm"
+        inline
+        @keyup.enter="handleCreate"
+      >
         <el-form-item :label="$t('event.eventType')">
-          <el-input v-model="evtForm.type" placeholder="例: game.start, user.login" style="width:280px" />
+          <el-input
+            v-model="evtForm.type"
+            placeholder="例: game.start, user.login"
+            style="width:280px"
+          />
         </el-form-item>
         <el-form-item :label="$t('event.dataJson')">
-          <el-input v-model="evtForm.payload" placeholder='例: {"gameId":"mc-1"}' style="width:320px" />
+          <el-input
+            v-model="evtForm.payload"
+            placeholder="例: {&quot;gameId&quot;:&quot;mc-1&quot;}"
+            style="width:320px"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleCreate" :loading="creating">{{ $t('event.pushToQueue') }}</el-button>
+          <el-button
+            type="primary"
+            :loading="creating"
+            @click="handleCreate"
+          >
+            {{ $t('event.pushToQueue') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>

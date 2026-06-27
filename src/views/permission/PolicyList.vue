@@ -1,41 +1,120 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/permissions')" class="back">{{ $t('permission.back') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/permissions')"
+    >
+      {{ $t('permission.back') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('permission.policyList') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('permission.createPolicy') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('permission.createPolicy') }}
+      </el-button>
     </div>
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('table.name')">
-          <el-input v-model="filter.name" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
-    <el-table :data="policies || []" v-loading="loading" stripe :empty-text="$t('table.empty')" @sort-change="onSort">
-      <el-table-column prop="name" :label="$t('permission.name')" min-width="150" sortable="custom" />
-      <el-table-column prop="effect" :label="$t('permission.effect')" width="80">
+    <el-table
+      v-loading="loading"
+      :data="policies || []"
+      stripe
+      :empty-text="$t('table.empty')"
+      @sort-change="onSort"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('permission.name')"
+        min-width="150"
+        sortable="custom"
+      />
+      <el-table-column
+        prop="effect"
+        :label="$t('permission.effect')"
+        width="80"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.effect==='allow'?'success':'danger'" size="small">{{ row.effect }}</el-tag>
+          <el-tag
+            :type="row.effect==='allow'?'success':'danger'"
+            size="small"
+          >
+            {{ row.effect }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('permission.actions')" min-width="200" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.actions?.join(', ') }}</template>
-      </el-table-column>
-      <el-table-column prop="resource" :label="$t('permission.resource')" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="priority" :label="$t('permission.priority')" width="80" sortable="custom" />
-      <el-table-column :label="$t('permission.enabled')" width="90">
+      <el-table-column
+        :label="$t('permission.actions')"
+        min-width="200"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-tag :type="row.enabled?'success':'info'" size="small">{{ row.enabled?$t('common.yes'):$t('common.no') }}</el-tag>
+          {{ row.actions?.join(', ') }}
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column
+        prop="resource"
+        :label="$t('permission.resource')"
+        min-width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="priority"
+        :label="$t('permission.priority')"
+        width="80"
+        sortable="custom"
+      />
+      <el-table-column
+        :label="$t('permission.enabled')"
+        width="90"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          <el-tag
+            :type="row.enabled?'success':'info'"
+            size="small"
+          >
+            {{ row.enabled?$t('common.yes'):$t('common.no') }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -58,21 +137,39 @@
     >
       <!-- Mode switch -->
       <div class="mode-bar">
-        <el-radio-group v-model="exprMode" size="small">
-          <el-radio-button value="form">{{ $t('permission.formMode') }}</el-radio-button>
-          <el-radio-button value="expression">{{ $t('permission.expressionMode') }}</el-radio-button>
+        <el-radio-group
+          v-model="exprMode"
+          size="small"
+        >
+          <el-radio-button value="form">
+            {{ $t('permission.formMode') }}
+          </el-radio-button>
+          <el-radio-button value="expression">
+            {{ $t('permission.expressionMode') }}
+          </el-radio-button>
         </el-radio-group>
       </div>
 
       <!-- Graphical form mode -->
-      <el-form v-if="exprMode === 'form'" :model="form" label-width="80px">
+      <el-form
+        v-if="exprMode === 'form'"
+        :model="form"
+        label-width="80px"
+      >
         <el-form-item :label="$t('permission.name')">
-          <el-input v-model="form.name" :placeholder="$t('permission.name')" />
+          <el-input
+            v-model="form.name"
+            :placeholder="$t('permission.name')"
+          />
         </el-form-item>
         <el-form-item :label="$t('permission.effect')">
           <el-radio-group v-model="form.effect">
-            <el-radio value="allow">{{ $t('permission.allow') }}</el-radio>
-            <el-radio value="deny">{{ $t('permission.deny') }}</el-radio>
+            <el-radio value="allow">
+              {{ $t('permission.allow') }}
+            </el-radio>
+            <el-radio value="deny">
+              {{ $t('permission.deny') }}
+            </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item :label="$t('permission.actions')">
@@ -82,19 +179,33 @@
             :rows="3"
             :placeholder="$t('permission.expressionActionsHint')"
           />
-          <div class="hint">{{ $t('permission.expressionActionsHint') }}</div>
+          <div class="hint">
+            {{ $t('permission.expressionActionsHint') }}
+          </div>
         </el-form-item>
         <el-form-item :label="$t('permission.resource')">
-          <el-input v-model="form.resource" :placeholder="$t('permission.expressionResourceHint')" />
-          <div class="hint">{{ $t('permission.expressionResourceHint') }}</div>
+          <el-input
+            v-model="form.resource"
+            :placeholder="$t('permission.expressionResourceHint')"
+          />
+          <div class="hint">
+            {{ $t('permission.expressionResourceHint') }}
+          </div>
         </el-form-item>
         <el-form-item :label="$t('permission.priority')">
-          <el-input-number v-model="form.priority" :min="0" :max="9999" />
+          <el-input-number
+            v-model="form.priority"
+            :min="0"
+            :max="9999"
+          />
         </el-form-item>
       </el-form>
 
       <!-- Expression mode -->
-      <div v-else class="expr-panel">
+      <div
+        v-else
+        class="expr-panel"
+      >
         <el-input
           v-model="exprJson"
           type="textarea"
@@ -103,7 +214,10 @@
           :placeholder="{formMode: 'Enter JSON policy expression'}"
           @input="onExprInput"
         />
-        <div class="expr-status" :class="exprStatus">
+        <div
+          class="expr-status"
+          :class="exprStatus"
+        >
           <span v-if="exprStatus === 'valid'">✓ {{ $t('permission.expressionValid') }}</span>
           <span v-else-if="exprStatus === 'invalid'">✗ {{ $t('permission.expressionInvalid') }}: {{ exprError }}</span>
           <span v-else>&nbsp;</span>
@@ -111,8 +225,14 @@
       </div>
 
       <template #footer>
-        <el-button @click="dialog.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">
+        <el-button @click="dialog.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
           {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
         </el-button>
       </template>
@@ -163,16 +283,19 @@ function joinActions(arr: string[]): string {
   return arr.join('\n')
 }
 
+// Holds the original expression JSON to preserve unrecognized fields across form ↔ JSON round-trips
+let originalExpr: Record<string, unknown> | null = null
+
 // ── Serialize form → JSON expression ──
-function toPolicyObject() {
-  const p: Record<string, unknown> = {
-    name: form.name || undefined,
-    effect: form.effect,
-    actions: parseActions(form.actionsText),
-    priority: form.priority,
-  }
-  if (form.resource) p.resource = form.resource
-  return p
+function toPolicyObject(): Record<string, unknown> {
+  const base = originalExpr ? { ...originalExpr } : {}
+  base.name = form.name || undefined
+  base.effect = form.effect
+  base.actions = parseActions(form.actionsText)
+  base.priority = form.priority
+  if (form.resource) base.resource = form.resource
+  else delete base.resource
+  return base
 }
 
 function syncFormToExpr() {
@@ -186,11 +309,12 @@ function syncExprToForm(): boolean {
   try {
     const obj = JSON.parse(exprJson.value)
     if (typeof obj !== 'object' || obj === null) throw new Error('Not an object')
-    form.name = obj.name ?? ''
-    form.effect = obj.effect === 'deny' ? 'deny' : 'allow'
-    form.actionsText = Array.isArray(obj.actions) ? joinActions(obj.actions) : ''
-    form.resource = obj.resource ?? ''
-    form.priority = typeof obj.priority === 'number' ? obj.priority : 100
+    originalExpr = obj as Record<string, unknown>
+    form.name = (obj as Record<string, unknown>).name as string ?? ''
+    form.effect = (obj as Record<string, unknown>).effect === 'deny' ? 'deny' : 'allow'
+    form.actionsText = Array.isArray((obj as Record<string, unknown>).actions) ? joinActions((obj as Record<string, unknown>).actions as string[]) : ''
+    form.resource = (obj as Record<string, unknown>).resource as string ?? ''
+    form.priority = typeof (obj as Record<string, unknown>).priority === 'number' ? (obj as Record<string, unknown>).priority as number : 100
     exprStatus.value = 'valid'
     exprError.value = ''
     return true

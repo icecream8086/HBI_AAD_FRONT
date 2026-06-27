@@ -5,7 +5,7 @@ import {
   validateFields, buildProviderOverrides, parseInput,
   FIELD_LIBRARY,
 } from './field-ast'
-import type { Rule, FieldNode, ValidationError } from './field-ast'
+import type { Rule, FieldNode } from './field-ast'
 
 const allFields = FIELD_LIBRARY[0].fields // 阿里云通用
 
@@ -13,9 +13,6 @@ const allFields = FIELD_LIBRARY[0].fields // 阿里云通用
 
 function v(values: Record<string, unknown>, extra?: Record<string, unknown>) {
   return { ...values, ...extra }
-}
-function fieldKeys(fields: readonly FieldNode[]) {
-  return fields.map(f => f.key).sort()
 }
 
 // ═══════════════════════════════════════════
@@ -82,7 +79,6 @@ describe('evalRule', () => {
 // ═══════════════════════════════════════════
 
 describe('visibility — EIP mutual exclusion', () => {
-  const eipKeys = ['autoCreateEip', 'eipBandwidth', 'eipISP', 'eipInstanceId', 'eipCommonBandwidthPackage']
 
   function visible(fieldKey: string, values: Record<string, unknown>) {
     const f = allFields.find(x => x.key === fieldKey)!

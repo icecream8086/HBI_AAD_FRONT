@@ -4,58 +4,116 @@
       <h2>{{ $t('action.dashboardTitle') }}</h2>
     </div>
 
-    <el-row :gutter="16" v-if="stats">
+    <el-row
+      v-if="stats"
+      :gutter="16"
+    >
       <el-col :span="6">
         <el-card class="stat-card">
-          <div class="stat-value">{{ stats.totalRuns }}</div>
-          <div class="stat-label">{{ $t('action.totalRuns') }}</div>
+          <div class="stat-value">
+            {{ stats.totalRuns }}
+          </div>
+          <div class="stat-label">
+            {{ $t('action.totalRuns') }}
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card class="stat-card">
-          <div class="stat-value active">{{ stats.activeRuns }}</div>
-          <div class="stat-label">{{ $t('action.activeRuns') }}</div>
+          <div class="stat-value active">
+            {{ stats.activeRuns }}
+          </div>
+          <div class="stat-label">
+            {{ $t('action.activeRuns') }}
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card class="stat-card">
-          <div class="stat-value" :class="stats.successRate >= 80 ? 'success' : 'warning'">{{ stats.successRate?.toFixed(1) }}%</div>
-          <div class="stat-label">{{ $t('action.successRate') }}</div>
+          <div
+            class="stat-value"
+            :class="stats.successRate >= 80 ? 'success' : 'warning'"
+          >
+            {{ stats.successRate?.toFixed(1) }}%
+          </div>
+          <div class="stat-label">
+            {{ $t('action.successRate') }}
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card class="stat-card">
-          <div class="stat-value">{{ stats.runnersOnline }}</div>
-          <div class="stat-label">{{ $t('action.runnersOnline') }}</div>
+          <div class="stat-value">
+            {{ stats.runnersOnline }}
+          </div>
+          <div class="stat-label">
+            {{ $t('action.runnersOnline') }}
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" style="margin-top:16px" v-if="stats">
+    <el-row
+      v-if="stats"
+      :gutter="16"
+      style="margin-top:16px"
+    >
       <el-col :span="12">
         <el-card>
-          <template #header><strong>{{ $t('action.byTrigger') }}</strong></template>
+          <template #header>
+            <strong>{{ $t('action.byTrigger') }}</strong>
+          </template>
           <div v-if="stats.byTrigger && Object.keys(stats.byTrigger).length">
-            <div v-for="(v, k) in stats.byTrigger" :key="k" class="trigger-row">
+            <div
+              v-for="(v, k) in stats.byTrigger"
+              :key="k"
+              class="trigger-row"
+            >
               <span class="trigger-name">{{ k }}</span>
-              <el-progress :percentage="pct(v, totalFromTrigger)" :color="triggerColor(k)" :show-text="false" style="flex:1;margin:0 12px" />
+              <el-progress
+                :percentage="pct(v, totalFromTrigger)"
+                :color="triggerColor(k)"
+                :show-text="false"
+                style="flex:1;margin:0 12px"
+              />
               <span class="trigger-count">{{ v }}</span>
             </div>
           </div>
-          <div v-else class="dim">-</div>
+          <div
+            v-else
+            class="dim"
+          >
+            -
+          </div>
         </el-card>
       </el-col>
       <el-col :span="12">
         <el-card>
-          <template #header><strong>{{ $t('action.byStatus') }}</strong></template>
+          <template #header>
+            <strong>{{ $t('action.byStatus') }}</strong>
+          </template>
           <div v-if="stats.byStatus && Object.keys(stats.byStatus).length">
-            <div v-for="(v, k) in stats.byStatus" :key="k" class="trigger-row">
+            <div
+              v-for="(v, k) in stats.byStatus"
+              :key="k"
+              class="trigger-row"
+            >
               <span class="trigger-name">{{ k }}</span>
-              <el-progress :percentage="pct(v, totalFromStatus)" :color="statusBarColor(k)" :show-text="false" style="flex:1;margin:0 12px" />
+              <el-progress
+                :percentage="pct(v, totalFromStatus)"
+                :color="statusBarColor(k)"
+                :show-text="false"
+                style="flex:1;margin:0 12px"
+              />
               <span class="trigger-count">{{ v }}</span>
             </div>
           </div>
-          <div v-else class="dim">-</div>
+          <div
+            v-else
+            class="dim"
+          >
+            -
+          </div>
         </el-card>
       </el-col>
     </el-row>

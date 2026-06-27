@@ -1,36 +1,99 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('subnet.title') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('subnet.create') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('subnet.create') }}
+      </el-button>
     </div>
 
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('table.name')">
-          <el-input v-model="filter.name" :placeholder="$t('table.name')" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            :placeholder="$t('table.name')"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="items" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('subnet.name')" min-width="140" />
-      <el-table-column prop="cidr" :label="$t('subnet.cidr')" width="130" />
-      <el-table-column prop="subnetPrefix" :label="$t('subnet.subnetPrefix')" width="100" />
-      <el-table-column :label="$t('topology.instanceTitle')" min-width="140">
-        <template #default="{ row }">{{ fmtInstance(row.instanceId) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="150">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+    <el-table
+      v-loading="loading"
+      :data="items"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('subnet.name')"
+        min-width="140"
+      />
+      <el-table-column
+        prop="cidr"
+        :label="$t('subnet.cidr')"
+        width="130"
+      />
+      <el-table-column
+        prop="subnetPrefix"
+        :label="$t('subnet.subnetPrefix')"
+        width="100"
+      />
+      <el-table-column
+        :label="$t('topology.instanceTitle')"
+        min-width="140"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          {{ fmtInstance(row.instanceId) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="150"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -47,27 +110,71 @@
       @current-change="fetchData"
     />
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('subnet.edit') : $t('subnet.create')" width="520px" destroy-on-close>
-      <el-form :model="form" label-width="110px">
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit ? $t('subnet.edit') : $t('subnet.create')"
+      width="520px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="110px"
+      >
         <el-form-item :label="$t('subnet.name')">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item :label="$t('subnet.cidr')" required>
-          <el-input v-model="form.cidr" :placeholder="$t('subnet.cidrPlaceholder')" />
+        <el-form-item
+          :label="$t('subnet.cidr')"
+          required
+        >
+          <el-input
+            v-model="form.cidr"
+            :placeholder="$t('subnet.cidrPlaceholder')"
+          />
         </el-form-item>
         <el-form-item :label="$t('subnet.subnetPrefix')">
-          <el-input-number v-model="form.subnetPrefix" :min="16" :max="28" style="width:100%" />
+          <el-input-number
+            v-model="form.subnetPrefix"
+            :min="16"
+            :max="28"
+            style="width:100%"
+          />
         </el-form-item>
-        <el-form-item :label="$t('topology.instanceTitle')" required>
-          <el-select v-model="form.instanceId" filterable style="width:100%">
-            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+        <el-form-item
+          :label="$t('topology.instanceTitle')"
+          required
+        >
+          <el-select
+            v-model="form.instanceId"
+            filterable
+            style="width:100%"
+          >
+            <el-option
+              v-for="inst in instances"
+              :key="inst.id"
+              :label="`${inst.name} (${inst.platform}/${inst.region})`"
+              :value="inst.id"
+            />
           </el-select>
-          <div v-if="selectedInst" class="inherit-hint">← {{ selectedInst.platform }} · {{ selectedInst.region }}</div>
+          <div
+            v-if="selectedInst"
+            class="inherit-hint"
+          >
+            ← {{ selectedInst.platform }} · {{ selectedInst.region }}
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

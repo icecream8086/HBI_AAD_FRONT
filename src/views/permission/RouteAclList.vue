@@ -1,38 +1,205 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/permissions')" class="back">{{ $t('permission.back') }}</el-button>
-    <div class="page-head"><h2>{{ $t('permission.aclTitle') }}</h2><el-button type="primary" size="small" @click="openCreate">{{ $t('permission.createAcl') }}</el-button></div>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/permissions')"
+    >
+      {{ $t('permission.back') }}
+    </el-button>
+    <div class="page-head">
+      <h2>{{ $t('permission.aclTitle') }}</h2><el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('permission.createAcl') }}
+      </el-button>
+    </div>
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('permission.path')">
-          <el-input v-model="filter.pathPrefix" placeholder="/api/" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.pathPrefix"
+            placeholder="/api/"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
-    <el-table :data="acls || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="method" :label="$t('permission.method')" width="80"><template #default="{ row }"><el-tag size="small">{{ row.method }}</el-tag></template></el-table-column>
-      <el-table-column prop="pathPrefix" :label="$t('permission.path')" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="matchType" :label="$t('permission.match')" width="80" />
-      <el-table-column prop="effect" :label="$t('permission.effect')" width="70"><template #default="{ row }"><el-tag :type="row.effect==='allow'?'success':'danger'" size="small">{{ row.effect }}</el-tag></template></el-table-column>
-      <el-table-column :label="$t('permission.userOrGroup')" width="180" show-overflow-tooltip><template #default="{ row }">{{ row.userId ? userName(row.userId) : row.userGroupId ? groupName(row.userGroupId) : '-' }}</template></el-table-column>
-      <el-table-column prop="priority" :label="$t('permission.priority')" width="80" />
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right"><template #default="{ row }"><el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button><el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button></template></el-table-column>
+    <el-table
+      v-loading="loading"
+      :data="acls || []"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="method"
+        :label="$t('permission.method')"
+        width="80"
+      >
+        <template #default="{ row }">
+          <el-tag size="small">
+            {{ row.method }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="pathPrefix"
+        :label="$t('permission.path')"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="matchType"
+        :label="$t('permission.match')"
+        width="80"
+      />
+      <el-table-column
+        prop="effect"
+        :label="$t('permission.effect')"
+        width="70"
+      >
+        <template #default="{ row }">
+          <el-tag
+            :type="row.effect==='allow'?'success':'danger'"
+            size="small"
+          >
+            {{ row.effect }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('permission.userOrGroup')"
+        width="180"
+        show-overflow-tooltip
+      >
+        <template #default="{ row }">
+          {{ row.userId ? userName(row.userId) : row.userGroupId ? groupName(row.userGroupId) : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="priority"
+        :label="$t('permission.priority')"
+        width="80"
+      />
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button><el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
-    <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
+    <el-pagination
+      v-model:current-page="page"
+      v-model:page-size="limit"
+      :total="total"
+      :page-sizes="[10,15,30,50]"
+      layout="total, sizes, prev, pager, next"
+      @size-change="fetchData"
+      @current-change="fetchData"
+    />
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit?$t('permission.editAcl'):$t('permission.createAcl')" width="550px">
-      <el-form :model="form" label-width="100px">
-        <el-form-item :label="$t('permission.method')"><el-select v-model="form.method"><el-option label="GET" value="GET" /><el-option label="POST" value="POST" /><el-option label="PUT" value="PUT" /><el-option label="DELETE" value="DELETE" /><el-option label="*" value="*" /></el-select></el-form-item>
-        <el-form-item :label="$t('permission.pathPrefix')"><el-input v-model="form.pathPrefix" :placeholder="$t('permission.resourcePlaceholder')" /></el-form-item>
-        <el-form-item :label="$t('permission.matchType')"><el-radio-group v-model="form.matchType"><el-radio value="prefix">{{ $t('permission.matchPrefix') }}</el-radio><el-radio value="exact">{{ $t('permission.matchExact') }}</el-radio></el-radio-group></el-form-item>
-        <el-form-item :label="$t('permission.effect')"><el-radio-group v-model="form.effect"><el-radio value="allow">{{ $t('permission.allow') }}</el-radio><el-radio value="deny">{{ $t('permission.deny') }}</el-radio></el-radio-group></el-form-item>
-        <el-form-item :label="$t('permission.userOrGroup')"><el-input v-model="form.userId" :placeholder="$t('permission.userGroupIdPlaceholder')" /></el-form-item>
-        <el-form-item :label="$t('permission.priority')"><el-input-number v-model="form.priority" :min="0" :max="9999" /></el-form-item>
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit?$t('permission.editAcl'):$t('permission.createAcl')"
+      width="550px"
+    >
+      <el-form
+        :model="form"
+        label-width="100px"
+      >
+        <el-form-item :label="$t('permission.method')">
+          <el-select v-model="form.method">
+            <el-option
+              label="GET"
+              value="GET"
+            /><el-option
+              label="POST"
+              value="POST"
+            /><el-option
+              label="PUT"
+              value="PUT"
+            /><el-option
+              label="DELETE"
+              value="DELETE"
+            /><el-option
+              label="*"
+              value="*"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('permission.pathPrefix')">
+          <el-input
+            v-model="form.pathPrefix"
+            :placeholder="$t('permission.resourcePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="$t('permission.matchType')">
+          <el-radio-group v-model="form.matchType">
+            <el-radio value="prefix">
+              {{ $t('permission.matchPrefix') }}
+            </el-radio><el-radio value="exact">
+              {{ $t('permission.matchExact') }}
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item :label="$t('permission.effect')">
+          <el-radio-group v-model="form.effect">
+            <el-radio value="allow">
+              {{ $t('permission.allow') }}
+            </el-radio><el-radio value="deny">
+              {{ $t('permission.deny') }}
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item :label="$t('permission.userOrGroup')">
+          <el-input
+            v-model="form.userId"
+            :placeholder="$t('permission.userGroupIdPlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="$t('permission.priority')">
+          <el-input-number
+            v-model="form.priority"
+            :min="0"
+            :max="9999"
+          />
+        </el-form-item>
       </el-form>
-      <template #footer><el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button><el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit?$t('table.save'):$t('table.create') }}</el-button></template>
+      <template #footer>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button><el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit?$t('table.save'):$t('table.create') }}
+        </el-button>
+      </template>
     </el-dialog>
   </div>
 </template>

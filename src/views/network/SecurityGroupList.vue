@@ -1,40 +1,108 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('securityGroup.title') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('securityGroup.create') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('securityGroup.create') }}
+      </el-button>
     </div>
 
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('table.name')">
-          <el-input v-model="filter.name" :placeholder="$t('table.name')" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            :placeholder="$t('table.name')"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="items" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('securityGroup.name')" min-width="140" />
-      <el-table-column prop="securityGroupId" :label="$t('topology.securityGroupId')" width="140" />
-      <el-table-column :label="$t('topology.instanceTitle')" min-width="140">
-        <template #default="{ row }">{{ fmtInstance(row.instanceId) }}</template>
-      </el-table-column>
-      <el-table-column prop="visibility" :label="$t('securityGroup.visibility')" width="80">
+    <el-table
+      v-loading="loading"
+      :data="items"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('securityGroup.name')"
+        min-width="140"
+      />
+      <el-table-column
+        prop="securityGroupId"
+        :label="$t('topology.securityGroupId')"
+        width="140"
+      />
+      <el-table-column
+        :label="$t('topology.instanceTitle')"
+        min-width="140"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.visibility==='public'?'success':'info'" size="small">{{ row.visibility }}</el-tag>
+          {{ fmtInstance(row.instanceId) }}
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="150">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column
+        prop="visibility"
+        :label="$t('securityGroup.visibility')"
+        width="80"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          <el-tag
+            :type="row.visibility==='public'?'success':'info'"
+            size="small"
+          >
+            {{ row.visibility }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="150"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -51,45 +119,123 @@
       @current-change="fetchData"
     />
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('securityGroup.edit') : $t('securityGroup.create')" width="520px" destroy-on-close>
-      <el-form :model="form" label-width="110px">
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit ? $t('securityGroup.edit') : $t('securityGroup.create')"
+      width="520px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="110px"
+      >
         <el-form-item :label="$t('securityGroup.name')">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item :label="$t('topology.instanceTitle')" required>
-          <el-select v-model="form.instanceId" filterable style="width:100%">
-            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+        <el-form-item
+          :label="$t('topology.instanceTitle')"
+          required
+        >
+          <el-select
+            v-model="form.instanceId"
+            filterable
+            style="width:100%"
+          >
+            <el-option
+              v-for="inst in instances"
+              :key="inst.id"
+              :label="`${inst.name} (${inst.platform}/${inst.region})`"
+              :value="inst.id"
+            />
           </el-select>
-          <div v-if="selectedInst" class="inherit-hint">← {{ selectedInst.platform }} · {{ selectedInst.region }}</div>
+          <div
+            v-if="selectedInst"
+            class="inherit-hint"
+          >
+            ← {{ selectedInst.platform }} · {{ selectedInst.region }}
+          </div>
         </el-form-item>
         <div class="cont-card">
-          <div class="section-label">{{ $t('securityGroup.bandwidthControl') }}</div>
-          <el-form-item :label="$t('securityGroup.egressBw')" label-width="130px">
-            <el-input-number v-model="form.egressBandwidth" :min="0" :max="100000" :step="10" style="width:160px" />
+          <div class="section-label">
+            {{ $t('securityGroup.bandwidthControl') }}
+          </div>
+          <el-form-item
+            :label="$t('securityGroup.egressBw')"
+            label-width="130px"
+          >
+            <el-input-number
+              v-model="form.egressBandwidth"
+              :min="0"
+              :max="100000"
+              :step="10"
+              style="width:160px"
+            />
           </el-form-item>
-          <el-form-item :label="$t('securityGroup.ingressBw')" label-width="130px">
-            <el-input-number v-model="form.ingressBandwidth" :min="0" :max="100000" :step="10" style="width:160px" />
+          <el-form-item
+            :label="$t('securityGroup.ingressBw')"
+            label-width="130px"
+          >
+            <el-input-number
+              v-model="form.ingressBandwidth"
+              :min="0"
+              :max="100000"
+              :step="10"
+              style="width:160px"
+            />
           </el-form-item>
-          <el-form-item :label="$t('securityGroup.burstBw')" label-width="130px">
-            <el-input-number v-model="form.burstBandwidth" :min="0" :max="100000" :step="10" style="width:160px" />
+          <el-form-item
+            :label="$t('securityGroup.burstBw')"
+            label-width="130px"
+          >
+            <el-input-number
+              v-model="form.burstBandwidth"
+              :min="0"
+              :max="100000"
+              :step="10"
+              style="width:160px"
+            />
           </el-form-item>
-          <el-form-item :label="$t('securityGroup.qosPriority')" label-width="130px">
-            <el-input-number v-model="form.qosPriority" :min="1" :max="10" :step="1" style="width:160px" />
+          <el-form-item
+            :label="$t('securityGroup.qosPriority')"
+            label-width="130px"
+          >
+            <el-input-number
+              v-model="form.qosPriority"
+              :min="1"
+              :max="10"
+              :step="1"
+              style="width:160px"
+            />
           </el-form-item>
         </div>
         <el-form-item :label="$t('topology.securityGroupId')">
-          <el-input v-model="form.securityGroupId" placeholder="sg-xxx" />
+          <el-input
+            v-model="form.securityGroupId"
+            placeholder="sg-xxx"
+          />
         </el-form-item>
         <el-form-item :label="$t('securityGroup.visibility')">
           <el-radio-group v-model="form.visibility">
-            <el-radio value="public">public</el-radio>
-            <el-radio value="private">private</el-radio>
+            <el-radio value="public">
+              public
+            </el-radio>
+            <el-radio value="private">
+              private
+            </el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

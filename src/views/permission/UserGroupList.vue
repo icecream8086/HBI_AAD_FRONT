@@ -1,91 +1,342 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/permissions')" class="back">{{ $t('permission.back') }}</el-button>
-    <div class="page-head"><h2>{{ $t('permission.userGroupTitle') }}</h2><el-button type="primary" size="small" @click="openCreate">{{ $t('permission.createUserGroup') }}</el-button></div>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/permissions')"
+    >
+      {{ $t('permission.back') }}
+    </el-button>
+    <div class="page-head">
+      <h2>{{ $t('permission.userGroupTitle') }}</h2><el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('permission.createUserGroup') }}
+      </el-button>
+    </div>
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('table.name')">
-          <el-input v-model="filter.name" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
-    <el-table :data="items || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('table.name')" min-width="150" />
-      <el-table-column :label="$t('permission.members')" width="280" show-overflow-tooltip>
+    <el-table
+      v-loading="loading"
+      :data="items || []"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('table.name')"
+        min-width="150"
+      />
+      <el-table-column
+        :label="$t('permission.members')"
+        width="280"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-tag v-for="mid in (row.memberIds?.slice(0,3)||[])" :key="mid" size="small" style="margin-right:4px">
+          <el-tag
+            v-for="mid in (row.memberIds?.slice(0,3)||[])"
+            :key="mid"
+            size="small"
+            style="margin-right:4px"
+          >
             {{ userName(mid) }}
-            <el-tag v-if="row.adminIds?.includes(mid)" size="small" type="warning" style="margin-left:2px">admin</el-tag>
+            <el-tag
+              v-if="row.adminIds?.includes(mid)"
+              size="small"
+              type="warning"
+              style="margin-left:2px"
+            >
+              admin
+            </el-tag>
           </el-tag>
           <span v-if="(row.memberIds?.length||0) > 3">+{{ row.memberIds.length - 3 }}</span>
           <span v-else-if="!row.memberIds?.length">{{ $t('common.none') }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('permission.admins')" width="180" show-overflow-tooltip>
+      <el-table-column
+        :label="$t('permission.admins')"
+        width="180"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-tag v-for="aid in (row.adminIds||[])" :key="aid" size="small" type="warning" style="margin-right:4px">{{ userName(aid) }}</el-tag>
+          <el-tag
+            v-for="aid in (row.adminIds||[])"
+            :key="aid"
+            size="small"
+            type="warning"
+            style="margin-right:4px"
+          >
+            {{ userName(aid) }}
+          </el-tag>
           <span v-if="!row.adminIds?.length">{{ $t('common.none') }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('permission.boundPermGroups')" min-width="180" show-overflow-tooltip>
+      <el-table-column
+        :label="$t('permission.boundPermGroups')"
+        min-width="180"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-tag v-for="g in boundGroups(row.id)" :key="g.id" size="small" style="margin-right:4px;margin-bottom:4px">{{ g.name }}</el-tag>
+          <el-tag
+            v-for="g in boundGroups(row.id)"
+            :key="g.id"
+            size="small"
+            style="margin-right:4px;margin-bottom:4px"
+          >
+            {{ g.name }}
+          </el-tag>
           <span v-if="!boundGroups(row.id).length">{{ $t('common.none') }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('permission.dependencies')" width="160" show-overflow-tooltip><template #default="{ row }">{{ row.dependsOn?.map(id => groupName(id)).join(', ') || $t('common.none') }}</template></el-table-column>
-      <el-table-column :label="$t('table.actions')" width="200" fixed="right">
+      <el-table-column
+        :label="$t('permission.dependencies')"
+        width="160"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" @click="openInvite(row)">{{ $t('permission.invite') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          {{ row.dependsOn?.map(id => groupName(id)).join(', ') || $t('common.none') }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="200"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            @click="openInvite(row)"
+          >
+            {{ $t('permission.invite') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total" :page-sizes="[10,15,30,50]" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
+    <el-pagination
+      v-model:current-page="page"
+      v-model:page-size="limit"
+      :total="total"
+      :page-sizes="[10,15,30,50]"
+      layout="total, sizes, prev, pager, next"
+      @size-change="fetchData"
+      @current-change="fetchData"
+    />
 
     <!-- Bound permission groups dialog -->
-    <el-dialog v-model="permDlg.show" :title="$t('permission.boundPermGroups')" width="600px">
+    <el-dialog
+      v-model="permDlg.show"
+      :title="$t('permission.boundPermGroups')"
+      width="600px"
+    >
       <div v-if="permDlg.groups.length">
-        <div v-for="g in permDlg.groups" :key="g.id" class="perm-group-card">
-          <div class="pg-header"><strong>{{ g.name }}</strong><el-tag size="small" type="info" style="margin-left:6px">{{ $t('permission.ruleCount', { count: g.rules?.length || 0 }) }}</el-tag></div>
-          <div v-if="g.dependsOn?.length" class="pg-deps">{{ $t('permission.inheritsFrom') }}{{ g.dependsOn.map(id => permGroupName(id)).join(', ') }}</div>
-          <el-table :data="g.rules || []" size="small" :empty-text="$t('table.empty')">
-            <el-table-column :label="$t('permission.effect')" width="60"><template #default="{ row: r }"><el-tag :type="r.effect==='allow'?'success':'danger'" size="small">{{ r.effect }}</el-tag></template></el-table-column>
-            <el-table-column :label="$t('permission.actions')" min-width="180"><template #default="{ row: r }">{{ r.actions?.join(', ') }}</template></el-table-column>
-            <el-table-column :label="$t('permission.resource')" width="120"><template #default="{ row: r }">{{ r.resource || '*' }}</template></el-table-column>
-            <el-table-column :label="$t('permission.priority')" width="70" prop="priority" />
+        <div
+          v-for="g in permDlg.groups"
+          :key="g.id"
+          class="perm-group-card"
+        >
+          <div class="pg-header">
+            <strong>{{ g.name }}</strong><el-tag
+              size="small"
+              type="info"
+              style="margin-left:6px"
+            >
+              {{ $t('permission.ruleCount', { count: g.rules?.length || 0 }) }}
+            </el-tag>
+          </div>
+          <div
+            v-if="g.dependsOn?.length"
+            class="pg-deps"
+          >
+            {{ $t('permission.inheritsFrom') }}{{ g.dependsOn.map(id => permGroupName(id)).join(', ') }}
+          </div>
+          <el-table
+            :data="g.rules || []"
+            size="small"
+            :empty-text="$t('table.empty')"
+          >
+            <el-table-column
+              :label="$t('permission.effect')"
+              width="60"
+            >
+              <template #default="{ row: r }">
+                <el-tag
+                  :type="r.effect==='allow'?'success':'danger'"
+                  size="small"
+                >
+                  {{ r.effect }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('permission.actions')"
+              min-width="180"
+            >
+              <template #default="{ row: r }">
+                {{ r.actions?.join(', ') }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('permission.resource')"
+              width="120"
+            >
+              <template #default="{ row: r }">
+                {{ r.resource || '*' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              :label="$t('permission.priority')"
+              width="70"
+              prop="priority"
+            />
           </el-table>
         </div>
       </div>
-      <el-empty v-else :description="$t('permission.noBoundPermGroups')" :image-size="60" />
+      <el-empty
+        v-else
+        :description="$t('permission.noBoundPermGroups')"
+        :image-size="60"
+      />
     </el-dialog>
 
     <!-- Invite dialog -->
-    <el-dialog v-model="inviteDlg.show" :title="$t('permission.inviteMember')" width="450px">
+    <el-dialog
+      v-model="inviteDlg.show"
+      :title="$t('permission.inviteMember')"
+      width="450px"
+    >
       <p style="margin-bottom:12px;color:var(--el-text-color-secondary);font-size:13px">
         {{ $t('permission.inviteTo') }}: <strong>{{ inviteDlg.groupName }}</strong>
       </p>
-      <el-select v-model="inviteDlg.userId" filterable :placeholder="$t('permission.userSelectPlaceholder')" style="width:100%">
-        <el-option v-for="u in users" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" />
+      <el-select
+        v-model="inviteDlg.userId"
+        filterable
+        :placeholder="$t('permission.userSelectPlaceholder')"
+        style="width:100%"
+      >
+        <el-option
+          v-for="u in users"
+          :key="u.id"
+          :label="`${u.name} (${u.email})`"
+          :value="u.id"
+        />
       </el-select>
       <template #footer>
-        <el-button @click="inviteDlg.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="inviting" @click="handleInvite">{{ $t('permission.invite') }}</el-button>
+        <el-button @click="inviteDlg.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="inviting"
+          @click="handleInvite"
+        >
+          {{ $t('permission.invite') }}
+        </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit?$t('permission.editUserGroup'):$t('permission.createUserGroup')" width="550px">
-      <el-form :model="form" label-width="100px">
-        <el-form-item :label="$t('permission.name')"><el-input v-model="form.name" /></el-form-item>
-        <el-form-item :label="$t('permission.admins')"><el-select v-model="form.adminIds" multiple filterable :placeholder="$t('permission.userSelectPlaceholder')" style="width:100%"><el-option v-for="u in users" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" /></el-select></el-form-item>
-        <el-form-item :label="$t('permission.members')"><el-select v-model="form.memberIds" multiple filterable :placeholder="$t('permission.userSelectPlaceholder')" style="width:100%"><el-option v-for="u in users" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" /></el-select></el-form-item>
-        <el-form-item :label="$t('permission.dependencies')"><el-select v-model="form.dependsOn" multiple filterable :placeholder="$t('permission.depSelectPlaceholder')" style="width:100%"><el-option v-for="g in items" :key="g.id" :label="g.name" :value="g.id" /></el-select></el-form-item>
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit?$t('permission.editUserGroup'):$t('permission.createUserGroup')"
+      width="550px"
+    >
+      <el-form
+        :model="form"
+        label-width="100px"
+      >
+        <el-form-item :label="$t('permission.name')">
+          <el-input v-model="form.name" />
+        </el-form-item>
+        <el-form-item :label="$t('permission.admins')">
+          <el-select
+            v-model="form.adminIds"
+            multiple
+            filterable
+            :placeholder="$t('permission.userSelectPlaceholder')"
+            style="width:100%"
+          >
+            <el-option
+              v-for="u in users"
+              :key="u.id"
+              :label="`${u.name} (${u.email})`"
+              :value="u.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('permission.members')">
+          <el-select
+            v-model="form.memberIds"
+            multiple
+            filterable
+            :placeholder="$t('permission.userSelectPlaceholder')"
+            style="width:100%"
+          >
+            <el-option
+              v-for="u in users"
+              :key="u.id"
+              :label="`${u.name} (${u.email})`"
+              :value="u.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('permission.dependencies')">
+          <el-select
+            v-model="form.dependsOn"
+            multiple
+            filterable
+            :placeholder="$t('permission.depSelectPlaceholder')"
+            style="width:100%"
+          >
+            <el-option
+              v-for="g in items"
+              :key="g.id"
+              :label="g.name"
+              :value="g.id"
+            />
+          </el-select>
+        </el-form-item>
       </el-form>
-      <template #footer><el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button><el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit?$t('table.save'):$t('table.create') }}</el-button></template>
+      <template #footer>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button><el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit?$t('table.save'):$t('table.create') }}
+        </el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -108,15 +359,8 @@ const form = reactive({ name: '', memberIds: [] as string[], adminIds: [] as str
 const permDlg = reactive({ show: false, groups: [] as PermissionGroup[] })
 const inviteDlg = reactive({ show: false, groupId: '', groupName: '', userId: '' })
 
-function shortId(id: string) { return id.slice(0,8) }
-
 function boundGroups(ugId: string): PermissionGroup[] {
   return allPermGroups.value.filter(pg => pg.userGroupIds?.includes(ugId))
-}
-
-function showPerms(row: UserGroup) {
-  permDlg.groups = boundGroups(row.id)
-  permDlg.show = true
 }
 
 function openCreate() { dialog.isEdit = false; dialog.editId = ''; form.name = ''; form.memberIds = []; form.adminIds = []; form.dependsOn = []; dialog.show = true }

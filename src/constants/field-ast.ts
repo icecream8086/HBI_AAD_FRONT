@@ -395,6 +395,18 @@ export const INSTANCE_SPEC: Record<string, InstanceSpec> = {
   'ecs.gn6v-c10g1.20xlarge':    { cpu:82,  mem:336,  gpu:'V100',      gpuMem:'16 GB',  gpuCount:8, gpuMode:'dedicated', bandwidth:'35',  pps:'450万',  nvlink:true,  nvlinkMax:8, mig:false, architecture:'Volta' },
 }
 
+// Dev-mode validation: every INSTANCE_SPEC entry must be a valid InstanceSpec
+if (import.meta.env.DEV) {
+  const requiredFields = ['cpu', 'mem', 'gpu', 'gpuMem', 'gpuCount', 'gpuMode', 'bandwidth', 'pps', 'nvlink', 'mig', 'architecture'] as const
+  for (const [key, spec] of Object.entries(INSTANCE_SPEC)) {
+    for (const f of requiredFields) {
+      if ((spec as Record<string, unknown>)[f] === undefined) {
+        console.error(`[INSTANCE_SPEC] "${key}" missing required field: ${f}`)
+      }
+    }
+  }
+}
+
 /** 根据分类标签筛选实例规格 */
 export function filterInstanceTypes(tag: string | null): readonly string[] {
   if (!tag) return ALL_INSTANCE_TYPES as readonly string[]

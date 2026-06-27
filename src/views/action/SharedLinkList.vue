@@ -2,32 +2,93 @@
   <div>
     <div class="page-head">
       <h2>{{ $t('action.sharedLinkTitle') }}</h2>
-      <el-button type="primary" @click="openCreate">{{ $t('action.createSharedLink') }}</el-button>
+      <el-button
+        type="primary"
+        @click="openCreate"
+      >
+        {{ $t('action.createSharedLink') }}
+      </el-button>
     </div>
 
-    <el-table :data="items" v-loading="loading" stripe :empty-text="$t('action.noLinks')">
-      <el-table-column prop="name" :label="$t('action.sharedLinkName')" min-width="140" />
-      <el-table-column label="Link ID" width="200" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.id }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('action.sharedLinkWorkflow')" width="180" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.workflowId }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('action.sharedLinkMaxUses')" width="100">
-        <template #default="{ row }">{{ row.maxUses || $t('action.unlimited') }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('action.sharedLinkExpires')" width="170">
-        <template #default="{ row }">{{ row.expiresAt ? fmt(row.expiresAt) : $t('action.expiresNever') }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('action.sharedLinkDisabled')" width="80">
+    <el-table
+      v-loading="loading"
+      :data="items"
+      stripe
+      :empty-text="$t('action.noLinks')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('action.sharedLinkName')"
+        min-width="140"
+      />
+      <el-table-column
+        label="Link ID"
+        width="200"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-tag :type="row.disabled ? 'danger' : 'success'" size="small">{{ row.disabled ? $t('common.yes') : $t('common.no') }}</el-tag>
+          {{ row.id }}
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="200" fixed="right">
+      <el-table-column
+        :label="$t('action.sharedLinkWorkflow')"
+        width="180"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-button v-if="!row.disabled" size="small" type="warning" @click="handleDisable(row.id)">{{ $t('action.disable') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          {{ row.workflowId }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('action.sharedLinkMaxUses')"
+        width="100"
+      >
+        <template #default="{ row }">
+          {{ row.maxUses || $t('action.unlimited') }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('action.sharedLinkExpires')"
+        width="170"
+      >
+        <template #default="{ row }">
+          {{ row.expiresAt ? fmt(row.expiresAt) : $t('action.expiresNever') }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('action.sharedLinkDisabled')"
+        width="80"
+      >
+        <template #default="{ row }">
+          <el-tag
+            :type="row.disabled ? 'danger' : 'success'"
+            size="small"
+          >
+            {{ row.disabled ? $t('common.yes') : $t('common.no') }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="200"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            v-if="!row.disabled"
+            size="small"
+            type="warning"
+            @click="handleDisable(row.id)"
+          >
+            {{ $t('action.disable') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -38,34 +99,82 @@
       :page-size="limit"
       :total="total"
       layout="prev, pager, next"
-      @current-change="fetchData"
       style="margin-top:16px; justify-content:flex-end"
+      @current-change="fetchData"
     />
 
-    <el-dialog v-model="dlg.show" :title="$t('action.createSharedLinkTitle')" width="480px" destroy-on-close>
-      <el-form :model="dlg.form" label-width="110px">
-        <el-form-item :label="$t('action.name')" required>
-          <el-input v-model="dlg.form.name" placeholder="My Shared Service" />
+    <el-dialog
+      v-model="dlg.show"
+      :title="$t('action.createSharedLinkTitle')"
+      width="480px"
+      destroy-on-close
+    >
+      <el-form
+        :model="dlg.form"
+        label-width="110px"
+      >
+        <el-form-item
+          :label="$t('action.name')"
+          required
+        >
+          <el-input
+            v-model="dlg.form.name"
+            placeholder="My Shared Service"
+          />
         </el-form-item>
-        <el-form-item label="Workflow ID" required>
-          <el-input v-model="dlg.form.workflowId" placeholder="wf_xxx" />
+        <el-form-item
+          label="Workflow ID"
+          required
+        >
+          <el-input
+            v-model="dlg.form.workflowId"
+            placeholder="wf_xxx"
+          />
         </el-form-item>
         <el-form-item label="Password">
-          <el-input v-model="dlg.form.password" type="password" show-password placeholder="Optional" />
+          <el-input
+            v-model="dlg.form.password"
+            type="password"
+            show-password
+            placeholder="Optional"
+          />
         </el-form-item>
         <el-form-item :label="$t('action.sharedLinkMaxUses')">
-          <el-input-number v-model="dlg.form.maxUses" :min="0" :step="1" style="width:100%" />
+          <el-input-number
+            v-model="dlg.form.maxUses"
+            :min="0"
+            :step="1"
+            style="width:100%"
+          />
         </el-form-item>
         <el-form-item label="Concurrent Max">
-          <el-input-number v-model="dlg.form.concurrentMax" :min="0" :step="1" style="width:100%" />
+          <el-input-number
+            v-model="dlg.form.concurrentMax"
+            :min="0"
+            :step="1"
+            style="width:100%"
+          />
         </el-form-item>
         <el-form-item label="Default TTL (s)">
-          <el-input-number v-model="dlg.form.defaultTtlSeconds" :min="0" :step="60" style="width:100%" />
+          <el-input-number
+            v-model="dlg.form.defaultTtlSeconds"
+            :min="0"
+            :step="60"
+            style="width:100%"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dlg.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="dlg.saving" @click="handleSave">{{ $t('table.create') }}</el-button>
+        <el-button @click="dlg.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="dlg.saving"
+          @click="handleSave"
+        >
+          {{ $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -101,8 +210,8 @@ async function fetchData() {
   loading.value = true
   try {
     const res = await api.actions.sharedLinks.list({ page: page.value, limit })
-    items.value = (res as any).items ?? []
-    total.value = (res as any).total ?? 0
+    items.value = (res.items ?? []) as SharedLink[]
+    total.value = res.total ?? 0
   } catch { ElMessage.error(t('action.fetchSharedLinksFailed')) }
   finally { loading.value = false }
 }

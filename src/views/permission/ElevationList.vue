@@ -1,29 +1,80 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('elevation.title') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('elevation.grant') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('elevation.grant') }}
+      </el-button>
     </div>
 
-    <el-table :data="items" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column :label="$t('elevation.userId')" min-width="180">
-        <template #default="{ row }">{{ row.userId }}</template>
-      </el-table-column>
-      <el-table-column prop="role" :label="$t('elevation.role')" width="100">
+    <el-table
+      v-loading="loading"
+      :data="items"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        :label="$t('elevation.userId')"
+        min-width="180"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.role === 'wheel' ? 'danger' : 'warning'" size="small">{{ row.role }}</el-tag>
+          {{ row.userId }}
         </template>
       </el-table-column>
-      <el-table-column :label="$t('elevation.expiresAt')" width="170">
-        <template #default="{ row }">{{ fmt(row.expiresAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="170">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="120" fixed="right">
+      <el-table-column
+        prop="role"
+        :label="$t('elevation.role')"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-button size="small" type="danger" @click="handleRevoke(row.userId)">{{ $t('elevation.revoke') }}</el-button>
+          <el-tag
+            :type="row.role === 'wheel' ? 'danger' : 'warning'"
+            size="small"
+          >
+            {{ row.role }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('elevation.expiresAt')"
+        width="170"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.expiresAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="170"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="120"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleRevoke(row.userId)"
+          >
+            {{ $t('elevation.revoke') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -40,25 +91,72 @@
       @current-change="fetchData"
     />
 
-    <el-dialog v-model="dialog.show" :title="$t('elevation.grant')" width="480px" destroy-on-close>
-      <el-form :model="form" label-width="110px">
-        <el-form-item :label="$t('elevation.userId')" required>
-          <el-select v-model="form.userId" filterable style="width:100%" :placeholder="$t('elevation.userId')">
-            <el-option v-for="u in users" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" />
+    <el-dialog
+      v-model="dialog.show"
+      :title="$t('elevation.grant')"
+      width="480px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="110px"
+      >
+        <el-form-item
+          :label="$t('elevation.userId')"
+          required
+        >
+          <el-select
+            v-model="form.userId"
+            filterable
+            style="width:100%"
+            :placeholder="$t('elevation.userId')"
+          >
+            <el-option
+              v-for="u in users"
+              :key="u.id"
+              :label="`${u.name} (${u.email})`"
+              :value="u.id"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item :label="$t('elevation.duration')" required>
-          <el-select v-model="form.duration" style="width:100%">
-            <el-option label="5 min" :value="5 * 60" />
-            <el-option label="15 min" :value="15 * 60" />
-            <el-option label="30 min" :value="30 * 60" />
-            <el-option label="1 h" :value="60 * 60" />
+        <el-form-item
+          :label="$t('elevation.duration')"
+          required
+        >
+          <el-select
+            v-model="form.duration"
+            style="width:100%"
+          >
+            <el-option
+              label="5 min"
+              :value="5 * 60"
+            />
+            <el-option
+              label="15 min"
+              :value="15 * 60"
+            />
+            <el-option
+              label="30 min"
+              :value="30 * 60"
+            />
+            <el-option
+              label="1 h"
+              :value="60 * 60"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleGrant">{{ $t('elevation.grant') }}</el-button>
+        <el-button @click="dialog.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleGrant"
+        >
+          {{ $t('elevation.grant') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

@@ -5,55 +5,158 @@
     </div>
 
     <el-card class="filters">
-      <el-form :inline="true" @submit.prevent>
+      <el-form
+        :inline="true"
+        @submit.prevent
+      >
         <el-form-item :label="$t('pod.filterStatus')">
-          <el-select v-model="filter.status" clearable :placeholder="$t('pod.filterAll')" style="width:140px">
-            <el-option :label="$t('pod.statusRunning')" value="Running" />
-            <el-option :label="$t('pod.statusStopped')" value="Stopped" />
-            <el-option :label="$t('pod.statusPending')" value="Pending" />
-            <el-option :label="$t('pod.statusFailed')" value="Failed" />
-            <el-option :label="$t('pod.statusTerminated')" value="Terminated" />
+          <el-select
+            v-model="filter.status"
+            clearable
+            :placeholder="$t('pod.filterAll')"
+            style="width:140px"
+          >
+            <el-option
+              :label="$t('pod.statusRunning')"
+              value="Running"
+            />
+            <el-option
+              :label="$t('pod.statusStopped')"
+              value="Stopped"
+            />
+            <el-option
+              :label="$t('pod.statusPending')"
+              value="Pending"
+            />
+            <el-option
+              :label="$t('pod.statusFailed')"
+              value="Failed"
+            />
+            <el-option
+              :label="$t('pod.statusTerminated')"
+              value="Terminated"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="fetchData">{{ $t('table.query') }}</el-button>
-          <el-button @click="filter.status='';fetchData()">{{ $t('table.reset') }}</el-button>
+          <el-button
+            type="primary"
+            @click="fetchData"
+          >
+            {{ $t('table.query') }}
+          </el-button>
+          <el-button @click="filter.status='';fetchData()">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="pods || []" v-loading="loading" stripe style="width:100%" :empty-text="$t('table.empty')">
-      <el-table-column label="" width="50">
+    <el-table
+      v-loading="loading"
+      :data="pods || []"
+      stripe
+      style="width:100%"
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        label=""
+        width="50"
+      >
         <template #default>
-          <el-icon :size="20"><Coin /></el-icon>
+          <el-icon :size="20">
+            <Coin />
+          </el-icon>
         </template>
       </el-table-column>
-      <el-table-column prop="id" :label="$t('table.id')" width="200" show-overflow-tooltip />
-      <el-table-column prop="status" :label="$t('table.status')" width="120">
+      <el-table-column
+        prop="id"
+        :label="$t('table.id')"
+        width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="status"
+        :label="$t('table.status')"
+        width="120"
+      >
         <template #default="{ row }">
-          <el-tag :type="statusType(row.status)" size="small" effect="dark">{{ row.status }}</el-tag>
+          <el-tag
+            :type="statusType(row.status)"
+            size="small"
+            effect="dark"
+          >
+            {{ row.status }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('pod.containerCount')" width="90">
-        <template #default="{ row }">{{ row.containers?.length || 0 }}</template>
-      </el-table-column>
-      <el-table-column prop="providerId" label="Provider ID" width="150" show-overflow-tooltip />
-      <el-table-column :label="$t('table.network')" width="160" show-overflow-tooltip>
-        <template #default="{ row }">{{ fmtNetwork(row.network) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="170">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="200">
+      <el-table-column
+        :label="$t('pod.containerCount')"
+        width="90"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="$router.push(`/sandboxes/pods/${row.providerId}`)">{{ $t('table.detail') }}</el-button>
-          <el-button size="small" type="warning" @click="handleStop(row.providerId)">{{ $t('pod.stop') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.providerId)">{{ $t('table.delete') }}</el-button>
+          {{ row.containers?.length || 0 }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="providerId"
+        label="Provider ID"
+        width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        :label="$t('table.network')"
+        width="160"
+        show-overflow-tooltip
+      >
+        <template #default="{ row }">
+          {{ fmtNetwork(row.network) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="170"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="200"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="$router.push(`/sandboxes/pods/${row.providerId}`)"
+          >
+            {{ $t('table.detail') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="warning"
+            @click="handleStop(row.providerId)"
+          >
+            {{ $t('pod.stop') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.providerId)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
     <div class="page-footer">
-      <el-button v-if="nextCursor" :loading="loading" @click="loadMore">{{ $t('table.loadMore') }}</el-button>
+      <el-button
+        v-if="nextCursor"
+        :loading="loading"
+        @click="loadMore"
+      >
+        {{ $t('table.loadMore') }}
+      </el-button>
     </div>
   </div>
 </template>
@@ -63,6 +166,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { api } from '../../api'
+import { type StatusTagMap, lookup } from '../../utils/codec'
 
 const { t } = useI18n()
 
@@ -73,10 +177,16 @@ const nextCursor = ref<string | undefined>()
 
 const filter = reactive({ status: '' })
 
-function statusType(status: string): string {
-  const m: Record<string, string> = { Running: 'success', Stopped: 'info', Pending: 'warning', Failed: 'danger', Terminated: 'info', Deleted: 'info' }
-  return m[status] || 'info'
+const podStatusTags: StatusTagMap<PodStatus> = {
+  Running: 'success',
+  Stopped: 'info',
+  Pending: 'warning',
+  Scheduling: 'warning',
+  Failed: 'danger',
+  Terminated: 'info',
+  Deleted: 'info',
 }
+function statusType(status: string) { return lookup(podStatusTags, status, 'info') }
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 

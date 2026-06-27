@@ -1,14 +1,22 @@
 <template>
   <div class="login-container">
-    <el-card class="login-card" shadow="always">
+    <el-card
+      class="login-card"
+      shadow="always"
+    >
       <template #header>
         <div class="login-header">
           <div>
             <h2>HBI AAD</h2>
-            <p class="subtitle">{{ $t('login.subtitle') }}</p>
+            <p class="subtitle">
+              {{ $t('login.subtitle') }}
+            </p>
           </div>
           <div class="header-actions">
-            <el-dropdown trigger="click" @command="cmd => setLang(cmd)">
+            <el-dropdown
+              trigger="click"
+              @command="cmd => setLang(cmd)"
+            >
               <span class="lang-btn">
                 <el-icon :size="14"><ChatDotSquare /></el-icon>
                 <span style="margin-left:2px">{{ locale === 'zh-CN' ? '简体中文' : 'English' }}</span>
@@ -16,20 +24,31 @@
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item v-for="opt in LANG_OPTIONS" :key="opt.id" :command="opt.id">
+                  <el-dropdown-item
+                    v-for="opt in LANG_OPTIONS"
+                    :key="opt.id"
+                    :command="opt.id"
+                  >
                     {{ opt.label }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-dropdown trigger="click" @command="cmd => setTheme(cmd)">
+            <el-dropdown
+              trigger="click"
+              @command="cmd => setTheme(cmd)"
+            >
               <span class="theme-btn">
                 <el-icon :size="16"><MagicStick /></el-icon>
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item v-for="t in themes" :key="t.id" :command="t.id">
-                    <el-icon><component :is="t.icon as any" /></el-icon>{{ $t('theme.' + t.id) }}
+                  <el-dropdown-item
+                    v-for="theme in themes"
+                    :key="theme.id"
+                    :command="theme.id"
+                  >
+                    <el-icon><component :is="theme.icon as any" /></el-icon>{{ $t('theme.' + theme.id) }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -38,51 +57,100 @@
         </div>
       </template>
 
-      <el-tabs v-model="activeTab" stretch>
-        <el-tab-pane :label="$t('login.login')" name="login">
+      <el-tabs
+        v-model="activeTab"
+        stretch
+      >
+        <el-tab-pane
+          :label="$t('login.login')"
+          name="login"
+        >
           <el-form
             ref="loginFormRef"
             :model="loginForm"
             :rules="loginRules"
-            @keyup.enter="handleLogin"
             label-position="top"
+            @keyup.enter="handleLogin"
           >
-            <el-form-item :label="$t('login.email')" prop="email">
+            <el-form-item
+              :label="$t('login.email')"
+              prop="email"
+            >
               <el-input v-model="loginForm.email" />
             </el-form-item>
-            <el-form-item :label="$t('login.password')" prop="password">
-              <el-input v-model="loginForm.password" type="password" show-password />
+            <el-form-item
+              :label="$t('login.password')"
+              prop="password"
+            >
+              <el-input
+                v-model="loginForm.password"
+                type="password"
+                show-password
+              />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" :loading="loading" @click="handleLogin" class="full-btn">
+              <el-button
+                type="primary"
+                :loading="loading"
+                class="full-btn"
+                @click="handleLogin"
+              >
                 {{ loading ? $t('login.loggingIn') : $t('login.login') }}
               </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane :label="$t('login.register')" name="register">
+        <el-tab-pane
+          :label="$t('login.register')"
+          name="register"
+        >
           <el-form
             ref="regFormRef"
             :model="regForm"
             :rules="regRules"
-            @keyup.enter="handleRegister"
             label-position="top"
+            @keyup.enter="handleRegister"
           >
-            <el-form-item :label="$t('login.username')" prop="name">
+            <el-form-item
+              :label="$t('login.username')"
+              prop="name"
+            >
               <el-input v-model="regForm.name" />
             </el-form-item>
-            <el-form-item :label="$t('login.email')" prop="email">
+            <el-form-item
+              :label="$t('login.email')"
+              prop="email"
+            >
               <el-input v-model="regForm.email" />
             </el-form-item>
-            <el-form-item :label="$t('login.password')" prop="password">
-              <el-input v-model="regForm.password" type="password" show-password />
+            <el-form-item
+              :label="$t('login.password')"
+              prop="password"
+            >
+              <el-input
+                v-model="regForm.password"
+                type="password"
+                show-password
+              />
             </el-form-item>
-            <el-form-item :label="$t('login.confirmPassword')" prop="confirm">
-              <el-input v-model="regForm.confirm" type="password" show-password />
+            <el-form-item
+              :label="$t('login.confirmPassword')"
+              prop="confirm"
+            >
+              <el-input
+                v-model="regForm.confirm"
+                type="password"
+                show-password
+              />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" :loading="loading" @click="handleRegister" class="full-btn">
+              <el-button
+                type="primary"
+                :loading="loading"
+                class="full-btn"
+                @click="handleRegister"
+              >
                 {{ loading ? $t('login.registering') : $t('login.register') }}
               </el-button>
             </el-form-item>
@@ -91,7 +159,9 @@
       </el-tabs>
 
       <div class="login-footer">
-        <p class="hint">{{ $t('login.hint', { file: 'auth.http', credentials: 'user@example.com / secret123' }) }}</p>
+        <p class="hint">
+          {{ $t('login.hint', { file: 'auth.http', credentials: 'user@example.com / secret123' }) }}
+        </p>
       </div>
     </el-card>
   </div>

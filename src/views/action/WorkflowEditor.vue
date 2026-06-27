@@ -1,14 +1,28 @@
 <template>
   <div>
-    <el-button text @click="$router.push(`/actions/workflows/${workflowId}`)" class="back-btn">{{ $t('action.backToList') }}</el-button>
+    <el-button
+      text
+      class="back-btn"
+      @click="$router.push(`/actions/workflows/${workflowId}`)"
+    >
+      {{ $t('action.backToList') }}
+    </el-button>
 
     <div class="page-head">
       <h2>{{ $t('action.editorTitle') }}</h2>
-      <el-button type="primary" :loading="saving" @click="handleSave">{{ $t('action.editorSave') }}</el-button>
+      <el-button
+        type="primary"
+        :loading="saving"
+        @click="handleSave"
+      >
+        {{ $t('action.editorSave') }}
+      </el-button>
     </div>
 
     <el-card>
-      <p class="editor-hint">{{ $t('action.editorHint') }}</p>
+      <p class="editor-hint">
+        {{ $t('action.editorHint') }}
+      </p>
     </el-card>
 
     <div class="editor-layout">
@@ -21,29 +35,87 @@
       </div>
       <div class="editor-sidebar">
         <el-card>
-          <template #header><strong>{{ $t('action.name') }}</strong></template>
-          <el-input v-model="name" size="small" @keyup.enter="handleSave" />
+          <template #header>
+            <strong>{{ $t('action.name') }}</strong>
+          </template>
+          <el-input
+            v-model="name"
+            size="small"
+            @keyup.enter="handleSave"
+          />
         </el-card>
         <el-card style="margin-top:12px">
-          <template #header><strong>{{ $t('action.triggerType') }}</strong></template>
-          <el-select v-model="triggerType" size="small" style="width:100%">
-            <el-option :label="$t('action.triggerManual')" value="manual" />
-            <el-option :label="$t('action.triggerCron')" value="cron" />
-            <el-option :label="$t('action.triggerHttp')" value="http" />
-            <el-option :label="$t('action.triggerPush')" value="push" />
+          <template #header>
+            <strong>{{ $t('action.triggerType') }}</strong>
+          </template>
+          <el-select
+            v-model="triggerType"
+            size="small"
+            style="width:100%"
+          >
+            <el-option
+              :label="$t('action.triggerManual')"
+              value="manual"
+            />
+            <el-option
+              :label="$t('action.triggerCron')"
+              value="cron"
+            />
+            <el-option
+              :label="$t('action.triggerHttp')"
+              value="http"
+            />
+            <el-option
+              :label="$t('action.triggerPush')"
+              value="push"
+            />
           </el-select>
-          <div v-if="triggerType === 'cron'" style="margin-top:8px">
-            <el-input v-model="cronExpr" size="small" placeholder="0 */6 * * *" />
+          <div
+            v-if="triggerType === 'cron'"
+            style="margin-top:8px"
+          >
+            <el-input
+              v-model="cronExpr"
+              size="small"
+              placeholder="0 */6 * * *"
+            />
           </div>
-          <div v-if="triggerType === 'http'" style="margin-top:8px">
-            <el-input v-model="httpSecret" size="small" placeholder="HMAC signature secret" />
+          <div
+            v-if="triggerType === 'http'"
+            style="margin-top:8px"
+          >
+            <el-input
+              v-model="httpSecret"
+              size="small"
+              placeholder="HMAC signature secret"
+            />
           </div>
         </el-card>
         <el-card style="margin-top:12px">
-          <template #header><strong>Quick Templates</strong></template>
-          <el-button size="small" text @click="insertTemplate('basic')">Basic Job</el-button>
-          <el-button size="small" text @click="insertTemplate('container')">Container Job</el-button>
-          <el-button size="small" text @click="insertTemplate('deploy')">Deploy Pattern</el-button>
+          <template #header>
+            <strong>Quick Templates</strong>
+          </template>
+          <el-button
+            size="small"
+            text
+            @click="insertTemplate('basic')"
+          >
+            Basic Job
+          </el-button>
+          <el-button
+            size="small"
+            text
+            @click="insertTemplate('container')"
+          >
+            Container Job
+          </el-button>
+          <el-button
+            size="small"
+            text
+            @click="insertTemplate('deploy')"
+          >
+            Deploy Pattern
+          </el-button>
         </el-card>
       </div>
     </div>
@@ -81,7 +153,6 @@ const extensions = [
     if (!text.trim()) return diagnostics
     // Check basic YAML structure: indentation consistency
     const lines = text.split('\n')
-    let prevIndent = 0
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       if (line.trim() === '' || line.trim().startsWith('#')) continue
@@ -94,7 +165,6 @@ const extensions = [
           message: 'Indentation should use even spaces (2-space recommended)',
         })
       }
-      prevIndent = indent
     }
     return diagnostics
   }),

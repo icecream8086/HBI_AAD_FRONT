@@ -1,48 +1,133 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('containerSecret.title') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('containerSecret.create') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('containerSecret.create') }}
+      </el-button>
     </div>
 
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('containerSecret.name')">
-          <el-input v-model="filter.name" :placeholder="$t('containerSecret.name')" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            :placeholder="$t('containerSecret.name')"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item :label="$t('containerSecret.type')">
-          <el-select v-model="filter.type" clearable style="width:120px" @change="fetchData">
-            <el-option :label="$t('containerSecret.typeValue')" value="value" />
-            <el-option :label="$t('containerSecret.typeUpload')" value="upload" />
+          <el-select
+            v-model="filter.type"
+            clearable
+            style="width:120px"
+            @change="fetchData"
+          >
+            <el-option
+              :label="$t('containerSecret.typeValue')"
+              value="value"
+            />
+            <el-option
+              :label="$t('containerSecret.typeUpload')"
+              value="upload"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="items" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('containerSecret.name')" min-width="140" />
-      <el-table-column :label="$t('containerSecret.type')" width="100">
+    <el-table
+      v-loading="loading"
+      :data="items"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('containerSecret.name')"
+        min-width="140"
+      />
+      <el-table-column
+        :label="$t('containerSecret.type')"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.type === 'value' ? 'primary' : 'warning'" size="small">
+          <el-tag
+            :type="row.type === 'value' ? 'primary' : 'warning'"
+            size="small"
+          >
             {{ row.type === 'value' ? $t('containerSecret.typeValue') : $t('containerSecret.typeUpload') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="visibility" :label="$t('containerSecret.visibility')" width="100" />
-      <el-table-column prop="scopeCount" :label="$t('containerSecret.scope')" width="80" />
-      <el-table-column :label="$t('table.createdAt')" width="150">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="280" fixed="right">
+      <el-table-column
+        prop="visibility"
+        :label="$t('containerSecret.visibility')"
+        width="100"
+      />
+      <el-table-column
+        prop="scopeCount"
+        :label="$t('containerSecret.scope')"
+        width="80"
+      />
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="150"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" @click="handleDownload(row)">{{ $t('containerSecret.download') }}</el-button>
-          <el-button size="small" @click="openCheckAccess(row)">{{ $t('containerSecret.checkAccess') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          {{ fmt(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="280"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            @click="handleDownload(row)"
+          >
+            {{ $t('containerSecret.download') }}
+          </el-button>
+          <el-button
+            size="small"
+            @click="openCheckAccess(row)"
+          >
+            {{ $t('containerSecret.checkAccess') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -59,58 +144,155 @@
       @current-change="fetchData"
     />
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('containerSecret.edit') : $t('containerSecret.create')" width="520px" destroy-on-close>
-      <el-form :model="form" label-width="110px">
-        <el-form-item :label="$t('containerSecret.name')" required>
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit ? $t('containerSecret.edit') : $t('containerSecret.create')"
+      width="520px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="110px"
+      >
+        <el-form-item
+          :label="$t('containerSecret.name')"
+          required
+        >
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item :label="$t('containerSecret.type')" required>
-          <el-select v-model="form.type" style="width:100%">
-            <el-option :label="$t('containerSecret.typeValue')" value="value" />
-            <el-option :label="$t('containerSecret.typeUpload')" value="upload" />
+        <el-form-item
+          :label="$t('containerSecret.type')"
+          required
+        >
+          <el-select
+            v-model="form.type"
+            style="width:100%"
+          >
+            <el-option
+              :label="$t('containerSecret.typeValue')"
+              value="value"
+            />
+            <el-option
+              :label="$t('containerSecret.typeUpload')"
+              value="upload"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="form.type === 'value'" :label="$t('containerSecret.value')">
-          <el-input v-model="form.value" type="textarea" :rows="4" />
+        <el-form-item
+          v-if="form.type === 'value'"
+          :label="$t('containerSecret.value')"
+        >
+          <el-input
+            v-model="form.value"
+            type="textarea"
+            :rows="4"
+          />
         </el-form-item>
         <el-form-item :label="$t('containerSecret.visibility')">
-          <el-select v-model="form.visibility" style="width:100%">
-            <el-option :label="$t('containerSecret.public')" value="public" />
-            <el-option :label="$t('containerSecret.private')" value="private" />
-            <el-option :label="$t('containerSecret.scope')" value="scope" />
+          <el-select
+            v-model="form.visibility"
+            style="width:100%"
+          >
+            <el-option
+              :label="$t('containerSecret.public')"
+              value="public"
+            />
+            <el-option
+              :label="$t('containerSecret.private')"
+              value="private"
+            />
+            <el-option
+              :label="$t('containerSecret.scope')"
+              value="scope"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="form.visibility === 'scope'" :label="$t('containerSecret.scopeIds')">
-          <el-select v-model="form.scopeIds" multiple filterable allow-create default-first-option style="width:100%" :placeholder="$t('containerSecret.scopePlaceholder')">
-            <el-option v-for="sid in form.scopeIds" :key="sid" :label="sid" :value="sid" />
+        <el-form-item
+          v-if="form.visibility === 'scope'"
+          :label="$t('containerSecret.scopeIds')"
+        >
+          <el-select
+            v-model="form.scopeIds"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            style="width:100%"
+            :placeholder="$t('containerSecret.scopePlaceholder')"
+          >
+            <el-option
+              v-for="sid in form.scopeIds"
+              :key="sid"
+              :label="sid"
+              :value="sid"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('containerSecret.keyType')">
-          <el-select v-model="form.keyType" style="width:100%">
-            <el-option label="RSA" value="rsa" />
-            <el-option label="ECDSA" value="ecdsa" />
-            <el-option label="Ed25519" value="ed25519" />
+          <el-select
+            v-model="form.keyType"
+            style="width:100%"
+          >
+            <el-option
+              label="RSA"
+              value="rsa"
+            />
+            <el-option
+              label="ECDSA"
+              value="ecdsa"
+            />
+            <el-option
+              label="Ed25519"
+              value="ed25519"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="checkDialog.show" :title="$t('containerSecret.checkAccessTitle')" width="480px" destroy-on-close>
+    <el-dialog
+      v-model="checkDialog.show"
+      :title="$t('containerSecret.checkAccessTitle')"
+      width="480px"
+      destroy-on-close
+    >
       <el-form label-width="100px">
         <el-form-item :label="$t('containerSecret.scopeId')">
-          <el-input v-model="checkDialog.scopeId" :placeholder="$t('containerSecret.scopeId')" />
+          <el-input
+            v-model="checkDialog.scopeId"
+            :placeholder="$t('containerSecret.scopeId')"
+          />
         </el-form-item>
-        <el-form-item v-if="checkDialog.result !== null" :label="$t('containerSecret.checkAccessResult')">
+        <el-form-item
+          v-if="checkDialog.result !== null"
+          :label="$t('containerSecret.checkAccessResult')"
+        >
           <pre class="access-result">{{ typeof checkDialog.result === 'string' ? checkDialog.result : JSON.stringify(checkDialog.result, null, 2) }}</pre>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="checkDialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="checkingAccess" @click="handleCheckAccess">{{ $t('table.confirm') }}</el-button>
+        <el-button @click="checkDialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="checkingAccess"
+          @click="handleCheckAccess"
+        >
+          {{ $t('table.confirm') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

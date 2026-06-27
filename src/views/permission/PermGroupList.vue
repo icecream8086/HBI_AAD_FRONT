@@ -19,15 +19,24 @@
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('table.name')">
-          <el-input v-model="filter.name" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <el-table
-      v-loading="loading" stripe
+      v-loading="loading"
+      stripe
       :data="groups || []"
 
       :empty-text="$t('table.empty')"
@@ -194,18 +203,36 @@
         </el-form-item>
         <el-divider>{{ $t('permission.rules') }}</el-divider>
         <div class="rule-mode-bar">
-          <el-radio-group v-model="ruleMode" size="small">
-            <el-radio-button value="form">{{ $t('permission.formMode') }}</el-radio-button>
-            <el-radio-button value="expression">{{ $t('permission.expressionMode') }}</el-radio-button>
+          <el-radio-group
+            v-model="ruleMode"
+            size="small"
+          >
+            <el-radio-button value="form">
+              {{ $t('permission.formMode') }}
+            </el-radio-button>
+            <el-radio-button value="expression">
+              {{ $t('permission.expressionMode') }}
+            </el-radio-button>
           </el-radio-group>
         </div>
 
         <!-- Form mode: per-rule rows -->
         <template v-if="ruleMode === 'form'">
-          <div v-for="(r, i) in form.rules" :key="i" class="rule-row">
-            <el-radio-group v-model="r.effect" size="small">
-              <el-radio-button value="allow">{{ $t('permission.allow') }}</el-radio-button>
-              <el-radio-button value="deny">{{ $t('permission.deny') }}</el-radio-button>
+          <div
+            v-for="(r, i) in form.rules"
+            :key="i"
+            class="rule-row"
+          >
+            <el-radio-group
+              v-model="r.effect"
+              size="small"
+            >
+              <el-radio-button value="allow">
+                {{ $t('permission.allow') }}
+              </el-radio-button>
+              <el-radio-button value="deny">
+                {{ $t('permission.deny') }}
+              </el-radio-button>
             </el-radio-group>
             <el-input
               v-model="r.actions"
@@ -219,16 +246,34 @@
               style="width:140px;margin-right:6px"
               size="small"
             />
-            <el-input-number v-model="r.priority" :min="0" size="small" style="width:90px" />
-            <el-button type="danger" size="small" circle @click="form.rules.splice(i,1)">−</el-button>
+            <el-input-number
+              v-model="r.priority"
+              :min="0"
+              size="small"
+              style="width:90px"
+            />
+            <el-button
+              type="danger"
+              size="small"
+              circle
+              @click="form.rules.splice(i,1)"
+            >
+              −
+            </el-button>
           </div>
-          <el-button size="small" @click="form.rules.push({effect:'allow',actions:'',resource:'',priority:100})">
+          <el-button
+            size="small"
+            @click="form.rules.push({effect:'allow',actions:'',resource:'',priority:100})"
+          >
             {{ $t('permission.addRule') }}
           </el-button>
         </template>
 
         <!-- Expression mode: monolithic JSON -->
-        <div v-else class="expr-panel">
+        <div
+          v-else
+          class="expr-panel"
+        >
           <el-input
             v-model="ruleExpr"
             type="textarea"
@@ -236,7 +281,10 @@
             class="rule-expr-textarea"
             @input="onRuleExprInput"
           />
-          <div class="expr-status" :class="ruleExprStatus">
+          <div
+            class="expr-status"
+            :class="ruleExprStatus"
+          >
             <span v-if="ruleExprStatus === 'valid'">✓ {{ $t('permission.expressionValid') }}</span>
             <span v-else-if="ruleExprStatus === 'invalid'">✗ {{ $t('permission.expressionInvalid') }}: {{ ruleExprError }}</span>
             <span v-else>&nbsp;</span>
@@ -257,16 +305,40 @@
     </el-dialog>
 
     <!-- Group Caps Dialog -->
-    <el-dialog v-model="capsDialog.show" :title="$t('permission.groupCaps')" width="400px" destroy-on-close>
-      <el-form v-if="capsDialog.groupId" label-width="100px">
-        <el-form-item v-for="(v, k) in capsForm" :key="k" :label="k">
+    <el-dialog
+      v-model="capsDialog.show"
+      :title="$t('permission.groupCaps')"
+      width="400px"
+      destroy-on-close
+    >
+      <el-form
+        v-if="capsDialog.groupId"
+        label-width="100px"
+      >
+        <el-form-item
+          v-for="(v, k) in capsForm"
+          :key="k"
+          :label="k"
+        >
           <el-switch v-model="capsForm[k]" />
         </el-form-item>
-        <el-empty v-if="!Object.keys(capsForm).length" :description="$t('user.noCaps')" :image-size="40" />
+        <el-empty
+          v-if="!Object.keys(capsForm).length"
+          :description="$t('user.noCaps')"
+          :image-size="40"
+        />
       </el-form>
       <template #footer>
-        <el-button @click="capsDialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="savingCaps" @click="handleSaveCaps">{{ $t('user.save') }}</el-button>
+        <el-button @click="capsDialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="savingCaps"
+          @click="handleSaveCaps"
+        >
+          {{ $t('user.save') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

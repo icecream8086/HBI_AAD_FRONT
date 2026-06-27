@@ -1,62 +1,175 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('topology.volumeTitle') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('topology.createVolume') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('topology.createVolume') }}
+      </el-button>
     </div>
 
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('table.name')">
-          <el-input v-model="filter.name" :placeholder="$t('table.name')" clearable style="width:160px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            :placeholder="$t('table.name')"
+            clearable
+            style="width:160px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item :label="$t('topology.instanceTitle')">
-          <el-select v-model="filter.instanceId" clearable filterable :placeholder="$t('table.selectPlaceholder')" style="width:160px" @change="fetchData">
-            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform})`" :value="inst.id" />
+          <el-select
+            v-model="filter.instanceId"
+            clearable
+            filterable
+            :placeholder="$t('table.selectPlaceholder')"
+            style="width:160px"
+            @change="fetchData"
+          >
+            <el-option
+              v-for="inst in instances"
+              :key="inst.id"
+              :label="`${inst.name} (${inst.platform})`"
+              :value="inst.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('topology.volumeType')">
-          <el-select v-model="filter.type" clearable :placeholder="$t('table.selectPlaceholder')" style="width:140px" @change="fetchData">
-            <el-option v-for="t in volumeTypes" :key="t" :label="typeLabel(t)" :value="t" />
+          <el-select
+            v-model="filter.type"
+            clearable
+            :placeholder="$t('table.selectPlaceholder')"
+            style="width:140px"
+            @change="fetchData"
+          >
+            <el-option
+              v-for="vt in volumeTypes"
+              :key="vt"
+              :label="typeLabel(vt)"
+              :value="vt"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('topology.status')">
-          <el-select v-model="filter.status" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
-            <el-option label="Active" value="Active" />
-            <el-option label="Detached" value="Detached" />
-            <el-option label="Attached" value="Attached" />
-            <el-option label="Orphaned" value="Orphaned" />
+          <el-select
+            v-model="filter.status"
+            clearable
+            :placeholder="$t('table.selectPlaceholder')"
+            style="width:120px"
+            @change="fetchData"
+          >
+            <el-option
+              label="Active"
+              value="Active"
+            />
+            <el-option
+              label="Detached"
+              value="Detached"
+            />
+            <el-option
+              label="Attached"
+              value="Attached"
+            />
+            <el-option
+              label="Orphaned"
+              value="Orphaned"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="volumes" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('topology.volumeName')" min-width="140" />
-      <el-table-column :label="$t('topology.instanceTitle')" min-width="140">
-        <template #default="{ row }">{{ instanceName(row.instanceId) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('topology.volumeType')" width="120">
+    <el-table
+      v-loading="loading"
+      :data="volumes"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('topology.volumeName')"
+        min-width="140"
+      />
+      <el-table-column
+        :label="$t('topology.instanceTitle')"
+        min-width="140"
+      >
         <template #default="{ row }">
-          <el-tag :type="typeTag(row.type)" size="small">{{ typeLabel(row.type) }}</el-tag>
+          {{ instanceName(row.instanceId) }}
         </template>
       </el-table-column>
-      <el-table-column prop="status" :label="$t('topology.status')" width="80">
+      <el-table-column
+        :label="$t('topology.volumeType')"
+        width="120"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.status === 'Active' ? 'success' : 'info'" size="small">{{ row.status }}</el-tag>
+          <el-tag
+            :type="typeTag(row.type)"
+            size="small"
+          >
+            {{ typeLabel(row.type) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="160">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column
+        prop="status"
+        :label="$t('topology.status')"
+        width="80"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          <el-tag
+            :type="statusTagType(row.status, colByProp('status'))"
+            size="small"
+          >
+            {{ row.status }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="160"
+      >
+        <template #default="{ row }">
+          {{ fmtCell(row.createdAt, colByProp('createdAt')) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -73,39 +186,103 @@
       @current-change="fetchData"
     />
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('topology.editVolume') : $t('topology.createVolume')" width="600px" destroy-on-close>
-      <el-form :model="form" label-width="120px">
-        <el-form-item :label="$t('topology.volumeName')" required>
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit ? $t('topology.editVolume') : $t('topology.createVolume')"
+      width="600px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="120px"
+      >
+        <el-form-item
+          :label="$t('topology.volumeName')"
+          required
+        >
           <el-input v-model="form.name" />
         </el-form-item>
         <el-form-item :label="$t('table.description')">
-          <el-input v-model="form.description" type="textarea" :rows="2" maxlength="500" show-word-limit />
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="2"
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
-        <el-form-item :label="$t('topology.instanceTitle')" required>
-          <el-select v-model="form.instanceId" filterable style="width:100%">
-            <el-option v-for="inst in instances" :key="inst.id" :label="`${inst.name} (${inst.platform}/${inst.region})`" :value="inst.id" />
+        <el-form-item
+          :label="$t('topology.instanceTitle')"
+          required
+        >
+          <el-select
+            v-model="form.instanceId"
+            filterable
+            style="width:100%"
+          >
+            <el-option
+              v-for="inst in instances"
+              :key="inst.id"
+              :label="`${inst.name} (${inst.platform}/${inst.region})`"
+              :value="inst.id"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item :label="$t('topology.volumeType')" required>
-          <el-select v-model="form.type" :disabled="dialog.isEdit" style="width:100%">
-            <el-option v-for="t in volumeTypes" :key="t" :label="typeLabel(t)" :value="t" />
+        <el-form-item
+          :label="$t('topology.volumeType')"
+          required
+        >
+          <el-select
+            v-model="form.type"
+            :disabled="dialog.isEdit"
+            style="width:100%"
+          >
+            <el-option
+              v-for="vt in volumeTypes"
+              :key="vt"
+              :label="typeLabel(vt)"
+              :value="vt"
+            />
           </el-select>
         </el-form-item>
 
         <!-- NFSVolume fields -->
         <template v-if="form.type === 'NFSVolume'">
-          <el-form-item :label="$t('topology.nfsServer')" required>
-            <el-input v-model="form.nfsServer" placeholder="192.168.1.100" />
+          <el-form-item
+            :label="$t('topology.nfsServer')"
+            required
+          >
+            <el-input
+              v-model="form.nfsServer"
+              placeholder="192.168.1.100"
+            />
           </el-form-item>
-          <el-form-item :label="$t('topology.nfsPath')" required>
-            <el-input v-model="form.nfsPath" placeholder="/data" />
+          <el-form-item
+            :label="$t('topology.nfsPath')"
+            required
+          >
+            <el-input
+              v-model="form.nfsPath"
+              placeholder="/data"
+            />
           </el-form-item>
           <el-form-item :label="$t('topology.nfsReadOnly')">
             <el-switch v-model="form.nfsReadOnly" />
           </el-form-item>
           <el-form-item :label="$t('topology.credentialRef')">
-            <el-select v-model="form.credentialRef" filterable clearable :placeholder="$t('table.selectPlaceholder')" style="width:100%">
-              <el-option v-for="c in creds" :key="c.name" :label="`${c.name} (${c.platform})`" :value="c.name" />
+            <el-select
+              v-model="form.credentialRef"
+              filterable
+              clearable
+              :placeholder="$t('table.selectPlaceholder')"
+              style="width:100%"
+            >
+              <el-option
+                v-for="c in creds"
+                :key="c.name"
+                :label="`${c.name} (${c.platform})`"
+                :value="c.name"
+              />
             </el-select>
           </el-form-item>
         </template>
@@ -114,14 +291,27 @@
 
         <!-- DiskVolume fields -->
         <template v-if="form.type === 'DiskVolume'">
-          <el-form-item :label="$t('topology.diskId')" required>
+          <el-form-item
+            :label="$t('topology.diskId')"
+            required
+          >
             <el-input v-model="form.diskId" />
           </el-form-item>
-          <el-form-item :label="$t('topology.diskFsType')" required>
-            <el-input v-model="form.diskFsType" placeholder="ext4" />
+          <el-form-item
+            :label="$t('topology.diskFsType')"
+            required
+          >
+            <el-input
+              v-model="form.diskFsType"
+              placeholder="ext4"
+            />
           </el-form-item>
           <el-form-item :label="$t('topology.diskSizeGiB')">
-            <el-input-number v-model="form.diskSizeGiB" :min="0" style="width:100%" />
+            <el-input-number
+              v-model="form.diskSizeGiB"
+              :min="0"
+              style="width:100%"
+            />
           </el-form-item>
           <el-form-item :label="$t('topology.diskReadOnly')">
             <el-switch v-model="form.diskReadOnly" />
@@ -133,53 +323,140 @@
 
         <!-- ConfigMapVolume fields -->
         <template v-if="form.type === 'ConfigMapVolume'">
-          <el-form-item :label="$t('topology.configMapName')" required>
+          <el-form-item
+            :label="$t('topology.configMapName')"
+            required
+          >
             <el-input v-model="form.configMapName" />
           </el-form-item>
           <el-form-item :label="$t('topology.configMapItems')">
-            <div v-for="(item, i) in configMapItems" :key="i" class="item-row">
-              <el-input v-model="item.key" :placeholder="$t('topology.configMapKey')" size="small" style="width:140px" />
-              <el-input v-model="item.path" :placeholder="$t('topology.configMapPath')" size="small" style="width:200px" />
-              <el-input-number v-model="item.mode" :min="0" :max="777" size="small" style="width:100px" />
-              <el-button type="danger" text size="small" @click="removeConfigMapItem(i)" :disabled="configMapItems.length <= 1">✕</el-button>
+            <div
+              v-for="(item, i) in configMapItems"
+              :key="i"
+              class="item-row"
+            >
+              <el-input
+                v-model="item.key"
+                :placeholder="$t('topology.configMapKey')"
+                size="small"
+                style="width:140px"
+              />
+              <el-input
+                v-model="item.path"
+                :placeholder="$t('topology.configMapPath')"
+                size="small"
+                style="width:200px"
+              />
+              <el-input-number
+                v-model="item.mode"
+                :min="0"
+                :max="777"
+                size="small"
+                style="width:100px"
+              />
+              <el-button
+                type="danger"
+                text
+                size="small"
+                :disabled="configMapItems.length <= 1"
+                @click="removeConfigMapItem(i)"
+              >
+                ✕
+              </el-button>
             </div>
-            <el-button text size="small" @click="addConfigMapItem" class="add-btn">+ {{ $t('topology.addItem') }}</el-button>
+            <el-button
+              text
+              size="small"
+              class="add-btn"
+              @click="addConfigMapItem"
+            >
+              + {{ $t('topology.addItem') }}
+            </el-button>
           </el-form-item>
         </template>
 
         <!-- SecretVolume fields -->
         <template v-if="form.type === 'SecretVolume'">
-          <el-form-item :label="$t('topology.secretName')" required>
+          <el-form-item
+            :label="$t('topology.secretName')"
+            required
+          >
             <el-input v-model="form.secretName" />
           </el-form-item>
           <el-form-item :label="$t('topology.configMapItems')">
-            <div v-for="(item, i) in secretItems" :key="i" class="item-row">
-              <el-input v-model="item.key" :placeholder="$t('topology.configMapKey')" size="small" style="width:140px" />
-              <el-input v-model="item.path" :placeholder="$t('topology.configMapPath')" size="small" style="width:200px" />
-              <el-input-number v-model="item.mode" :min="0" :max="777" size="small" style="width:100px" />
-              <el-button type="danger" text size="small" @click="removeSecretItem(i)" :disabled="secretItems.length <= 1">✕</el-button>
+            <div
+              v-for="(item, i) in secretItems"
+              :key="i"
+              class="item-row"
+            >
+              <el-input
+                v-model="item.key"
+                :placeholder="$t('topology.configMapKey')"
+                size="small"
+                style="width:140px"
+              />
+              <el-input
+                v-model="item.path"
+                :placeholder="$t('topology.configMapPath')"
+                size="small"
+                style="width:200px"
+              />
+              <el-input-number
+                v-model="item.mode"
+                :min="0"
+                :max="777"
+                size="small"
+                style="width:100px"
+              />
+              <el-button
+                type="danger"
+                text
+                size="small"
+                :disabled="secretItems.length <= 1"
+                @click="removeSecretItem(i)"
+              >
+                ✕
+              </el-button>
             </div>
-            <el-button text size="small" @click="addSecretItem" class="add-btn">+ {{ $t('topology.addItem') }}</el-button>
+            <el-button
+              text
+              size="small"
+              class="add-btn"
+              @click="addSecretItem"
+            >
+              + {{ $t('topology.addItem') }}
+            </el-button>
           </el-form-item>
         </template>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
+        <el-button @click="dialog.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
 import { useReferenceCache } from '../../composables/useReferenceCache'
+import { volumeColumns } from '../../constants/field-descriptors'
+import { useEntityColumns } from '../../composables/useEntityColumns'
 
 const { t } = useI18n()
 const refCache = useReferenceCache()
+const { fmtCell, statusTagType, colByProp } = useEntityColumns(volumeColumns)
 
 const loading = ref(false)
 const saving = ref(false)
@@ -241,7 +518,6 @@ function addSecretItem(key = '', path = '', mode = 0o644) {
 }
 function removeSecretItem(i: number) { secretItems.splice(i, 1) }
 
-function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 function instanceName(id: string | undefined) {
   if (!id) return '-'
   const inst = instances.value.find(i => i.id === id)
@@ -304,8 +580,8 @@ async function fetchData() {
     if (filter.type) params.type = filter.type
     if (filter.status) params.status = filter.status
     const res = await api.topology.volumes.list(params)
-    volumes.value = (res as any).items ?? []
-    total.value = (res as any).total ?? volumes.value.length
+    volumes.value = (res.items ?? []) as Volume[]
+    total.value = res.total ?? volumes.value.length
   } catch { ElMessage.error(t('topology.fetchFailed')) }
   finally { loading.value = false }
 }

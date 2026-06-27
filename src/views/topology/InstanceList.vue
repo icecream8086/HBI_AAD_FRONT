@@ -1,68 +1,212 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('topology.instanceTitle') }}</h2>
-      <el-button type="primary" size="small" @click="openCreate">{{ $t('topology.createInstance') }}</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="openCreate"
+      >
+        {{ $t('topology.createInstance') }}
+      </el-button>
     </div>
 
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('topology.platform')">
-          <el-select v-model="filter.platform" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
-            <el-option v-for="p in platforms" :key="p" :label="p" :value="p" />
+          <el-select
+            v-model="filter.platform"
+            clearable
+            :placeholder="$t('table.selectPlaceholder')"
+            style="width:120px"
+            @change="fetchData"
+          >
+            <el-option
+              v-for="p in platforms"
+              :key="p"
+              :label="p"
+              :value="p"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('topology.region')">
-          <el-select v-model="filter.region" clearable :placeholder="$t('table.selectPlaceholder')" style="width:140px" @change="fetchData">
-            <el-option v-for="r in regionOptions" :key="r" :label="r" :value="r" />
+          <el-select
+            v-model="filter.region"
+            clearable
+            :placeholder="$t('table.selectPlaceholder')"
+            style="width:140px"
+            @change="fetchData"
+          >
+            <el-option
+              v-for="r in regionOptions"
+              :key="r"
+              :label="r"
+              :value="r"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('topology.status')">
-          <el-select v-model="filter.status" clearable :placeholder="$t('table.selectPlaceholder')" style="width:120px" @change="fetchData">
-            <el-option label="online" value="online" />
-            <el-option label="offline" value="offline" />
-            <el-option label="error" value="error" />
+          <el-select
+            v-model="filter.status"
+            clearable
+            :placeholder="$t('table.selectPlaceholder')"
+            style="width:120px"
+            @change="fetchData"
+          >
+            <el-option
+              label="online"
+              value="online"
+            />
+            <el-option
+              label="offline"
+              value="offline"
+            />
+            <el-option
+              label="error"
+              value="error"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="instances" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('topology.instanceName')" min-width="120" />
-      <el-table-column prop="platform" :label="$t('topology.platform')" width="80">
-        <template #default="{ row }"><el-tag size="small">{{ row.platform }}</el-tag></template>
-      </el-table-column>
-      <el-table-column prop="region" :label="$t('topology.region')" width="130" />
-      <el-table-column prop="zone" :label="$t('topology.zone')" width="110" />
-      <el-table-column prop="endpoint" :label="$t('topology.endpoint')" min-width="200" show-overflow-tooltip />
-      <el-table-column :label="$t('topology.labels')" min-width="200" show-overflow-tooltip>
+    <el-table
+      v-loading="loading"
+      :data="instances"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('topology.instanceName')"
+        min-width="120"
+      />
+      <el-table-column
+        prop="platform"
+        :label="$t('topology.platform')"
+        width="80"
+      >
         <template #default="{ row }">
-          <el-tag v-for="(v, k) in row.labels" :key="k" size="small" style="margin:1px">{{ k }}={{ v }}</el-tag>
+          <el-tag size="small">
+            {{ row.platform }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('topology.capabilities')" width="100">
+      <el-table-column
+        prop="region"
+        :label="$t('topology.region')"
+        width="130"
+      />
+      <el-table-column
+        prop="zone"
+        :label="$t('topology.zone')"
+        width="110"
+      />
+      <el-table-column
+        prop="endpoint"
+        :label="$t('topology.endpoint')"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        :label="$t('topology.labels')"
+        min-width="200"
+        show-overflow-tooltip
+      >
         <template #default="{ row }">
-          <el-tag v-if="row.capabilities?.container" size="small" type="success" style="margin-right:2px">C</el-tag>
-          <el-tag v-if="row.capabilities?.image" size="small" type="warning" style="margin-right:2px">I</el-tag>
-          <el-tag v-if="row.capabilities?.network" size="small" style="margin-right:2px">N</el-tag>
+          <el-tag
+            v-for="(v, k) in row.labels"
+            :key="k"
+            size="small"
+            style="margin:1px"
+          >
+            {{ k }}={{ v }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="status" :label="$t('topology.status')" width="70">
+      <el-table-column
+        :label="$t('topology.capabilities')"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.status==='online'?'success':'danger'" size="small">{{ row.status }}</el-tag>
+          <el-tag
+            v-if="row.capabilities?.container"
+            size="small"
+            type="success"
+            style="margin-right:2px"
+          >
+            C
+          </el-tag>
+          <el-tag
+            v-if="row.capabilities?.image"
+            size="small"
+            type="warning"
+            style="margin-right:2px"
+          >
+            I
+          </el-tag>
+          <el-tag
+            v-if="row.capabilities?.network"
+            size="small"
+            style="margin-right:2px"
+          >
+            N
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="150">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="160" fixed="right">
+      <el-table-column
+        prop="status"
+        :label="$t('topology.status')"
+        width="70"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('table.delete') }}</el-button>
+          <el-tag
+            :type="statusTagType(row.status, colByProp('status'))"
+            size="small"
+          >
+            {{ row.status }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="150"
+      >
+        <template #default="{ row }">
+          {{ fmtCell(row.createdAt, colByProp('createdAt')) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="160"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('table.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -79,53 +223,151 @@
       @current-change="fetchData"
     />
 
-    <el-dialog v-model="dialog.show" :title="dialog.isEdit ? $t('topology.editInstance') : $t('topology.createInstance')" width="620px" destroy-on-close>
-      <el-form :model="form" label-width="120px">
+    <el-dialog
+      v-model="dialog.show"
+      :title="dialog.isEdit ? $t('topology.editInstance') : $t('topology.createInstance')"
+      width="620px"
+      destroy-on-close
+    >
+      <el-form
+        :model="form"
+        label-width="120px"
+      >
         <el-form-item :label="$t('topology.instanceName')">
           <el-input v-model="form.name" />
         </el-form-item>
         <el-row :gutter="12">
-          <el-col :span="12"><el-form-item :label="$t('topology.platform')">
-            <el-select v-model="form.platform" style="width:100%" @change="onPlatformChange">
-              <el-option v-for="p in ['alibaba','aws','podman','stub']" :key="p" :label="p" :value="p" />
-            </el-select>
-          </el-form-item></el-col>
-          <el-col :span="12"><el-form-item :label="$t('topology.region')" required>
-            <el-select v-model="form.region" :disabled="!form.platform" style="width:100%" filterable allow-create>
-              <el-option v-for="r in regions" :key="r" :label="r" :value="r" />
-            </el-select>
-          </el-form-item></el-col>
+          <el-col :span="12">
+            <el-form-item :label="$t('topology.platform')">
+              <el-select
+                v-model="form.platform"
+                style="width:100%"
+                @change="onPlatformChange"
+              >
+                <el-option
+                  v-for="p in ['alibaba','aws','podman','stub']"
+                  :key="p"
+                  :label="p"
+                  :value="p"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item
+              :label="$t('topology.region')"
+              required
+            >
+              <el-select
+                v-model="form.region"
+                :disabled="!form.platform"
+                style="width:100%"
+                filterable
+                allow-create
+              >
+                <el-option
+                  v-for="r in regions"
+                  :key="r"
+                  :label="r"
+                  :value="r"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
         <el-form-item :label="$t('topology.zone')">
-          <el-input v-model="form.zone" :placeholder="$t('topology.zoneHint')" />
+          <el-input
+            v-model="form.zone"
+            :placeholder="$t('topology.zoneHint')"
+          />
         </el-form-item>
         <el-form-item :label="$t('topology.endpoint')">
-          <el-input v-model="form.endpoint" placeholder="http://192.168.1.1:8080" />
+          <el-input
+            v-model="form.endpoint"
+            placeholder="http://192.168.1.1:8080"
+          />
         </el-form-item>
         <el-form-item :label="$t('topology.credentialRef')">
-          <el-select v-model="form.credentialRef" filterable allow-create clearable placeholder="Optional / 输入自定义" style="width:100%">
-            <el-option v-for="c in creds" :key="c.id" :label="`${c.name} (${c.platform})`" :value="c.id" />
+          <el-select
+            v-model="form.credentialRef"
+            filterable
+            allow-create
+            clearable
+            placeholder="Optional / 输入自定义"
+            style="width:100%"
+          >
+            <el-option
+              v-for="c in creds"
+              :key="c.id"
+              :label="`${c.name} (${c.platform})`"
+              :value="c.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('topology.labels')">
-          <div v-for="(pair, i) in labelsEntries" :key="i" class="label-row">
-            <el-input v-model="pair.key" placeholder="Key" size="small" style="width:160px" />
+          <div
+            v-for="(pair, i) in labelsEntries"
+            :key="i"
+            class="label-row"
+          >
+            <el-input
+              v-model="pair.key"
+              placeholder="Key"
+              size="small"
+              style="width:160px"
+            />
             <span style="margin:0 4px">=</span>
-            <el-input v-model="pair.value" placeholder="Value" size="small" style="width:200px" />
-            <el-button type="danger" text size="small" @click="removeLabel(i)" :disabled="labelsEntries.length<=1">✕</el-button>
+            <el-input
+              v-model="pair.value"
+              placeholder="Value"
+              size="small"
+              style="width:200px"
+            />
+            <el-button
+              type="danger"
+              text
+              size="small"
+              :disabled="labelsEntries.length<=1"
+              @click="removeLabel(i)"
+            >
+              ✕
+            </el-button>
           </div>
-          <el-button text size="small" @click="addLabel" class="add-label-btn">+ Add label</el-button>
-          <div class="hint">扩展信息，如 networkDomain / instanceTypes / faultDomain</div>
+          <el-button
+            text
+            size="small"
+            class="add-label-btn"
+            @click="addLabel"
+          >
+            + Add label
+          </el-button>
+          <div class="hint">
+            扩展信息，如 networkDomain / instanceTypes / faultDomain
+          </div>
         </el-form-item>
         <el-form-item :label="$t('topology.capabilities')">
-          <el-checkbox v-model="form.capContainer">Container</el-checkbox>
-          <el-checkbox v-model="form.capImage">Image</el-checkbox>
-          <el-checkbox v-model="form.capNetwork">Network</el-checkbox>
+          <el-checkbox v-model="form.capContainer">
+            Container
+          </el-checkbox>
+          <el-checkbox v-model="form.capImage">
+            Image
+          </el-checkbox>
+          <el-checkbox v-model="form.capNetwork">
+            Network
+          </el-checkbox>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.show=false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ dialog.isEdit ? $t('table.save') : $t('table.create') }}</el-button>
+        <el-button @click="dialog.show=false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          {{ dialog.isEdit ? $t('table.save') : $t('table.create') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -137,9 +379,12 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../../api'
 import { useReferenceCache } from '../../composables/useReferenceCache'
+import { instanceColumns } from '../../constants/field-descriptors'
+import { useEntityColumns } from '../../composables/useEntityColumns'
 
 const { t } = useI18n()
 const refCache = useReferenceCache()
+const { fmtCell, statusTagType, colByProp } = useEntityColumns(instanceColumns)
 
 const loading = ref(false)
 const saving = ref(false)
@@ -166,8 +411,6 @@ const form = reactive({
   capContainer: true, capImage: true, capNetwork: false,
 })
 const labelsEntries = reactive<{ key: string; value: string }[]>([])
-
-function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 function addLabel(key = '', value = '') { labelsEntries.push({ key, value }) }
 function removeLabel(i: number) { labelsEntries.splice(i, 1) }
@@ -243,8 +486,8 @@ async function fetchData() {
     if (filter.region) params.region = filter.region
     if (filter.status) params.status = filter.status
     const res = await api.topology.instances.list(params)
-    instances.value = (res as any).items ?? []
-    total.value = (res as any).total ?? instances.value.length
+    instances.value = (res.items ?? []) as ComputeInstance[]
+    total.value = res.total ?? instances.value.length
   } catch { ElMessage.error(t('topology.fetchFailed')) }
   finally { loading.value = false }
 }

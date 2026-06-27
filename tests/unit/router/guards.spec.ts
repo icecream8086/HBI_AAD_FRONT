@@ -8,10 +8,8 @@ vi.mock('../../../src/store', () => ({
 
 describe('router navigation guards', () => {
   let router: ReturnType<typeof createRouter>
-  let calls: string[]
 
   beforeEach(() => {
-    calls = []
     router = createRouter({
       history: createMemoryHistory(),
       routes: [

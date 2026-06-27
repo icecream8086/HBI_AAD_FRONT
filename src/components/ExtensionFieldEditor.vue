@@ -3,7 +3,10 @@
     <h2>扩展字段编辑器</h2>
 
     <!-- ── View 1: Vendor cards ── -->
-    <div v-if="!activeVendor" class="efe-cards">
+    <div
+      v-if="!activeVendor"
+      class="efe-cards"
+    >
       <div
         v-for="v in FIELD_LIBRARY"
         :key="v.label"
@@ -11,40 +14,75 @@
         @click="enterVendor(v)"
       >
         <div class="efe-card-icon">
-          <el-icon :size="24"><Cloudy /></el-icon>
+          <el-icon :size="24">
+            <Cloudy />
+          </el-icon>
         </div>
         <div class="efe-card-body">
-          <div class="efe-card-name">{{ v.label }}</div>
-          <div class="efe-card-desc">{{ v.description }}</div>
-          <div class="efe-card-count">{{ v.fields.length }} 个扩展字段</div>
+          <div class="efe-card-name">
+            {{ v.label }}
+          </div>
+          <div class="efe-card-desc">
+            {{ v.description }}
+          </div>
+          <div class="efe-card-count">
+            {{ v.fields.length }} 个扩展字段
+          </div>
         </div>
-        <el-icon class="efe-card-arrow"><ArrowRight /></el-icon>
+        <el-icon class="efe-card-arrow">
+          <ArrowRight />
+        </el-icon>
       </div>
-      <el-empty v-if="!FIELD_LIBRARY.length" description="暂无可用云厂商" :image-size="60" />
+      <el-empty
+        v-if="!FIELD_LIBRARY.length"
+        description="暂无可用云厂商"
+        :image-size="60"
+      />
     </div>
 
     <!-- ── View 2: Editor + Code split ── -->
     <template v-else>
       <div class="efe-toolbar">
-        <el-button text @click="activeVendor = null">
+        <el-button
+          text
+          @click="activeVendor = null"
+        >
           <el-icon><ArrowLeft /></el-icon>
           返回厂商列表
         </el-button>
         <div class="efe-toolbar-right">
           <span class="efe-field-count">{{ visibleFields.length }} / {{ activeVendor.fields.length }} fields</span>
-          <el-button size="small" :type="uiLocked ? 'info' : 'primary'" @click="uiLocked = !uiLocked">
-            <el-icon :size="14"><Lock v-if="uiLocked" /><Unlock v-else /></el-icon>
+          <el-button
+            size="small"
+            :type="uiLocked ? 'info' : 'primary'"
+            @click="uiLocked = !uiLocked"
+          >
+            <el-icon :size="14">
+              <Lock v-if="uiLocked" /><Unlock v-else />
+            </el-icon>
             {{ uiLocked ? 'UI 锁定' : 'UI 解锁' }}
           </el-button>
-          <el-button size="small" :type="codeLocked ? 'info' : 'warning'" @click="codeLocked = !codeLocked">
-            <el-icon :size="14"><Lock v-if="codeLocked" /><Unlock v-else /></el-icon>
+          <el-button
+            size="small"
+            :type="codeLocked ? 'info' : 'warning'"
+            @click="codeLocked = !codeLocked"
+          >
+            <el-icon :size="14">
+              <Lock v-if="codeLocked" /><Unlock v-else />
+            </el-icon>
             {{ codeLocked ? 'Code 锁定' : 'Code 解锁' }}
           </el-button>
           <el-button-group size="small">
-            <el-button :type="layout === 'horizontal' ? 'primary' : ''" @click="layout = 'horizontal'">
+            <el-button
+              :type="layout === 'horizontal' ? 'primary' : ''"
+              @click="layout = 'horizontal'"
+            >
               <el-icon><Rank /></el-icon>
             </el-button>
-            <el-button :type="layout === 'vertical' ? 'primary' : ''" @click="layout = 'vertical'">
+            <el-button
+              :type="layout === 'vertical' ? 'primary' : ''"
+              @click="layout = 'vertical'"
+            >
               <el-icon><Switch /></el-icon>
             </el-button>
           </el-button-group>
@@ -53,56 +91,95 @@
 
       <div :class="['efe-split', layout === 'horizontal' ? 'efe-split-h' : 'efe-split-v']">
         <!-- Form panel -->
-        <div class="efe-panel efe-panel-form" :style="layout === 'horizontal' ? { flex: '1', minWidth: 0 } : {}">
+        <div
+          class="efe-panel efe-panel-form"
+          :style="layout === 'horizontal' ? { flex: '1', minWidth: 0 } : {}"
+        >
           <el-card shadow="never">
-            <template #header>{{ activeVendor.label }}</template>
+            <template #header>
+              {{ activeVendor.label }}
+            </template>
             <div class="efe-body">
-              <template v-for="[grp, fields] in groupedFields" :key="grp">
-                <div class="efe-grp-header">{{ groupLabel(grp) }}</div>
-                <div v-for="field in fields" :key="field.key" :class="['efe-field', { 'efe-field-error': hasFieldError(field.key) && !isWarning(field.key), 'efe-field-warning': isWarning(field.key) }]">
-                  <div class="efe-field-label" :class="{ 'efe-label-error': hasFieldError(field.key) && !isWarning(field.key), 'efe-label-warning': isWarning(field.key) }">
+              <template
+                v-for="[grp, fields] in groupedFields"
+                :key="grp"
+              >
+                <div class="efe-grp-header">
+                  {{ groupLabel(grp) }}
+                </div>
+                <div
+                  v-for="field in fields"
+                  :key="field.key"
+                  :class="['efe-field', { 'efe-field-error': hasFieldError(field.key) && !isWarning(field.key), 'efe-field-warning': isWarning(field.key) }]"
+                >
+                  <div
+                    class="efe-field-label"
+                    :class="{ 'efe-label-error': hasFieldError(field.key) && !isWarning(field.key), 'efe-label-warning': isWarning(field.key) }"
+                  >
                     <span>{{ field.label }}</span>
-                    <el-tooltip :content="field.description" placement="top">
-                      <el-icon :size="13" class="efe-help"><QuestionFilled /></el-icon>
+                    <el-tooltip
+                      :content="field.description"
+                      placement="top"
+                    >
+                      <el-icon
+                        :size="13"
+                        class="efe-help"
+                      >
+                        <QuestionFilled />
+                      </el-icon>
                     </el-tooltip>
-                    <span v-if="field.required" class="efe-required">*</span>
-                    <span v-if="field.locked" class="efe-locked">🔒</span>
-                    <span v-if="hasFieldError(field.key)" class="efe-err-msg">{{ fieldError(field.key) }}</span>
+                    <span
+                      v-if="field.required"
+                      class="efe-required"
+                    >*</span>
+                    <span
+                      v-if="field.locked"
+                      class="efe-locked"
+                    >🔒</span>
+                    <span
+                      v-if="hasFieldError(field.key)"
+                      class="efe-err-msg"
+                    >{{ fieldError(field.key) }}</span>
                   </div>
                   <div class="efe-field-input">
                     <el-switch
                       v-if="field.type === 'boolean'"
                       :model-value="values[field.key] ?? field.defaultValue ?? false"
-                      @update:model-value="set(field.key, $event)"
                       :disabled="uiLocked || field.locked"
+                      @update:model-value="set(field.key, $event)"
                     />
                     <template v-if="field.validation?.kind === 'enum'">
-                      <div v-if="field.key === 'instanceType'" class="efe-inst-tags">
+                      <div
+                        v-if="field.key === 'instanceType'"
+                        class="efe-inst-tags"
+                      >
                         <el-tag
                           v-for="cat in INSTANCE_CATEGORIES"
                           :key="cat.tag"
                           size="small"
                           :type="instanceFilter === cat.tag ? 'primary' : 'info'"
                           :effect="instanceFilter === cat.tag ? 'dark' : 'plain'"
-                          @click="instanceFilter = instanceFilter === cat.tag ? null : cat.tag"
                           style="cursor:pointer"
-                        >{{ cat.tag }}</el-tag>
+                          @click="instanceFilter = instanceFilter === cat.tag ? null : cat.tag"
+                        >
+                          {{ cat.tag }}
+                        </el-tag>
                       </div>
                       <el-select
-                      :model-value="values[field.key] ?? field.defaultValue ?? ''"
-                      @update:model-value="set(field.key, $event)"
-                      :disabled="uiLocked || field.locked"
-                      clearable
-                      filterable
-                      style="width:100%"
-                    >
-                      <el-option
-                        v-for="opt in (field.key === 'instanceType' ? filterInstanceTypes(instanceFilter) : field.validation.values)"
-                        :key="opt"
-                        :label="opt"
-                        :value="opt"
-                      />
-                    </el-select>
+                        :model-value="values[field.key] ?? field.defaultValue ?? ''"
+                        :disabled="uiLocked || field.locked"
+                        clearable
+                        filterable
+                        style="width:100%"
+                        @update:model-value="set(field.key, $event)"
+                      >
+                        <el-option
+                          v-for="opt in (field.key === 'instanceType' ? filterInstanceTypes(instanceFilter) : field.validation.values)"
+                          :key="opt"
+                          :label="opt"
+                          :value="opt"
+                        />
+                      </el-select>
                       <el-button
                         v-if="field.key === 'instanceType' && values[field.key]"
                         size="small"
@@ -110,27 +187,34 @@
                         style="margin-left:4px;flex-shrink:0"
                         @click="openInstanceDetail(values[field.key] as string)"
                       >
-                        <el-icon :size="13"><InfoFilled /></el-icon>
+                        <el-icon :size="13">
+                          <InfoFilled />
+                        </el-icon>
                       </el-button>
                     </template>
                     <el-input-number
                       v-else-if="field.type === 'number'"
                       :model-value="values[field.key] ?? field.defaultValue"
-                      @update:model-value="set(field.key, $event)"
                       :disabled="uiLocked || field.locked"
                       :min="field.validation?.min"
                       :max="field.validation?.max"
                       controls-position="right"
                       style="width:100%"
+                      @update:model-value="set(field.key, $event)"
                     />
-                    <div v-else-if="field.type === 'string[]'" class="efe-tags">
+                    <div
+                      v-else-if="field.type === 'string[]'"
+                      class="efe-tags"
+                    >
                       <el-tag
                         v-for="(t, ti) in (values[field.key] as string[] || [])"
                         :key="ti"
                         closable
                         size="small"
                         @close="removeTag(field.key, ti)"
-                      >{{ t }}</el-tag>
+                      >
+                        {{ t }}
+                      </el-tag>
                       <el-input
                         v-if="tagInputs[field.key] !== undefined"
                         v-model="tagInputs[field.key]"
@@ -139,7 +223,13 @@
                         @blur="addTag(field.key)"
                         @keyup.enter="addTag(field.key)"
                       />
-                      <el-button v-else size="small" @click="startTag(field.key)">+ Tag</el-button>
+                      <el-button
+                        v-else
+                        size="small"
+                        @click="startTag(field.key)"
+                      >
+                        + Tag
+                      </el-button>
                     </div>
                     <template v-else-if="field.type === 'object'">
                       <el-input
@@ -147,17 +237,23 @@
                         size="small"
                         readonly
                         :placeholder="`{ ... }`"
-                        @click="editJson(field)"
                         style="cursor:pointer"
+                        @click="editJson(field)"
                       />
-                      <el-button size="small" @click="editJson(field)" style="margin-left:4px">Edit</el-button>
+                      <el-button
+                        size="small"
+                        style="margin-left:4px"
+                        @click="editJson(field)"
+                      >
+                        Edit
+                      </el-button>
                     </template>
                     <el-input
                       v-else
                       :model-value="values[field.key] ?? field.defaultValue ?? ''"
-                      @update:model-value="set(field.key, $event)"
                       :disabled="uiLocked || field.locked"
                       clearable
+                      @update:model-value="set(field.key, $event)"
                     />
                   </div>
                 </div>
@@ -174,13 +270,38 @@
         />
 
         <!-- Code panel -->
-        <div class="efe-panel efe-panel-code" :style="layout === 'horizontal' ? { width: codePanelWidth + 'px', flexShrink: 0 } : {}">
+        <div
+          class="efe-panel efe-panel-code"
+          :style="layout === 'horizontal' ? { width: codePanelWidth + 'px', flexShrink: 0 } : {}"
+        >
           <div class="efe-code-header">
             <span>providerOverrides.alibaba</span>
             <div>
-              <el-tag v-if="codeLocked" type="info" size="small" effect="plain" style="margin-right:6px">🔒 只读</el-tag>
-              <el-tag v-else type="warning" size="small" effect="plain" style="margin-right:6px">✎ 可编辑</el-tag>
-              <el-button size="small" text @click="copyCode">Copy</el-button>
+              <el-tag
+                v-if="codeLocked"
+                type="info"
+                size="small"
+                effect="plain"
+                style="margin-right:6px"
+              >
+                🔒 只读
+              </el-tag>
+              <el-tag
+                v-else
+                type="warning"
+                size="small"
+                effect="plain"
+                style="margin-right:6px"
+              >
+                ✎ 可编辑
+              </el-tag>
+              <el-button
+                size="small"
+                text
+                @click="copyCode"
+              >
+                Copy
+              </el-button>
             </div>
           </div>
           <Codemirror
@@ -193,13 +314,28 @@
       </div>
 
       <div class="efe-footer">
-        <el-button @click="resetAll">Reset</el-button>
-        <el-button type="primary" @click="handleSave">Save</el-button>
+        <el-button @click="resetAll">
+          Reset
+        </el-button>
+        <el-button
+          type="primary"
+          @click="handleSave"
+        >
+          Save
+        </el-button>
       </div>
 
       <!-- Instance detail dialog -->
-      <el-dialog v-model="instDlg.show" :title="instDlg.title" width="480px" append-to-body>
-        <div v-if="instDlg.spec" class="inst-card">
+      <el-dialog
+        v-model="instDlg.show"
+        :title="instDlg.title"
+        width="480px"
+        append-to-body
+      >
+        <div
+          v-if="instDlg.spec"
+          class="inst-card"
+        >
           <div class="inst-row">
             <div class="inst-item">
               <span class="inst-label">CPU</span>
@@ -224,9 +360,24 @@
             <div class="inst-item">
               <span class="inst-label">GPU 模式</span>
               <span class="inst-val">
-                <el-tag v-if="instDlg.spec.gpuMode==='dedicated'" type="success" size="small" effect="plain">独享整卡</el-tag>
-                <el-tag v-else-if="instDlg.spec.gpuMode==='vGPU'" type="warning" size="small" effect="plain">vGPU 分片 {{ instDlg.spec.gpuFraction }}</el-tag>
-                <el-tag v-else type="info" size="small" effect="plain">共享CPU · {{ instDlg.spec.gpuFraction }}</el-tag>
+                <el-tag
+                  v-if="instDlg.spec.gpuMode==='dedicated'"
+                  type="success"
+                  size="small"
+                  effect="plain"
+                >独享整卡</el-tag>
+                <el-tag
+                  v-else-if="instDlg.spec.gpuMode==='vGPU'"
+                  type="warning"
+                  size="small"
+                  effect="plain"
+                >vGPU 分片 {{ instDlg.spec.gpuFraction }}</el-tag>
+                <el-tag
+                  v-else
+                  type="info"
+                  size="small"
+                  effect="plain"
+                >共享CPU · {{ instDlg.spec.gpuFraction }}</el-tag>
               </span>
             </div>
             <div class="inst-item">
@@ -245,25 +396,64 @@
             </div>
           </div>
           <div class="inst-features">
-            <el-tag v-if="instDlg.spec.nvlink" type="success" size="small" effect="dark" style="margin-right:6px">NVLink {{ instDlg.spec.nvlinkMax }}路</el-tag>
-            <el-tag v-if="instDlg.spec.mig" type="primary" size="small" effect="dark" style="margin-right:6px">MIG 多实例</el-tag>
-            <el-tag v-if="!instDlg.spec.nvlink && !instDlg.spec.mig" size="small" effect="plain">无 GPU 互联</el-tag>
+            <el-tag
+              v-if="instDlg.spec.nvlink"
+              type="success"
+              size="small"
+              effect="dark"
+              style="margin-right:6px"
+            >
+              NVLink {{ instDlg.spec.nvlinkMax }}路
+            </el-tag>
+            <el-tag
+              v-if="instDlg.spec.mig"
+              type="primary"
+              size="small"
+              effect="dark"
+              style="margin-right:6px"
+            >
+              MIG 多实例
+            </el-tag>
+            <el-tag
+              v-if="!instDlg.spec.nvlink && !instDlg.spec.mig"
+              size="small"
+              effect="plain"
+            >
+              无 GPU 互联
+            </el-tag>
           </div>
         </div>
-        <div v-else style="color:var(--el-text-color-secondary)">暂无详细规格信息</div>
+        <div
+          v-else
+          style="color:var(--el-text-color-secondary)"
+        >
+          暂无详细规格信息
+        </div>
       </el-dialog>
 
       <!-- JSON editor dialog -->
-      <el-dialog v-model="jsonDlg.show" :title="jsonDlg.field?.label" width="500px" append-to-body>
+      <el-dialog
+        v-model="jsonDlg.show"
+        :title="jsonDlg.field?.label"
+        width="500px"
+        append-to-body
+      >
         <el-input
           v-model="jsonDlg.text"
           type="textarea"
           :rows="8"
-          placeholder='{ "username": "...", "password": "..." }'
+          placeholder="{ &quot;username&quot;: &quot;...&quot;, &quot;password&quot;: &quot;...&quot; }"
         />
         <template #footer>
-          <el-button @click="jsonDlg.show = false">Cancel</el-button>
-          <el-button type="primary" @click="saveJson">OK</el-button>
+          <el-button @click="jsonDlg.show = false">
+            Cancel
+          </el-button>
+          <el-button
+            type="primary"
+            @click="saveJson"
+          >
+            OK
+          </el-button>
         </template>
       </el-dialog>
     </template>
@@ -287,7 +477,7 @@ import {
   INSTANCE_SPEC,
   type InstanceSpec,
 } from '../constants/field-ast'
-import type { FieldNode, ResolvedField, VendorGroup, ValidationError } from '../constants/field-ast'
+import type { FieldNode, ResolvedField, VendorGroup } from '../constants/field-ast'
 
 const emit = defineEmits<{
   (e: 'apply', values: Record<string, unknown>): void

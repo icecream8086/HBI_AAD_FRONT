@@ -2,46 +2,136 @@
   <div>
     <div class="page-head">
       <h2>{{ $t('action.title') }}</h2>
-      <el-button type="primary" @click="openCreate">{{ $t('action.create') }}</el-button>
+      <el-button
+        type="primary"
+        @click="openCreate"
+      >
+        {{ $t('action.create') }}
+      </el-button>
     </div>
 
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('table.name')">
-          <el-input v-model="filter.name" clearable style="width:200px" @clear="fetchData" @keyup.enter="fetchData" />
+          <el-input
+            v-model="filter.name"
+            clearable
+            style="width:200px"
+            @clear="fetchData"
+            @keyup.enter="fetchData"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="items" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="name" :label="$t('action.name')" min-width="160" />
-      <el-table-column :label="$t('action.triggerType')" width="120">
+    <el-table
+      v-loading="loading"
+      :data="items"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="name"
+        :label="$t('action.name')"
+        min-width="160"
+      />
+      <el-table-column
+        :label="$t('action.triggerType')"
+        width="120"
+      >
         <template #default="{ row }">
-          <el-tag v-if="row.on?.manual" size="small" type="primary">{{ $t('action.triggerManual') }}</el-tag>
-          <el-tag v-else-if="row.on?.cron" size="small" type="warning">{{ $t('action.triggerCron') }}</el-tag>
-          <el-tag v-else-if="row.on?.http" size="small" type="success">{{ $t('action.triggerHttp') }}</el-tag>
-          <el-tag v-else-if="row.on?.push" size="small" type="info">{{ $t('action.triggerPush') }}</el-tag>
+          <el-tag
+            v-if="row.on?.manual"
+            size="small"
+            type="primary"
+          >
+            {{ $t('action.triggerManual') }}
+          </el-tag>
+          <el-tag
+            v-else-if="row.on?.cron"
+            size="small"
+            type="warning"
+          >
+            {{ $t('action.triggerCron') }}
+          </el-tag>
+          <el-tag
+            v-else-if="row.on?.http"
+            size="small"
+            type="success"
+          >
+            {{ $t('action.triggerHttp') }}
+          </el-tag>
+          <el-tag
+            v-else-if="row.on?.push"
+            size="small"
+            type="info"
+          >
+            {{ $t('action.triggerPush') }}
+          </el-tag>
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('action.jobs')" width="80">
-        <template #default="{ row }">{{ Object.keys(row.jobs || {}).length }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="170">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.updatedAt')" width="170">
-        <template #default="{ row }">{{ fmt(row.updatedAt) }}</template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="300" fixed="right">
+      <el-table-column
+        :label="$t('action.jobs')"
+        width="80"
+      >
         <template #default="{ row }">
-          <el-button size="small" @click="$router.push(`/actions/workflows/${row.id}`)">{{ $t('table.detail') }}</el-button>
-          <el-button size="small" @click="openEdit(row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="small" type="success" @click="openTrigger(row)">{{ $t('action.triggerNow') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">{{ $t('action.delete') }}</el-button>
+          {{ Object.keys(row.jobs || {}).length }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="170"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.updatedAt')"
+        width="170"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.updatedAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        :label="$t('table.actions')"
+        width="300"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            @click="$router.push(`/actions/workflows/${row.id}`)"
+          >
+            {{ $t('table.detail') }}
+          </el-button>
+          <el-button
+            size="small"
+            @click="openEdit(row)"
+          >
+            {{ $t('table.edit') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="success"
+            @click="openTrigger(row)"
+          >
+            {{ $t('action.triggerNow') }}
+          </el-button>
+          <el-button
+            size="small"
+            type="danger"
+            @click="handleDelete(row.id)"
+          >
+            {{ $t('action.delete') }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -52,31 +142,76 @@
       :page-size="limit"
       :total="total"
       layout="prev, pager, next"
-      @current-change="fetchData"
       style="margin-top:16px; justify-content:flex-end"
+      @current-change="fetchData"
     />
 
     <!-- Create/Edit Dialog -->
-    <el-dialog v-model="dlg.show" :title="dlg.isEdit ? $t('action.editTitle') : $t('action.createTitle')" width="700px" destroy-on-close :close-on-click-modal="false">
-      <el-form :model="form" label-width="110px">
-        <el-form-item :label="$t('action.name')" required>
-          <el-input v-model="form.name" :placeholder="$t('action.name')" />
+    <el-dialog
+      v-model="dlg.show"
+      :title="dlg.isEdit ? $t('action.editTitle') : $t('action.createTitle')"
+      width="700px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
+      <el-form
+        :model="form"
+        label-width="110px"
+      >
+        <el-form-item
+          :label="$t('action.name')"
+          required
+        >
+          <el-input
+            v-model="form.name"
+            :placeholder="$t('action.name')"
+          />
         </el-form-item>
         <el-form-item :label="$t('action.triggerType')">
-          <el-select v-model="form.triggerType" style="width:100%">
-            <el-option :label="$t('action.triggerManual')" value="manual" />
-            <el-option :label="$t('action.triggerCron')" value="cron" />
-            <el-option :label="$t('action.triggerHttp')" value="http" />
-            <el-option :label="$t('action.triggerPush')" value="push" />
+          <el-select
+            v-model="form.triggerType"
+            style="width:100%"
+          >
+            <el-option
+              :label="$t('action.triggerManual')"
+              value="manual"
+            />
+            <el-option
+              :label="$t('action.triggerCron')"
+              value="cron"
+            />
+            <el-option
+              :label="$t('action.triggerHttp')"
+              value="http"
+            />
+            <el-option
+              :label="$t('action.triggerPush')"
+              value="push"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="form.triggerType === 'cron'" :label="$t('action.cronExpr')">
-          <el-input v-model="form.cronExpr" placeholder="0 */6 * * *" />
+        <el-form-item
+          v-if="form.triggerType === 'cron'"
+          :label="$t('action.cronExpr')"
+        >
+          <el-input
+            v-model="form.cronExpr"
+            placeholder="0 */6 * * *"
+          />
         </el-form-item>
-        <el-form-item v-if="form.triggerType === 'http'" label="Signature Secret">
-          <el-input v-model="form.httpSecret" placeholder="Optional HMAC secret" />
+        <el-form-item
+          v-if="form.triggerType === 'http'"
+          label="Signature Secret"
+        >
+          <el-input
+            v-model="form.httpSecret"
+            placeholder="Optional HMAC secret"
+          />
         </el-form-item>
-        <el-form-item :label="$t('action.yaml')" required>
+        <el-form-item
+          :label="$t('action.yaml')"
+          required
+        >
           <Codemirror
             v-model="form.yaml"
             :extensions="cmExtensions"
@@ -85,23 +220,50 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dlg.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="dlg.saving" @click="handleSave">
+        <el-button @click="dlg.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="dlg.saving"
+          @click="handleSave"
+        >
           {{ dlg.isEdit ? $t('table.save') : $t('table.create') }}
         </el-button>
       </template>
     </el-dialog>
 
     <!-- Trigger Dialog -->
-    <el-dialog v-model="triggerDlg.show" :title="$t('action.triggerTitle')" width="450px" destroy-on-close>
-      <el-form :model="triggerDlg.form" label-width="90px">
+    <el-dialog
+      v-model="triggerDlg.show"
+      :title="$t('action.triggerTitle')"
+      width="450px"
+      destroy-on-close
+    >
+      <el-form
+        :model="triggerDlg.form"
+        label-width="90px"
+      >
         <el-form-item :label="$t('action.inputs')">
-          <el-input v-model="triggerDlg.form.inputs" type="textarea" :rows="4" placeholder='{"key": "value"}' />
+          <el-input
+            v-model="triggerDlg.form.inputs"
+            type="textarea"
+            :rows="4"
+            placeholder="{&quot;key&quot;: &quot;value&quot;}"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="triggerDlg.show = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="triggerDlg.saving" @click="handleTrigger">{{ $t('action.triggerNow') }}</el-button>
+        <el-button @click="triggerDlg.show = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="triggerDlg.saving"
+          @click="handleTrigger"
+        >
+          {{ $t('action.triggerNow') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -114,6 +276,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Codemirror } from 'vue-codemirror'
 import { yaml as yamlLang } from '@codemirror/lang-yaml'
 import { api } from '../../api'
+import YAML from 'yaml'
 
 const cmExtensions = [yamlLang()]
 
@@ -133,56 +296,21 @@ const triggerDlg = reactive({ show: false, saving: false, workflowId: '', form: 
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
-function jsonToYaml(jobs: Record<string, JobDef>): string {
-  const lines: string[] = []
-  for (const [name, job] of Object.entries(jobs)) {
-    lines.push(`${name}:`)
-    if (job.needs?.length) lines.push(`  needs: [${job.needs.join(', ')}]`)
-    if (job.container?.image) {
-      lines.push(`  container:`)
-      lines.push(`    image: ${job.container.image}`)
-    }
-    if (job.steps) {
-      lines.push(`  steps:`)
-      for (const s of job.steps) {
-        lines.push(`    - run: "${s.run || ''}"`)
-      }
-    }
-    if (job.timeout) lines.push(`  timeout: ${job.timeout}`)
-  }
-  return lines.join('\n')
+function jobsToYaml(jobs: Record<string, JobDef>): string {
+  return YAML.stringify(jobs, { lineWidth: 0 })
 }
 
 function parseYamlToJobs(yaml: string): Record<string, JobDef> | null {
-  // Simple YAML → JSON conversion for workflow jobs
+  if (!yaml.trim()) return null
   try {
-    const jobs: Record<string, JobDef> = {}
-    const lines = yaml.split('\n')
-    let currentJob = ''
-    let inContainer = false
-    let inSteps = false
-    for (const line of lines) {
-      if (line.trim() === '' || line.startsWith('#')) continue
-      if (/^[a-zA-Z]/.test(line) && !line.startsWith(' ')) {
-        currentJob = line.replace(/:$/, '').trim()
-        jobs[currentJob] = { steps: [] }
-        inContainer = false; inSteps = false
-      } else if (currentJob && line.match(/^\s+needs:/)) {
-        const needsStr = line.replace(/^\s+needs:\s*\[?/, '').replace(/\]$/, '').trim()
-        jobs[currentJob].needs = needsStr ? needsStr.split(/,\s*/).map(s => s.replace(/['"]/g, '')) : []
-      } else if (currentJob && line.match(/^\s+container:/)) {
-        inContainer = true; inSteps = false
-      } else if (inContainer && line.match(/^\s+image:/)) {
-        const img = line.replace(/^\s+image:\s*/, '').trim()
-        jobs[currentJob].container = { ...jobs[currentJob].container, image: img }
-      } else if (!inContainer && line.match(/^\s+steps:/)) {
-        inSteps = true; inContainer = false
-      } else if (inSteps && line.match(/^\s+- run:/)) {
-        const run = line.replace(/^\s+- run:\s*/, '').trim().replace(/^"/, '').replace(/"$/, '')
-        jobs[currentJob].steps!.push({ run })
-      }
+    const parsed = YAML.parse(yaml)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    // Validate structure: each value must have a `steps` array
+    for (const [, val] of Object.entries(parsed)) {
+      if (!val || typeof val !== 'object') return null
+      if (!Array.isArray((val as Record<string, unknown>).steps)) return null
     }
-    return Object.keys(jobs).length > 0 ? jobs : null
+    return parsed as Record<string, JobDef>
   } catch {
     return null
   }
@@ -200,7 +328,7 @@ function openEdit(row: WorkflowDef) {
   form.triggerType = row.on?.cron ? 'cron' : row.on?.http ? 'http' : row.on?.push ? 'push' : 'manual'
   form.cronExpr = row.on?.cron || ''
   form.httpSecret = row.on?.http?.signatureSecret || ''
-  form.yaml = row.jobs ? jsonToYaml(row.jobs) : ''
+  form.yaml = row.jobs ? jobsToYaml(row.jobs) : ''
   dlg.show = true
 }
 
@@ -229,38 +357,13 @@ async function handleSave() {
   if (!form.yaml.trim()) { ElMessage.warning(t('action.yamlRequired')); return }
   const jobs = parseYamlToJobs(form.yaml)
   if (!jobs) {
-    try {
-      // Try JSON parse as fallback
-      const parsed = JSON.parse(form.yaml)
-      if (typeof parsed !== 'object') throw new Error()
-      if (!dlg.isEdit) {
-        dlg.saving = true
-        const body: Record<string, any> = { name: form.name, jobs: parsed }
-        const on: Record<string, any> = {}
-        if (form.triggerType === 'manual') on.manual = true
-        else if (form.triggerType === 'cron') on.cron = form.cronExpr || '0 0 * * *'
-        else if (form.triggerType === 'http') on.http = { signatureSecret: form.httpSecret || undefined }
-        else if (form.triggerType === 'push') on.push = {}
-        body.on = on
-        await api.actions.workflows.create(body as any)
-        ElMessage.success(t('action.createSuccess'))
-        dlg.show = false; await fetchData()
-      } else {
-        // For edit, just pass YAML as string with name/on
-        await api.actions.workflows.update(dlg.editId, { name: form.name })
-        ElMessage.success(t('action.updateSuccess'))
-        dlg.show = false; await fetchData()
-      }
-    } catch (e: any) {
-      ElMessage.error(e?.response?.data?.error?.message || t('action.saveFailed'))
-    }
-    finally { dlg.saving = false }
+    ElMessage.error(t('action.yamlParseFailed') || 'YAML parse failed — check syntax')
     return
   }
 
   dlg.saving = true
   try {
-    const on: Record<string, any> = {}
+    const on: Record<string, unknown> = {}
     if (form.triggerType === 'manual') on.manual = true
     else if (form.triggerType === 'cron') on.cron = form.cronExpr || '0 0 * * *'
     else if (form.triggerType === 'http') on.http = { signatureSecret: form.httpSecret || undefined }

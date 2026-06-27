@@ -1,13 +1,19 @@
 <template>
   <el-container class="main-layout">
     <!-- Sidebar -->
-    <el-aside :width="isCollapsed ? '64px' : '240px'" class="sidebar">
+    <el-aside
+      :width="isCollapsed ? '64px' : '240px'"
+      class="sidebar"
+    >
       <div class="sidebar-header">
         <template v-if="!isCollapsed">
           <span class="logo-text">HBI AAD</span>
           <span class="logo-desc">扩展字段编辑器</span>
         </template>
-        <span v-else class="logo-icon">H</span>
+        <span
+          v-else
+          class="logo-icon"
+        >H</span>
       </div>
       <el-menu
         :default-active="route.path"
@@ -20,7 +26,9 @@
       >
         <el-menu-item index="/dashboard">
           <el-icon><Odometer /></el-icon>
-          <template #title>{{ $t('menu.dashboard') }}</template>
+          <template #title>
+            {{ $t('menu.dashboard') }}
+          </template>
         </el-menu-item>
 
         <el-sub-menu index="actions">
@@ -28,14 +36,30 @@
             <el-icon><VideoPlay /></el-icon>
             <span>{{ $t('menu.actions') }}</span>
           </template>
-          <el-menu-item index="/actions/dashboard">{{ $t('menu.actionDashboard') }}</el-menu-item>
-          <el-menu-item index="/actions/workflows">{{ $t('menu.workflows') }}</el-menu-item>
-          <el-menu-item index="/actions/runs">{{ $t('menu.workflowRuns') }}</el-menu-item>
-          <el-menu-item index="/actions/runners">{{ $t('menu.runners') }}</el-menu-item>
-          <el-menu-item index="/actions/registry">{{ $t('menu.actionRegistry') }}</el-menu-item>
-          <el-menu-item index="/actions/shared-links">{{ $t('menu.sharedLinks') }}</el-menu-item>
-          <el-menu-item index="/actions/organizations">{{ $t('menu.actionOrganizations') }}</el-menu-item>
-          <el-menu-item index="/actions/templates">{{ $t('menu.actionTemplates') }}</el-menu-item>
+          <el-menu-item index="/actions/dashboard">
+            {{ $t('menu.actionDashboard') }}
+          </el-menu-item>
+          <el-menu-item index="/actions/workflows">
+            {{ $t('menu.workflows') }}
+          </el-menu-item>
+          <el-menu-item index="/actions/runs">
+            {{ $t('menu.workflowRuns') }}
+          </el-menu-item>
+          <el-menu-item index="/actions/runners">
+            {{ $t('menu.runners') }}
+          </el-menu-item>
+          <el-menu-item index="/actions/registry">
+            {{ $t('menu.actionRegistry') }}
+          </el-menu-item>
+          <el-menu-item index="/actions/shared-links">
+            {{ $t('menu.sharedLinks') }}
+          </el-menu-item>
+          <el-menu-item index="/actions/organizations">
+            {{ $t('menu.actionOrganizations') }}
+          </el-menu-item>
+          <el-menu-item index="/actions/templates">
+            {{ $t('menu.actionTemplates') }}
+          </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="sandbox-group">
@@ -43,20 +67,30 @@
             <el-icon><Monitor /></el-icon>
             <span>{{ $t('menu.sandboxes') }}</span>
           </template>
-          <el-menu-item index="/sandboxes">{{ $t('menu.sandboxList') }}</el-menu-item>
-          <el-menu-item index="/sandboxes/pods">{{ $t('menu.sandboxPods') }}</el-menu-item>
+          <el-menu-item index="/sandboxes">
+            {{ $t('menu.sandboxList') }}
+          </el-menu-item>
+          <el-menu-item index="/sandboxes/pods">
+            {{ $t('menu.sandboxPods') }}
+          </el-menu-item>
         </el-sub-menu>
         <el-menu-item index="/templates">
           <el-icon><Document /></el-icon>
-          <template #title>{{ $t('menu.templates') }}</template>
+          <template #title>
+            {{ $t('menu.templates') }}
+          </template>
         </el-menu-item>
         <el-menu-item index="/images">
           <el-icon><PictureFilled /></el-icon>
-          <template #title>{{ $t('menu.images') }}</template>
+          <template #title>
+            {{ $t('menu.images') }}
+          </template>
         </el-menu-item>
         <el-menu-item index="/users">
           <el-icon><User /></el-icon>
-          <template #title>{{ $t('menu.users') }}</template>
+          <template #title>
+            {{ $t('menu.users') }}
+          </template>
         </el-menu-item>
 
         <el-sub-menu index="admin">
@@ -64,16 +98,36 @@
             <el-icon><Setting /></el-icon>
             <span>{{ $t('menu.permissions') }}</span>
           </template>
-          <el-menu-item index="/permissions/policies">{{ $t('menu.policies') }}</el-menu-item>
-          <el-menu-item index="/permissions/groups">{{ $t('menu.permissionGroups') }}</el-menu-item>
-          <el-menu-item index="/permissions/user-groups">{{ $t('menu.userGroups') }}</el-menu-item>
-          <el-menu-item index="/permissions/route-acls">{{ $t('menu.routeAcls') }}</el-menu-item>
-          <el-menu-item index="/permissions/system-groups">{{ $t('menu.systemGroups') }}</el-menu-item>
-          <el-menu-item index="/permissions/user-templates">{{ $t('menu.userTemplates') }}</el-menu-item>
-          <el-menu-item index="/permissions/container-secrets">{{ $t('menu.containerSecrets') }}</el-menu-item>
-          <el-menu-item index="/permissions/elevations">{{ $t('menu.elevations') }}</el-menu-item>
-          <el-menu-item index="/permissions/invitations">{{ $t('menu.invitations') }}</el-menu-item>
-          <el-menu-item index="/permissions/tools">{{ $t('menu.permTools') }}</el-menu-item>
+          <el-menu-item index="/permissions/policies">
+            {{ $t('menu.policies') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/groups">
+            {{ $t('menu.permissionGroups') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/user-groups">
+            {{ $t('menu.userGroups') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/route-acls">
+            {{ $t('menu.routeAcls') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/system-groups">
+            {{ $t('menu.systemGroups') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/user-templates">
+            {{ $t('menu.userTemplates') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/container-secrets">
+            {{ $t('menu.containerSecrets') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/elevations">
+            {{ $t('menu.elevations') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/invitations">
+            {{ $t('menu.invitations') }}
+          </el-menu-item>
+          <el-menu-item index="/permissions/tools">
+            {{ $t('menu.permTools') }}
+          </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="topology">
@@ -85,9 +139,15 @@
             <el-icon><Cpu /></el-icon>
             {{ $t('menu.instances') }}
           </el-menu-item>
-          <el-menu-item index="/topology/credentials">{{ $t('menu.credentials') }}</el-menu-item>
-          <el-menu-item index="/topology/buckets">{{ $t('menu.buckets') }}</el-menu-item>
-          <el-menu-item index="/topology/volumes">{{ $t('menu.volumes') }}</el-menu-item>
+          <el-menu-item index="/topology/credentials">
+            {{ $t('menu.credentials') }}
+          </el-menu-item>
+          <el-menu-item index="/topology/buckets">
+            {{ $t('menu.buckets') }}
+          </el-menu-item>
+          <el-menu-item index="/topology/volumes">
+            {{ $t('menu.volumes') }}
+          </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="network">
@@ -95,17 +155,25 @@
             <el-icon><Connection /></el-icon>
             <span>{{ $t('menu.network') }}</span>
           </template>
-          <el-menu-item index="/networks">{{ $t('menu.securityGroups') }}</el-menu-item>
-          <el-menu-item index="/subnets">{{ $t('menu.subnets') }}</el-menu-item>
+          <el-menu-item index="/networks">
+            {{ $t('menu.securityGroups') }}
+          </el-menu-item>
+          <el-menu-item index="/subnets">
+            {{ $t('menu.subnets') }}
+          </el-menu-item>
         </el-sub-menu>
 
         <el-menu-item index="/audit">
           <el-icon><List /></el-icon>
-          <template #title>{{ $t('menu.audit') }}</template>
+          <template #title>
+            {{ $t('menu.audit') }}
+          </template>
         </el-menu-item>
         <el-menu-item index="/events">
           <el-icon><Refresh /></el-icon>
-          <template #title>{{ $t('menu.events') }}</template>
+          <template #title>
+            {{ $t('menu.events') }}
+          </template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -114,23 +182,40 @@
     <el-container>
       <el-header class="header">
         <div class="header-left">
-          <el-icon class="collapse-btn" @click="toggleSidebar" :size="18">
+          <el-icon
+            class="collapse-btn"
+            :size="18"
+            @click="toggleSidebar"
+          >
             <Fold v-if="!isCollapsed" />
             <Expand v-else />
           </el-icon>
           <el-breadcrumb>
-            <el-breadcrumb-item :to="{ path: '/dashboard' }">{{ $t('common.home') }}</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="route.meta?.title">{{ $t(route.meta.title as string) }}</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/dashboard' }">
+              {{ $t('common.home') }}
+            </el-breadcrumb-item>
+            <el-breadcrumb-item v-if="route.meta?.title">
+              {{ $t(route.meta.title as string) }}
+            </el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">
-          <span class="ext-editor-btn" @click="$router.push('/extension-fields')">
-            <el-icon :size="15" style="margin-right:3px;vertical-align:text-bottom"><Setting /></el-icon>
+          <span
+            class="ext-editor-btn"
+            @click="$router.push('/extension-fields')"
+          >
+            <el-icon
+              :size="15"
+              style="margin-right:3px;vertical-align:text-bottom"
+            ><Setting /></el-icon>
             扩展字段编辑器
           </span>
 
           <!-- Language switcher -->
-          <el-dropdown trigger="click" @command="cmd => setLang(cmd)">
+          <el-dropdown
+            trigger="click"
+            @command="cmd => setLang(cmd)"
+          >
             <span class="user-trigger">
               <el-icon :size="16"><ChatDotSquare /></el-icon>
               <span style="margin:0 2px">{{ locale === 'zh-CN' ? '简体中文' : 'English' }}</span>
@@ -138,7 +223,11 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="opt in LANG_OPTIONS" :key="opt.id" :command="opt.id">
+                <el-dropdown-item
+                  v-for="opt in LANG_OPTIONS"
+                  :key="opt.id"
+                  :command="opt.id"
+                >
                   {{ opt.label }}
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -146,7 +235,10 @@
           </el-dropdown>
 
           <!-- Theme switcher -->
-          <el-dropdown trigger="click" @command="cmd => setTheme(cmd)">
+          <el-dropdown
+            trigger="click"
+            @command="cmd => setTheme(cmd)"
+          >
             <span class="user-trigger">
               <el-icon :size="18"><MagicStick /></el-icon>
               <span style="margin:0 4px">{{ $t('theme.' + currentInfo.id) }}</span>
@@ -154,55 +246,123 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="t in themes" :key="t.id" :command="t.id">
-                  <el-icon><component :is="t.icon as any" /></el-icon>{{ $t('theme.' + t.id) }}
+                <el-dropdown-item
+                  v-for="theme in themes"
+                  :key="theme.id"
+                  :command="theme.id"
+                >
+                  <el-icon><component :is="theme.icon as any" /></el-icon>{{ $t('theme.' + theme.id) }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
 
           <!-- Sudo button -->
-          <el-tooltip v-if="sudoRemainingMs > 0" :content="$t('common.sudoRemaining') + ': ' + fmtDuration(sudoRemainingMs)" placement="bottom">
-            <el-button size="small" type="warning" @click="handleSudo" class="sudo-btn">
+          <el-tooltip
+            v-if="sudoRemainingMs > 0"
+            :content="$t('common.sudoRemaining') + ': ' + fmtDuration(sudoRemainingMs)"
+            placement="bottom"
+          >
+            <el-button
+              size="small"
+              type="warning"
+              class="sudo-btn"
+              @click="handleSudo"
+            >
               <el-icon><WarningFilled /></el-icon>
               {{ $t('common.sudoActive') }}
             </el-button>
           </el-tooltip>
-          <el-button v-else size="small" @click="handleSudo" class="sudo-btn">
+          <el-button
+            v-else
+            size="small"
+            class="sudo-btn"
+            @click="handleSudo"
+          >
             <el-icon><Top /></el-icon>
             {{ $t('common.sudo') }}
           </el-button>
 
           <!-- Invite button -->
-          <el-button size="small" @click="showInviteDlg = true" class="invite-btn">
+          <el-button
+            size="small"
+            class="invite-btn"
+            @click="showInviteDlg = true"
+          >
             <el-icon><UserFilled /></el-icon>
             {{ $t('permission.invite') }}
           </el-button>
 
           <!-- API quick reference -->
-          <el-popover trigger="click" :width="380">
+          <el-popover
+            trigger="click"
+            :width="380"
+          >
             <template #reference>
-              <el-button size="small" circle class="api-doc-btn">
-                <el-icon :size="16"><Document /></el-icon>
+              <el-button
+                size="small"
+                circle
+                class="api-doc-btn"
+              >
+                <el-icon :size="16">
+                  <Document />
+                </el-icon>
               </el-button>
             </template>
             <div style="font-size:13px;line-height:1.6">
-              <div style="margin-bottom:8px"><strong>Auth</strong><br><code style="font-size:12px;background:var(--el-fill-color-light);padding:1px 4px;border-radius:3px">Authorization: Bearer sess_xxx</code><br><span style="font-size:12px;color:var(--el-text-color-secondary)">2h 过期，401 自动跳转登录</span></div>
-              <div style="margin-bottom:8px"><strong>分页</strong><br><code style="font-size:12px;background:var(--el-fill-color-light);padding:1px 4px;border-radius:3px">?page=&limit=&name=&type=&status=</code></div>
-              <div style="margin-bottom:8px"><strong>角色</strong><br><el-tag size="small" type="danger">wheel</el-tag> 最高权限 <el-tag size="small" type="warning">root</el-tag> 管理 <el-tag size="small">Operator</el-tag> <el-tag size="small" type="info">Viewer</el-tag></div>
-              <div style="margin-bottom:8px"><strong>审计</strong><br><span style="font-size:12px;color:var(--el-text-color-secondary)">生产环境 GET /api/audit/logs 不工作，走 wrangler tail / Logpush</span></div>
-              <div style="margin-bottom:4px"><strong>Volume</strong><br><span style="font-size:12px;color:var(--el-text-color-secondary)">必须绑定到计算实例（instanceId）</span></div>
+              <div style="margin-bottom:8px">
+                <strong>Auth</strong><br><code style="font-size:12px;background:var(--el-fill-color-light);padding:1px 4px;border-radius:3px">Authorization: Bearer sess_xxx</code><br><span style="font-size:12px;color:var(--el-text-color-secondary)">2h 过期，401 自动跳转登录</span>
+              </div>
+              <div style="margin-bottom:8px">
+                <strong>分页</strong><br><code style="font-size:12px;background:var(--el-fill-color-light);padding:1px 4px;border-radius:3px">?page=&limit=&name=&type=&status=</code>
+              </div>
+              <div style="margin-bottom:8px">
+                <strong>角色</strong><br><el-tag
+                  size="small"
+                  type="danger"
+                >
+                  wheel
+                </el-tag> 最高权限 <el-tag
+                  size="small"
+                  type="warning"
+                >
+                  root
+                </el-tag> 管理 <el-tag size="small">
+                  Operator
+                </el-tag> <el-tag
+                  size="small"
+                  type="info"
+                >
+                  Viewer
+                </el-tag>
+              </div>
+              <div style="margin-bottom:8px">
+                <strong>审计</strong><br><span style="font-size:12px;color:var(--el-text-color-secondary)">生产环境 GET /api/audit/logs 不工作，走 wrangler tail / Logpush</span>
+              </div>
+              <div style="margin-bottom:4px">
+                <strong>Volume</strong><br><span style="font-size:12px;color:var(--el-text-color-secondary)">必须绑定到计算实例（instanceId）</span>
+              </div>
               <el-divider style="margin:6px 0" />
               <div style="font-size:12px;color:var(--el-text-color-secondary)">
-                <a href="/api/openapi.json" target="_blank">OpenAPI JSON</a>
+                <a
+                  href="/api/openapi.json"
+                  target="_blank"
+                >OpenAPI JSON</a>
                 <span style="margin:0 6px">|</span>154 路由 · 82 路径
               </div>
             </div>
           </el-popover>
 
-          <el-dropdown trigger="click" @command="handleCommand">
+          <el-dropdown
+            trigger="click"
+            @command="handleCommand"
+          >
             <span class="user-trigger">
-              <el-avatar :size="28" :src="avatarBlob" style="margin-right:6px">
+              <el-avatar
+                :size="28"
+                :src="avatarBlob"
+                style="margin-right:6px"
+              >
                 {{ (user?.name || user?.email || 'U')[0].toUpperCase() }}
               </el-avatar>
               <span class="username">{{ user?.name || user?.email || $t('common.profile') }}</span>
@@ -213,7 +373,10 @@
                 <el-dropdown-item command="profile">
                   <el-icon><User /></el-icon>{{ $t('common.profile') }}
                 </el-dropdown-item>
-                <el-dropdown-item divided command="logout">
+                <el-dropdown-item
+                  divided
+                  command="logout"
+                >
                   <el-icon><SwitchButton /></el-icon>{{ $t('common.logout') }}
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -228,22 +391,54 @@
     </el-container>
 
     <!-- Invite dialog -->
-    <el-dialog v-model="showInviteDlg" :title="$t('permission.inviteMember')" width="450px">
+    <el-dialog
+      v-model="showInviteDlg"
+      :title="$t('permission.inviteMember')"
+      width="450px"
+    >
       <el-form label-width="80px">
         <el-form-item :label="$t('permission.userGroups')">
-          <el-select v-model="inviteForm.groupId" filterable :placeholder="$t('permission.groupSelectPlaceholder')" style="width:100%">
-            <el-option v-for="g in inviteGroups" :key="g.id" :label="g.name" :value="g.id" />
+          <el-select
+            v-model="inviteForm.groupId"
+            filterable
+            :placeholder="$t('permission.groupSelectPlaceholder')"
+            style="width:100%"
+          >
+            <el-option
+              v-for="g in inviteGroups"
+              :key="g.id"
+              :label="g.name"
+              :value="g.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('permission.members')">
-          <el-select v-model="inviteForm.userId" filterable :placeholder="$t('permission.userSelectPlaceholder')" style="width:100%">
-            <el-option v-for="u in inviteUsers" :key="u.id" :label="`${u.name} (${u.email})`" :value="u.id" />
+          <el-select
+            v-model="inviteForm.userId"
+            filterable
+            :placeholder="$t('permission.userSelectPlaceholder')"
+            style="width:100%"
+          >
+            <el-option
+              v-for="u in inviteUsers"
+              :key="u.id"
+              :label="`${u.name} (${u.email})`"
+              :value="u.id"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showInviteDlg = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" :loading="inviteSaving" @click="handleHeaderInvite">{{ $t('permission.invite') }}</el-button>
+        <el-button @click="showInviteDlg = false">
+          {{ $t('table.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="inviteSaving"
+          @click="handleHeaderInvite"
+        >
+          {{ $t('permission.invite') }}
+        </el-button>
       </template>
     </el-dialog>
   </el-container>
@@ -263,7 +458,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useStore<State>()
 const { themes, currentInfo, setTheme } = useTheme()
-const { locale, setLang, toggleLang } = useLocale()
+const { locale, setLang } = useLocale()
 const { t } = useI18n()
 
 const user = computed(() => store.state.auth.currentUser)

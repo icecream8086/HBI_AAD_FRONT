@@ -1,6 +1,12 @@
 <template>
   <div>
-    <el-button text @click="$router.push('/dashboard')" class="back">← {{ $t('common.home') }}</el-button>
+    <el-button
+      text
+      class="back"
+      @click="$router.push('/dashboard')"
+    >
+      ← {{ $t('common.home') }}
+    </el-button>
     <div class="page-head">
       <h2>{{ $t('invitation.title') }}</h2>
     </div>
@@ -8,37 +14,103 @@
     <el-card class="filters">
       <el-form inline>
         <el-form-item :label="$t('invitation.filterStatus')">
-          <el-select v-model="filter.status" clearable style="width:160px" :placeholder="$t('invitation.filterStatus')" @change="fetchData">
-            <el-option :label="$t('invitation.pending')" value="pending" />
-            <el-option :label="$t('invitation.accepted')" value="accepted" />
-            <el-option :label="$t('invitation.rejected')" value="rejected" />
+          <el-select
+            v-model="filter.status"
+            clearable
+            style="width:160px"
+            :placeholder="$t('invitation.filterStatus')"
+            @change="fetchData"
+          >
+            <el-option
+              :label="$t('invitation.pending')"
+              value="pending"
+            />
+            <el-option
+              :label="$t('invitation.accepted')"
+              value="accepted"
+            />
+            <el-option
+              :label="$t('invitation.rejected')"
+              value="rejected"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="resetFilter">{{ $t('table.reset') }}</el-button>
+          <el-button @click="resetFilter">
+            {{ $t('table.reset') }}
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <el-table :data="items || []" v-loading="loading" stripe :empty-text="$t('table.empty')">
-      <el-table-column prop="groupName" :label="$t('invitation.groupName')" min-width="150" />
-      <el-table-column prop="inviterName" :label="$t('invitation.inviterName')" min-width="120" />
-      <el-table-column prop="inviteeName" :label="$t('invitation.inviteeName')" min-width="120" />
-      <el-table-column :label="$t('invitation.status')" width="110">
+    <el-table
+      v-loading="loading"
+      :data="items || []"
+      stripe
+      :empty-text="$t('table.empty')"
+    >
+      <el-table-column
+        prop="groupName"
+        :label="$t('invitation.groupName')"
+        min-width="150"
+      />
+      <el-table-column
+        prop="inviterName"
+        :label="$t('invitation.inviterName')"
+        min-width="120"
+      />
+      <el-table-column
+        prop="inviteeName"
+        :label="$t('invitation.inviteeName')"
+        min-width="120"
+      />
+      <el-table-column
+        :label="$t('invitation.status')"
+        width="110"
+      >
         <template #default="{ row }">
-          <el-tag :type="statusType(row.status)" size="small">{{ $t(`invitation.${row.status}`) }}</el-tag>
+          <el-tag
+            :type="statusType(row.status)"
+            size="small"
+          >
+            {{ $t(`invitation.${row.status}`) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.createdAt')" width="170">
-        <template #default="{ row }">{{ fmt(row.createdAt) }}</template>
+      <el-table-column
+        :label="$t('table.createdAt')"
+        width="170"
+      >
+        <template #default="{ row }">
+          {{ fmt(row.createdAt) }}
+        </template>
       </el-table-column>
-      <el-table-column :label="$t('table.actions')" width="180" fixed="right">
+      <el-table-column
+        :label="$t('table.actions')"
+        width="180"
+        fixed="right"
+      >
         <template #default="{ row }">
           <template v-if="row.status === 'pending'">
-            <el-button size="small" type="success" @click="handleAccept(row.id)">{{ $t('invitation.accept') }}</el-button>
-            <el-button size="small" type="danger" @click="handleReject(row.id)">{{ $t('invitation.reject') }}</el-button>
+            <el-button
+              size="small"
+              type="success"
+              @click="handleAccept(row.id)"
+            >
+              {{ $t('invitation.accept') }}
+            </el-button>
+            <el-button
+              size="small"
+              type="danger"
+              @click="handleReject(row.id)"
+            >
+              {{ $t('invitation.reject') }}
+            </el-button>
           </template>
-          <span v-else style="color:var(--el-text-color-secondary);font-size:12px">—</span>
+          <span
+            v-else
+            style="color:var(--el-text-color-secondary);font-size:12px"
+          >—</span>
         </template>
       </el-table-column>
     </el-table>
@@ -62,6 +134,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { api } from '../../api'
+import { type StatusTagMap, lookup } from '../../utils/codec'
 
 const { t } = useI18n()
 
@@ -72,10 +145,12 @@ const limit = 20
 const total = ref(0)
 const filter = reactive({ status: '' as string })
 
-function statusType(s: string) {
-  const m: Record<string, string> = { pending: 'warning', accepted: 'success', rejected: 'info' }
-  return m[s] || 'info'
+const invitationStatusTags: StatusTagMap<'pending' | 'accepted' | 'rejected'> = {
+  pending: 'warning',
+  accepted: 'success',
+  rejected: 'info',
 }
+function statusType(s: string) { return lookup(invitationStatusTags, s, 'info') }
 
 function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 

@@ -4,30 +4,76 @@
       <h2>{{ $t('action.registryTitle') }}</h2>
     </div>
 
-    <el-card v-if="items.length" class="section">
-      <el-table :data="items" v-loading="loading" stripe :empty-text="$t('action.noActions')">
-        <el-table-column prop="name" :label="$t('action.registryName')" width="160" />
-        <el-table-column prop="version" :label="$t('action.registryVersion')" width="100">
+    <el-card
+      v-if="items.length"
+      class="section"
+    >
+      <el-table
+        v-loading="loading"
+        :data="items"
+        stripe
+        :empty-text="$t('action.noActions')"
+      >
+        <el-table-column
+          prop="name"
+          :label="$t('action.registryName')"
+          width="160"
+        />
+        <el-table-column
+          prop="version"
+          :label="$t('action.registryVersion')"
+          width="100"
+        >
           <template #default="{ row }">
-            <el-tag size="small">{{ row.version }}</el-tag>
+            <el-tag size="small">
+              {{ row.version }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="description" :label="$t('action.registryDescription')" min-width="200" show-overflow-tooltip />
-        <el-table-column :label="$t('action.registrySource')" width="200">
+        <el-table-column
+          prop="description"
+          :label="$t('action.registryDescription')"
+          min-width="200"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          :label="$t('action.registrySource')"
+          width="200"
+        >
           <template #default="{ row }">
-            <el-tag size="small" type="info">{{ row.runs?.using }}</el-tag>
+            <el-tag
+              size="small"
+              type="info"
+            >
+              {{ row.runs?.using }}
+            </el-tag>
             <span style="margin-left:4px">{{ row.runs?.image || row.runs?.main || '' }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('action.registryInputs')" width="80">
-          <template #default="{ row }">{{ Object.keys(row.inputs || {}).length }}</template>
+        <el-table-column
+          :label="$t('action.registryInputs')"
+          width="80"
+        >
+          <template #default="{ row }">
+            {{ Object.keys(row.inputs || {}).length }}
+          </template>
         </el-table-column>
-        <el-table-column :label="$t('action.registryOutputs')" width="80">
-          <template #default="{ row }">{{ Object.keys(row.outputs || {}).length }}</template>
+        <el-table-column
+          :label="$t('action.registryOutputs')"
+          width="80"
+        >
+          <template #default="{ row }">
+            {{ Object.keys(row.outputs || {}).length }}
+          </template>
         </el-table-column>
       </el-table>
     </el-card>
-    <div v-else-if="!loading" class="empty-state">{{ $t('action.noActions') }}</div>
+    <div
+      v-else-if="!loading"
+      class="empty-state"
+    >
+      {{ $t('action.noActions') }}
+    </div>
   </div>
 </template>
 
