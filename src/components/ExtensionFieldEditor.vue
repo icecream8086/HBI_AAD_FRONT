@@ -480,7 +480,7 @@ import {
 import type { FieldNode, ResolvedField, VendorGroup } from '../constants/field-ast'
 
 const emit = defineEmits<{
-  (e: 'apply', values: Record<string, unknown>): void
+  apply: [values: Record<string, unknown>]
 }>()
 
 // ── Layout ──

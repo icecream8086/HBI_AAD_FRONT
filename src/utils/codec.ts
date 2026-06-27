@@ -55,7 +55,7 @@ export function validateCodec<K extends string>(
   map: Record<string, unknown>,
   keys: readonly K[],
 ): void {
-  if (import.meta.env.PROD) return
+  if (process.env.NODE_ENV === 'production') return
   const mapKeys = Object.keys(map).sort()
   const expected = [...keys].sort()
   const extra = mapKeys.filter(k => !expected.includes(k as K))

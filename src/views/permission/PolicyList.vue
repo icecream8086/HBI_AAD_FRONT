@@ -376,7 +376,7 @@ function openEdit(row: StoredPolicy) {
   dialog.show = true
 }
 
-function onSort(_: any) { fetchData() }
+function onSort() { fetchData() }
 function resetFilter() { filter.name = ''; fetchData() }
 
 async function fetchData() {

@@ -45,7 +45,7 @@ export function useResolver() {
     return g?.name || id.slice(0, 12)
   }
 
-  function resolveNames(ids: string[] | undefined, resolver: (id: string) => string): { id: string; name: string }[] {
+  function resolveNames(ids: string[] | undefined, resolver: (_id: string) => string): { id: string; name: string }[] {
     if (!ids?.length) return []
     return ids.map(id => ({ id, name: resolver(id) }))
   }

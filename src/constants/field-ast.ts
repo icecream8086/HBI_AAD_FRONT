@@ -396,11 +396,11 @@ export const INSTANCE_SPEC: Record<string, InstanceSpec> = {
 }
 
 // Dev-mode validation: every INSTANCE_SPEC entry must be a valid InstanceSpec
-if (import.meta.env.DEV) {
-  const requiredFields = ['cpu', 'mem', 'gpu', 'gpuMem', 'gpuCount', 'gpuMode', 'bandwidth', 'pps', 'nvlink', 'mig', 'architecture'] as const
+if (process.env.NODE_ENV !== 'production') {
+  const requiredFields: readonly (keyof InstanceSpec)[] = ['cpu', 'mem', 'gpu', 'gpuMem', 'gpuCount', 'gpuMode', 'bandwidth', 'pps', 'nvlink', 'mig', 'architecture']
   for (const [key, spec] of Object.entries(INSTANCE_SPEC)) {
     for (const f of requiredFields) {
-      if ((spec as Record<string, unknown>)[f] === undefined) {
+      if (spec[f] === undefined) {
         console.error(`[INSTANCE_SPEC] "${key}" missing required field: ${f}`)
       }
     }
