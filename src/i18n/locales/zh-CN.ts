@@ -1,4 +1,4 @@
-export default {
+const messages = {
   route: {
     dashboard: '仪表盘',
     sandboxes: '容器实例列表',
@@ -1171,4 +1171,6 @@ export default {
     maintenance: '维护',
     test: '测试',
   },
-}
+} satisfies I18nMessages
+
+export default messages

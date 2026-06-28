@@ -1425,7 +1425,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { useResolver } from '../../composables/useResolver'
 import { useReferenceCache } from '../../composables/useReferenceCache'
 
@@ -1521,13 +1521,13 @@ function emptyHc(): HealthCheckForm {
 
 // ---- HealthCheck codec (HealthCheckForm ↔ HealthCheckDef) ----
 function hcToForm(raw: HealthCheckDef): HealthCheckForm {
-  const probe = raw.probe || {}
-  const probeType = (probe as any).exec ? 'exec' : (probe as any).httpGet ? 'httpGet' : (probe as any).tcpSocket ? 'tcpSocket' : 'tcpSocket'
+  const probe: ProbeSpec = raw.probe || {}
+  const probeType = probe.exec ? 'exec' : probe.httpGet ? 'httpGet' : probe.tcpSocket ? 'tcpSocket' : 'tcpSocket'
   return {
     name: raw.name || '', target: raw.target || '', type: raw.type || 'readiness', probeType,
-    execCommand: (probe as any).exec?.command ? JSON.stringify((probe as any).exec.command) : '',
-    httpPath: (probe as any).httpGet?.path || '/', httpPort: (probe as any).httpGet?.port ?? 80,
-    tcpPort: (probe as any).tcpSocket?.port ?? 80,
+    execCommand: probe.exec?.command ? JSON.stringify(probe.exec.command) : '',
+    httpPath: probe.httpGet?.path || '/', httpPort: probe.httpGet?.port ?? 80,
+    tcpPort: probe.tcpSocket?.port ?? 80,
     initialDelaySeconds: raw.initialDelaySeconds ?? 0, periodSeconds: raw.periodSeconds ?? 10, timeoutSeconds: raw.timeoutSeconds ?? 5,
   }
 }

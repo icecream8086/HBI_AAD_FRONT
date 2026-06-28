@@ -133,7 +133,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { type StatusTagMap, lookup } from '../../utils/codec'
 
 const { t } = useI18n()

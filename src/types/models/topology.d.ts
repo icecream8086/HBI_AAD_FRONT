@@ -309,7 +309,7 @@ interface UpdateSubnetInput {
 
 // ─── Volume ───
 
-type VolumeType = 'NFSVolume' | 'HostPathVolume' | 'EmptyDirVolume' | 'DiskVolume' | 'SecretVolume'
+type VolumeType = 'NFSVolume' | 'HostPathVolume' | 'EmptyDirVolume' | 'DiskVolume' | 'ConfigMapVolume' | 'SecretVolume'
 
 interface NFSConfig {
   server: string
@@ -346,6 +346,7 @@ interface Volume {
   credentialRef?: string
   nfs?: NFSConfig
   disk?: DiskConfig
+  configMap?: { name: string; items?: { key: string; path: string; mode?: number }[] }
   secret?: SecretConfig
   status: string
   createdAt: number
@@ -360,6 +361,7 @@ interface CreateVolumeInput {
   credentialRef?: string
   nfs?: NFSConfig
   disk?: DiskConfig
+  configMap?: { name: string; items?: { key: string; path: string; mode?: number }[] }
   secret?: SecretConfig
 }
 
@@ -368,6 +370,7 @@ interface UpdateVolumeInput {
   description?: string | null
   nfs?: NFSConfig
   disk?: DiskConfig
+  configMap?: { name: string; items?: { key: string; path: string; mode?: number }[] }
   secret?: SecretConfig
 }
 

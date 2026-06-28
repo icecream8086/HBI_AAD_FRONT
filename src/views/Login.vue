@@ -15,7 +15,7 @@
           <div class="header-actions">
             <el-dropdown
               trigger="click"
-              @command="cmd => setLang(cmd)"
+              @command="(cmd: string) => setLang(cmd)"
             >
               <span class="lang-btn">
                 <el-icon :size="14"><ChatDotSquare /></el-icon>
@@ -36,7 +36,7 @@
             </el-dropdown>
             <el-dropdown
               trigger="click"
-              @command="cmd => setTheme(cmd)"
+              @command="(cmd: string) => setTheme(cmd)"
             >
               <span class="theme-btn">
                 <el-icon :size="16"><MagicStick /></el-icon>
@@ -174,8 +174,10 @@ import { ElMessage, type FormInstance } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
 import { useLocale, LANG_OPTIONS } from '../composables/useLocale'
-import { api } from '../api'
+import { api } from '../api/typed'
 import { useStore } from 'vuex'
+import { loginSchema, registerSchema } from './Login.schema'
+import type { LoginFormValues, RegisterFormValues } from './Login.schema'
 
 const router = useRouter()
 const store = useStore<State>()
@@ -187,15 +189,14 @@ const activeTab = ref('login')
 const loginFormRef = ref<FormInstance>()
 const regFormRef = ref<FormInstance>()
 
-// Default credentials from http/auth.http
-const loginForm = reactive({ email: 'user@example.com', password: 'secret123' })
+const loginForm = reactive<LoginFormValues>({ email: 'user@example.com', password: 'secret123' })
 const loginRules = {
   email: [{ required: true, message: t('login.emailRequired'), trigger: 'blur' }],
   password: [{ required: true, message: t('login.passwordRequired'), trigger: 'blur' }],
 }
 
-const regForm = reactive({ name: 'Alice', email: 'user@example.com', password: 'secret123', confirm: 'secret123' })
-const validateConfirm = (_rule: any, value: string, callback: any) => {
+const regForm = reactive<RegisterFormValues>({ name: 'Alice', email: 'user@example.com', password: 'secret123', confirm: 'secret123' })
+const validateConfirm = (_rule: unknown, value: string, callback: (e?: Error) => void) => {
   if (value !== regForm.password) callback(new Error(t('login.passwordMismatch')))
   else callback()
 }

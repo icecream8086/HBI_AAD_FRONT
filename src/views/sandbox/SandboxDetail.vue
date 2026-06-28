@@ -707,13 +707,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { type StatusTagMap, lookup } from '../../utils/codec'
+import { useTypedRoute } from '../../composables/useTypedRoute'
 
-const route = useRoute()
+const { params } = useTypedRoute('/sandboxes/:id')
 const router = useRouter()
 const { t } = useI18n()
 const loading = ref(false)
@@ -910,7 +911,7 @@ function fmtCmd(cmd: string[] | undefined): string {
 
 async function load() {
   loading.value = true
-  try { sandbox.value = await api.sandboxes.get(route.params.id as string) as Sandbox }
+  try { sandbox.value = await api.sandboxes.get(params.id) }
   catch { ElMessage.error(t('sandbox.loadFailed')) }
   finally { loading.value = false }
 }
@@ -921,7 +922,7 @@ async function handleStart() {
   if (throttle()) return
   starting.value = true
   try {
-    await api.sandboxes.start(route.params.id as string)
+    await api.sandboxes.start(params.id)
     ElMessage.success(t('sandbox.startSuccess'))
     await load()
   } catch { ElMessage.error(t('sandbox.actionFailed')) }
@@ -931,7 +932,7 @@ async function handleStart() {
 async function handleStop() {
   if (throttle()) return
   try {
-    await api.sandboxes.stop(route.params.id as string)
+    await api.sandboxes.stop(params.id)
     ElMessage.success(t('sandbox.stopSuccess'))
     await load()
   } catch { ElMessage.error(t('sandbox.actionFailed')) }
@@ -939,21 +940,21 @@ async function handleStop() {
 async function handleDelete() {
   try {
     await ElMessageBox.confirm(t('sandbox.deleteConfirm'), t('table.confirm'))
-    await api.sandboxes.delete(route.params.id as string)
+    await api.sandboxes.delete(params.id)
     ElMessage.success(t('sandbox.deleteSuccess')); router.push('/sandboxes')
   } catch { /* ignore */ }
 }
 async function handleSync() {
   if (throttle()) return
   try {
-    await api.sandboxes.sync(route.params.id as string)
+    await api.sandboxes.sync(params.id)
     ElMessage.success(t('sandbox.syncSuccess'))
     await load()
   } catch { ElMessage.error(t('sandbox.syncFailed')) }
 }
 async function fetchHealth() {
   try {
-    const h = await api.sandboxes.health(route.params.id as string) as ContainerHealth[]
+    const h = await api.sandboxes.health(params.id) as ContainerHealth[]
     if (!h?.length) { ElMessage.info('No container health data'); return }
     h.forEach(c => ElMessage.info(`${t('sandbox.containerLabel')} ${c.containerName}: ${c.status}${c.ready ? ' ✓' : ''}`))
   } catch { ElMessage.error('Health check failed') }
@@ -972,11 +973,11 @@ async function fetchHealth() {
 .cont-box h4 { margin: 0 0 8px 0; }
 .sub { margin-top: 6px; font-size: 13px; }
 code { font-size: 12px; background: var(--el-bg-color-page); padding: 2px 6px; border-radius: 3px; }
-.log-viewer { background: #0d1117; color: #e6edf3; font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.6; padding: 12px; border-radius: 6px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.log-viewer { background: var(--el-fill-color-darker); color: var(--el-text-color-primary); font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.6; padding: 12px; border-radius: 6px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
 .log-viewer.log-placeholder { background: transparent; color: var(--el-text-color-secondary); font-family: var(--el-font-family); font-size: 13px; display: flex; align-items: center; justify-content: center; min-height: 80px; }
 .log-line { padding: 0 4px; }
-.log-warn { color: #d29922; }
-.log-error { color: #f85149; }
+.log-warn { color: var(--el-color-warning); }
+.log-error { color: var(--el-color-danger); }
 .log-count { font-size: 12px; color: var(--el-text-color-secondary); margin-left: 6px; }
 .log-fetch-time { font-size: 11px; color: var(--el-text-color-secondary); margin-left: 6px; }
 .log-actions { display: inline-flex; align-items: center; gap: 4px; float: right; }

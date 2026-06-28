@@ -124,7 +124,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 
 const { t } = useI18n()
 
@@ -136,14 +136,31 @@ const totalFromStatus = computed(() => stats.value ? Object.values(stats.value.b
 
 function pct(v: number, total: number) { return total ? Math.round((v / total) * 100) : 0 }
 
+type TriggerType = 'manual' | 'cron' | 'webhook' | 'http' | 'shared_link'
+
+const TRIGGER_COLORS: Record<TriggerType, string> = {
+  manual:      '#409EFF',
+  cron:        '#E6A23C',
+  webhook:     '#67C23A',
+  http:        '#909399',
+  shared_link: '#F56C6C',
+}
+
+type StatusColorKey = 'Success' | 'Failure' | 'Pending' | 'Running'
+
+const STATUS_COLORS: Record<StatusColorKey, string> = {
+  Success:  '#67C23A',
+  Failure:  '#F56C6C',
+  Pending:  '#909399',
+  Running:  '#409EFF',
+}
+
 function triggerColor(k: string) {
-  const m: Record<string, string> = { manual: '#409EFF', cron: '#E6A23C', webhook: '#67C23A', http: '#909399', shared_link: '#F56C6C' }
-  return m[k] || '#409EFF'
+  return TRIGGER_COLORS[k as TriggerType] || TRIGGER_COLORS.manual
 }
 
 function statusBarColor(k: string) {
-  const m: Record<string, string> = { Success: '#67C23A', Failure: '#F56C6C', Pending: '#909399', Running: '#409EFF' }
-  return m[k] || '#409EFF'
+  return STATUS_COLORS[k as StatusColorKey] || STATUS_COLORS.Running
 }
 
 async function fetchStats() {

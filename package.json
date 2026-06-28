@@ -10,7 +10,8 @@
     "lint": "vue-cli-service lint",
     "docs:openapi": "openapi-generator-cli generate -i http://localhost:3000/api/openapi.json -g typescript-axios -o src/api/generated --type-mappings integer=int",
     "docs:openapi:local": "openapi-generator-cli generate -i openapi.json -g typescript-axios -o src/api/generated --type-mappings integer=int",
-    "docs:api": "node scripts/export-api.mjs && echo '→ Review src/api/index-generated.ts and merge into src/api/index.ts'"
+    "docs:api": "node scripts/export-api.mjs && echo '→ Review src/api/index-generated.ts and merge into src/api/index.ts'",
+    "i18n:types": "node scripts/extract-i18n-keys.mjs"
   },
   "dependencies": {
     "@antv/x6": "^3.1.7",
@@ -28,7 +29,8 @@
     "vue-i18n": "^9.14.5",
     "vue-router": "^4.3.0",
     "vuex": "^4.1.0",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.34.0",

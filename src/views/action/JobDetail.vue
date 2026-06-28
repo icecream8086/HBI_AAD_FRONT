@@ -167,7 +167,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { type StatusTagMap, lookup } from '../../utils/codec'
 
 const route = useRoute()
@@ -180,7 +180,7 @@ const job = ref<JobRun | null>(null)
 const logText = ref('')
 const currentStep = ref('')
 
-function fmt(ts: number) { return ts ? new Date(ts).toLocaleString() : '-' }
+function fmt(ts?: number) { return ts ? new Date(ts).toLocaleString() : '-' }
 
 const jobStatusTags: StatusTagMap<JobRunStatus> = {
   Success: 'success',
@@ -218,8 +218,8 @@ onMounted(loadJob)
 .dim { color: var(--el-text-color-secondary); font-size: 13px; }
 .error-text { color: var(--el-color-danger); font-size: 13px; }
 .log-output {
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: var(--el-fill-color-darker);
+  color: var(--el-text-color-primary);
   padding: 16px;
   border-radius: 6px;
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;

@@ -740,14 +740,14 @@ function saveJson() {
 .efe-divider {
   width: 4px;
   cursor: col-resize;
-  background: #409eff;
+  background: var(--el-color-primary);
   border-radius: 2px;
   flex-shrink: 0;
   transition: background 0.15s;
   margin: 0 6px;
 }
-.efe-divider:hover { background: #79bbff; }
-.efe-divider-dragging { background: #e6a23c !important; }
+.efe-divider:hover { background: var(--el-color-primary-light-3); }
+.efe-divider-dragging { background: var(--el-color-warning) !important; }
 
 .efe-panel-form :deep(.el-card__body) { padding: 12px 16px; }
 .efe-panel-code {

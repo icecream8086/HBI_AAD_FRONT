@@ -271,7 +271,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { useReferenceCache } from '../../composables/useReferenceCache'
 import { credentialColumns } from '../../constants/field-descriptors'
 import { useEntityColumns } from '../../composables/useEntityColumns'

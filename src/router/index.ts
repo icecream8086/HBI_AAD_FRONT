@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import store from '../store'
+import { ROUTE_MIN_ROLE, hasMinRole } from '../types/permissions'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -92,11 +93,24 @@ router.beforeEach((to, _from, next) => {
   const isLoggedIn = store.state.auth.isLoggedIn
   if (to.meta.requiresAuth && !isLoggedIn) {
     next('/login')
-  } else if (to.path === '/login' && isLoggedIn) {
-    next('/dashboard')
-  } else {
-    next()
+    return
   }
+  if (to.path === '/login' && isLoggedIn) {
+    next('/dashboard')
+    return
+  }
+  // Role-based guard
+  if (to.name && typeof to.name === 'string') {
+    const minRole = ROUTE_MIN_ROLE[to.name]
+    if (minRole) {
+      const userRole = store.state.auth.currentUser?.role
+      if (!hasMinRole(userRole, minRole)) {
+        next('/dashboard')
+        return
+      }
+    }
+  }
+  next()
 })
 
 export default router

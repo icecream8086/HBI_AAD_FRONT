@@ -305,7 +305,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { type StatusTagMap, lookup } from '../../utils/codec'
 
 const route = useRoute()

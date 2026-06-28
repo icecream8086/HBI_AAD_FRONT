@@ -86,14 +86,20 @@
             {{ $t('menu.images') }}
           </template>
         </el-menu-item>
-        <el-menu-item index="/users">
+        <el-menu-item
+          v-if="canAdmin"
+          index="/users"
+        >
           <el-icon><User /></el-icon>
           <template #title>
             {{ $t('menu.users') }}
           </template>
         </el-menu-item>
 
-        <el-sub-menu index="admin">
+        <el-sub-menu
+          v-if="canAdmin"
+          index="admin"
+        >
           <template #title>
             <el-icon><Setting /></el-icon>
             <span>{{ $t('menu.permissions') }}</span>
@@ -130,7 +136,10 @@
           </el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="topology">
+        <el-sub-menu
+          v-if="canOperate"
+          index="topology"
+        >
           <template #title>
             <el-icon><MapLocation /></el-icon>
             <span>{{ $t('menu.topology') }}</span>
@@ -150,7 +159,10 @@
           </el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="network">
+        <el-sub-menu
+          v-if="canOperate"
+          index="network"
+        >
           <template #title>
             <el-icon><Connection /></el-icon>
             <span>{{ $t('menu.network') }}</span>
@@ -163,13 +175,19 @@
           </el-menu-item>
         </el-sub-menu>
 
-        <el-menu-item index="/audit">
+        <el-menu-item
+          v-if="canOperate"
+          index="/audit"
+        >
           <el-icon><List /></el-icon>
           <template #title>
             {{ $t('menu.audit') }}
           </template>
         </el-menu-item>
-        <el-menu-item index="/events">
+        <el-menu-item
+          v-if="canOperate"
+          index="/events"
+        >
           <el-icon><Refresh /></el-icon>
           <template #title>
             {{ $t('menu.events') }}
@@ -201,6 +219,7 @@
         </div>
         <div class="header-right">
           <span
+            v-if="canOperate"
             class="ext-editor-btn"
             @click="$router.push('/extension-fields')"
           >
@@ -214,7 +233,7 @@
           <!-- Language switcher -->
           <el-dropdown
             trigger="click"
-            @command="cmd => setLang(cmd)"
+            @command="(cmd: string) => setLang(cmd)"
           >
             <span class="user-trigger">
               <el-icon :size="16"><ChatDotSquare /></el-icon>
@@ -237,7 +256,7 @@
           <!-- Theme switcher -->
           <el-dropdown
             trigger="click"
-            @command="cmd => setTheme(cmd)"
+            @command="(cmd: string) => setTheme(cmd)"
           >
             <span class="user-trigger">
               <el-icon :size="18"><MagicStick /></el-icon>
@@ -452,7 +471,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
 import { useLocale, LANG_OPTIONS } from '../composables/useLocale'
-import { API_BASE, api } from '../api'
+import { API_BASE } from '../api'
+import { api } from '../api/typed'
+import { isRoot, isOperator } from '../types/permissions'
 
 const route = useRoute()
 const router = useRouter()
@@ -462,6 +483,9 @@ const { locale, setLang } = useLocale()
 const { t } = useI18n()
 
 const user = computed(() => store.state.auth.currentUser)
+const userRole = computed(() => user.value?.role)
+const canAdmin = computed(() => isRoot(userRole.value))
+const canOperate = computed(() => isOperator(userRole.value))
 const isCollapsed = computed(() => store.state.app.sidebarCollapsed)
 const avatarBlob = ref('')
 let avatarReq = 0

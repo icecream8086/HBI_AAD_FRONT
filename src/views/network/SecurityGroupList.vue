@@ -245,8 +245,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { useReferenceCache } from '../../composables/useReferenceCache'
+import { toAppError } from '../../types/errors'
 
 const { t } = useI18n()
 const refCache = useReferenceCache()
@@ -343,8 +344,7 @@ async function handleSave() {
     }
     dialog.show = false; await fetchData()
   } catch (e) {
-    const msg = (e as any)?.response?.data?.error?.message || (e as any)?.message || t('securityGroup.actionFailed')
-    ElMessage.error(msg)
+    ElMessage.error(toAppError(e).message)
   }
   finally { saving.value = false }
 }

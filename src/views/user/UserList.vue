@@ -139,7 +139,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { type StatusTagMap, lookup } from '../../utils/codec'
 import { userColumns } from '../../constants/field-descriptors'
 import { useEntityColumns } from '../../composables/useEntityColumns'
@@ -156,8 +156,8 @@ const searchQuery = ref('')
 const searching = ref(false)
 const searchResult = ref<User | null>(null)
 
-const userRoleTags: StatusTagMap<UserRole> = { root: 'danger', Operator: 'warning', Viewer: 'info' }
-function roleType(r: string) { return lookup(userRoleTags, r, 'info') }
+const userRoleTags: StatusTagMap<UserRole> = { root: 'danger', Operator: 'warning', Viewer: 'info', wheel: 'success' }
+function roleType(r: UserRole) { return lookup(userRoleTags, r, 'info') }
 
 async function handleSearch() {
   const q = searchQuery.value.trim()

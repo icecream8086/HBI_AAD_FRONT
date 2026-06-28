@@ -4,9 +4,11 @@ interface AuthState {
   isLoggedIn: boolean
 }
 
+type ThemeId = import('../assets/themes/registry').ThemeId
+
 interface AppState {
-  theme: string
-  language: string
+  theme: ThemeId
+  language: 'zh-CN' | 'en'
   sidebarCollapsed: boolean
 }
 

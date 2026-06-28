@@ -346,7 +346,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useResolver } from '../../composables/useResolver'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 
 const { t } = useI18n()
 const { load: loadRefs, userName, groupName, permGroupName, users: refUsers, permGroups } = useResolver()

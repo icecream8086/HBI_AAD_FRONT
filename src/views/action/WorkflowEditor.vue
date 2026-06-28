@@ -130,7 +130,7 @@ import { ElMessage } from 'element-plus'
 import { Codemirror } from 'vue-codemirror'
 import { yaml as yamlLang } from '@codemirror/lang-yaml'
 import { linter } from '@codemirror/lint'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 
 const route = useRoute()
 const router = useRouter()

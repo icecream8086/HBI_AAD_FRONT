@@ -286,7 +286,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { useReferenceCache } from '../../composables/useReferenceCache'
 import { type StatusTagMap, lookup } from '../../utils/codec'
 import { sandboxColumns } from '../../constants/field-descriptors'

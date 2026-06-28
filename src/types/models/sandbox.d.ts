@@ -36,6 +36,7 @@ interface CreateSandboxInput {
   healthMaxRetries?: number
   creatorId?: string
   providerOverrides?: Record<string, unknown>
+  labels?: Record<string, string>
 }
 
 interface ResourceSpec {
@@ -56,7 +57,7 @@ interface ContainerConfig {
   imagePullPolicy?: 'Always' | 'IfNotPresent' | 'Never'
   resources?: ResourceRequirements
   volumeMounts?: VolumeMount[]
-  ports?: { containerPort: number; hostPort?: number; protocol?: string }[]
+  ports?: { containerPort: number; container?: number; hostPort?: number; protocol?: string }[]
   livenessProbe?: ProbeSpec
   readinessProbe?: ProbeSpec
   startupProbe?: ProbeSpec
@@ -73,6 +74,8 @@ interface ContainerRuntime {
   image: string
   cpu: number
   memory: number
+  gpu?: number
+  gpuType?: string
   state: ContainerState
   volumeMounts: VolumeMount[]
   health?: { status: string; lastCheckedAt?: string; message?: string }
@@ -97,6 +100,8 @@ interface ProviderIdentity {
 interface NetworkInfo {
   publicIp?: string
   privateIp?: string
+  externalIp?: string
+  internalIp?: string
   ipAddress?: string
   vpcId?: string
   subnetId?: string

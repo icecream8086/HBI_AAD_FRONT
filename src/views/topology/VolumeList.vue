@@ -449,7 +449,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { useReferenceCache } from '../../composables/useReferenceCache'
 import { volumeColumns } from '../../constants/field-descriptors'
 import { useEntityColumns } from '../../composables/useEntityColumns'
@@ -489,7 +489,7 @@ const typeTags: Record<VolumeType, string> = {
 }
 
 function typeLabel(t: VolumeType) { return typeLabels[t] || t }
-function typeTag(t: VolumeType) { return (typeTags as any)[t] || '' }
+function typeTag(t: VolumeType) { return typeTags[t] || '' }
 
 const dialog = reactive({ show: false, isEdit: false, editId: '' })
 const form = reactive({

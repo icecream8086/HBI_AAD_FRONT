@@ -175,14 +175,14 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { useI18n } from 'vue-i18n'
-import { api } from '../api'
+import { useTypedI18n } from '../composables/useTypedI18n'
+import { api } from '../api/typed'
 
-const { t } = useI18n()
+const { t } = useTypedI18n()
 const store = useStore<State>()
 const user = computed(() => store.state.auth.currentUser)
 const roleTag = computed(() => {
-  const m: Record<string, string> = { root: 'danger', Operator: 'warning', Viewer: 'info', wheel: 'success' }
+  const m: Partial<Record<UserRole, string>> = { root: 'danger', Operator: 'warning', Viewer: 'info', wheel: 'success' }
   return m[user.value?.role || ''] || 'info'
 })
 
@@ -207,7 +207,7 @@ function formatUptime(ms: number): string {
   return `${d}d ${h}h ${m}m`
 }
 
-function statusBreakdown(items: any[]): { label: string; count: number; type: string }[] {
+function statusBreakdown(items: { status?: string }[]): { label: string; count: number; type: string }[] {
   const m: Record<string, { label: string; type: string }> = {
     Running: { label: 'Running', type: 'success' },
     Stopped: { label: 'Stopped', type: 'info' },
@@ -226,7 +226,7 @@ function statusBreakdown(items: any[]): { label: string; count: number; type: st
 }
 
 onMounted(async () => {
-  try { Object.assign(info, await api.info.get() as ServerInfo) } catch { /* ignore */ }
+  try { Object.assign(info, await api.info.get()) } catch { /* ignore */ }
 
   try {
     const [sb, tm, im, us] = await Promise.allSettled([
@@ -237,7 +237,7 @@ onMounted(async () => {
     ])
 
     if (sb.status === 'fulfilled') {
-      const items = sb.value as any[]
+      const items = sb.value
       statCards[0].value = items.length
       statCards[0].breakdown = statusBreakdown(items)
 
@@ -258,9 +258,9 @@ onMounted(async () => {
         instanceCount: items.length, regions: [...regions],
       }
     }
-    if (tm.status === 'fulfilled') statCards[1].value = (tm.value as any[]).length
-    if (im.status === 'fulfilled') statCards[2].value = (im.value as any[]).length
-    if (us.status === 'fulfilled') statCards[3].value = (us.value as any[]).length
+    if (tm.status === 'fulfilled') statCards[1].value = tm.value.length
+    if (im.status === 'fulfilled') statCards[2].value = im.value.length
+    if (us.status === 'fulfilled') statCards[3].value = us.value.length
   } catch { /* ignore */ }
 })
 </script>

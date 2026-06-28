@@ -275,7 +275,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Codemirror } from 'vue-codemirror'
 import { yaml as yamlLang } from '@codemirror/lang-yaml'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import YAML from 'yaml'
 
 const cmExtensions = [yamlLang()]

@@ -347,7 +347,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 import { useReferenceCache } from '../../composables/useReferenceCache'
 
 const { t } = useI18n()
@@ -507,8 +507,8 @@ async function handleSave() {
   saving.value = true
   try {
     const body = { name: form.name, rules, userGroupIds: form.userGroupIds.length ? form.userGroupIds : undefined, userIds: form.userIds.length ? form.userIds : undefined, dependsOn: form.dependsOn.length ? form.dependsOn : undefined }
-    if (dialog.isEdit) { await api.permissions.groups.update(dialog.editId, body as any); ElMessage.success(t('permission.updated')) }
-    else { await api.permissions.groups.create(body as any); ElMessage.success(t('permission.created')) }
+    if (dialog.isEdit) { await api.permissions.groups.update(dialog.editId, body); ElMessage.success(t('permission.updated')) }
+    else { await api.permissions.groups.create(body); ElMessage.success(t('permission.created')) }
     dialog.show=false; await fetchData()
   } catch { ElMessage.error(t('permission.actionFailed')) }
   finally { saving.value = false }

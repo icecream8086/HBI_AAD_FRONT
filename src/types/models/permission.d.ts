@@ -107,6 +107,7 @@ interface PermissionTemplate {
 interface UserTemplate {
   id: string
   name: string
+  description?: string
   defaultGroupIds: string[]
   defaultPermGroupIds: string[]
   dependsOn: string[]

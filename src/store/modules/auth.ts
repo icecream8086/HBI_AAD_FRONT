@@ -1,4 +1,5 @@
-import { Module } from 'vuex'
+import type { Module } from 'vuex'
+import { isRoot, isOperator } from '../../types/permissions'
 
 const state: AuthState = {
   token: localStorage.getItem('access_token') || null,
@@ -29,7 +30,6 @@ const authModule: Module<AuthState, State> = {
       s.token = null
       s.currentUser = null
       s.isLoggedIn = false
-      // Preserve theme, clear everything else
       const theme = localStorage.getItem('app-theme')
       localStorage.clear()
       sessionStorage.clear()
@@ -53,8 +53,9 @@ const authModule: Module<AuthState, State> = {
   getters: {
     isLoggedIn: (s) => s.isLoggedIn,
     currentUser: (s) => s.currentUser,
-    isRoot: (s) => s.currentUser?.role === 'root',
-    isOperator: (s) => s.currentUser?.role === 'root' || s.currentUser?.role === 'Operator',
+    isRoot: (s): boolean => isRoot(s.currentUser?.role),
+    isOperator: (s): boolean => isOperator(s.currentUser?.role),
+    isViewer: (s): boolean => s.currentUser?.role === 'Viewer',
   },
 }
 

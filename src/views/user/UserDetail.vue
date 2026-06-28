@@ -445,7 +445,7 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { api } from '../../api'
+import { api } from '../../api/typed'
 
 const route = useRoute()
 const { t } = useI18n()

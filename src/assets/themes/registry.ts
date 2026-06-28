@@ -1,7 +1,11 @@
+export type ThemeId = 'light' | 'dark' | 'morandi' | 'forest' | 'ocean' | 'sakura' | 'gnu' | 'frutiger'
+
+export type IconName = 'Sunny' | 'Moon' | 'MagicStick' | 'Star' | 'Cloudy' | 'ColdDrink' | 'Cpu' | 'Cherry'
+
 export interface ThemeDef {
-  id: string
+  id: ThemeId
   name: string
-  icon: string
+  icon: IconName
 }
 
 export const THEMES: ThemeDef[] = [
@@ -15,4 +19,4 @@ export const THEMES: ThemeDef[] = [
   { id: 'frutiger', name: 'Frutiger', icon: 'Cherry' },
 ]
 
-export const DEFAULT_THEME = 'light'
+export const DEFAULT_THEME: ThemeId = 'light'

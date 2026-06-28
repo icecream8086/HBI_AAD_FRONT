@@ -1,8 +1,11 @@
-import { Module } from 'vuex'
+import type { Module } from 'vuex'
+import type { ThemeId } from '../../assets/themes/registry'
 
-const state: AppState = {
-  theme: localStorage.getItem('theme') || 'light',
-  language: localStorage.getItem('language') || 'zh-CN',
+export type LocaleId = 'zh-CN' | 'en'
+
+const state = {
+  theme: (localStorage.getItem('theme') || 'light') as ThemeId,
+  language: (localStorage.getItem('language') || 'zh-CN') as LocaleId,
   sidebarCollapsed: false,
 }
 
@@ -12,11 +15,11 @@ const appModule: Module<AppModuleState, State> = {
   namespaced: true,
   state,
   mutations: {
-    SET_THEME(state, theme: string) {
+    SET_THEME(state, theme: ThemeId) {
       state.theme = theme
       localStorage.setItem('theme', theme)
     },
-    SET_LANGUAGE(state, language: string) {
+    SET_LANGUAGE(state, language: LocaleId) {
       state.language = language
       localStorage.setItem('language', language)
     },
@@ -25,10 +28,10 @@ const appModule: Module<AppModuleState, State> = {
     },
   },
   actions: {
-    setTheme({ commit }, theme: string) {
+    setTheme({ commit }, theme: ThemeId) {
       commit('SET_THEME', theme)
     },
-    setLanguage({ commit }, language: string) {
+    setLanguage({ commit }, language: LocaleId) {
       commit('SET_LANGUAGE', language)
     },
     toggleSidebar({ commit }) {

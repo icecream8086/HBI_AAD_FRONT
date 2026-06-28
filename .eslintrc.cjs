@@ -14,8 +14,26 @@ module.exports = {
     parser: '@typescript-eslint/parser',
   },
   rules: {
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    // ── TypeScript ──
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports', fixStyle: 'inline-type-imports' }],
+    '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/no-explicit-any': 'warn',
+
+    // ── JavaScript 通用 ──
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    'no-debugger': 'error',
+    'eqeqeq': ['warn', 'always'],
+    'curly': ['warn', 'multi-line'],
+    'prefer-const': 'warn',
+    'no-var': 'error',
+    'no-unused-expressions': ['warn', { allowShortCircuit: true, allowTernary: true }],
+
+    // ── Vue Template ──
     'vue/multi-word-component-names': 'off',
+    'vue/component-name-in-template-casing': ['warn', 'PascalCase', { registeredComponentsOnly: true }],
+    'vue/attribute-hyphenation': ['warn', 'always', { ignore: [] }],
+    'vue/no-unused-refs': 'warn',
   },
   overrides: [
     {
@@ -26,13 +44,14 @@ module.exports = {
       },
     },
     {
-      files: ['src/api/generated/**', 'src/api/index-generated.ts'],
+      files: ['scripts/**'],
       rules: {
-        '@typescript-eslint/no-explicit-any': 'off',
+        'no-console': 'off',
+        '@typescript-eslint/no-var-requires': 'off',
       },
     },
     {
-      files: ['src/views/**/*.vue'],
+      files: ['src/api/generated/**', 'src/api/index-generated.ts'],
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
       },

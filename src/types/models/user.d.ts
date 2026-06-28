@@ -1,4 +1,4 @@
-type UserRole = 'root' | 'Operator' | 'Viewer'
+type UserRole = 'root' | 'Operator' | 'Viewer' | 'wheel'
 
 interface User {
   id: string

@@ -1,4 +1,4 @@
-export default {
+const messages = {
   route: {
     dashboard: 'Dashboard',
     sandboxes: 'Sandbox List',
@@ -113,6 +113,12 @@ export default {
     sharedLinks: 'Shared Links',
     actionDashboard: 'Actions Dashboard',
     actionOrganizations: 'Organizations',
+    containerSecrets: 'Container Secrets',
+    userTemplates: 'User Templates',
+    elevations: 'Elevations',
+    invitations: 'Invitations',
+    permTools: 'Permission Tools',
+    actionTemplates: 'Workflow Templates',
   },
   table: {
     name: 'Name',
@@ -1160,4 +1166,6 @@ export default {
     maintenance: 'Maintenance',
     test: 'Test',
   },
-}
+} satisfies I18nMessages
+
+export default messages

@@ -8,6 +8,7 @@ interface ImageInfo {
   architecture?: string
   os?: string
   layers?: number
+  taskId?: string
 }
 
 interface ImagePullRequest {
